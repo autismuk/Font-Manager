@@ -6,7 +6,7 @@
 
 display.setStatusBar(display.HiddenStatusBar)
 
-
+fm = require("system.fontmanager")
 
 
 
