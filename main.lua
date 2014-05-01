@@ -6,7 +6,7 @@
 
 display.setStatusBar(display.HiddenStatusBar)
 
-local fontList = require("demofont")
+local fontList = require("fonts.demofont")
 local options = { frames = {} }
 local fontFile = nil
 local asciiToFrame = {}
@@ -19,7 +19,7 @@ for item,cDef in ipairs(fontList) do
 end
 
 
-local sheet = graphics.newImageSheet(fontFile,options)
+local sheet = graphics.newImageSheet("fonts/"..fontFile,options)
 
 for i = 32,127 do
     if asciiToFrame[i] ~= nil then
