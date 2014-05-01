@@ -6,6 +6,11 @@
 
 display.setStatusBar(display.HiddenStatusBar)
 
+
+
+
+
+--[[
 local fontList = require("fonts.demofont")
 local options = { frames = {} }
 local fontFile = nil
@@ -44,3 +49,5 @@ for i = 1,#s do
     d.y = 420+fontList[f].yOffset
     x = x + fontList[f].width
 end
+
+--]]
