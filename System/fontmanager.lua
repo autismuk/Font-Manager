@@ -58,7 +58,7 @@ end
 --	for actual drawing the scale can be adjusted (pxScale,pyScale are multipliers of the scale) but the character will occupy the same space.
 -- 	Finally, characters can be set at an offset from the actual position (xAdjust,yAdjust) to allow for wavy font effects and characters to move.
 --
-function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,pxScale,pyScale,xOffset,yOffset)
+function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,pxScale,pyScale,xOffset,yOffset,rotation)
 	local scalar = fontSize / self.fontHeight 												-- how much to scale the font by to make it the required size.
 	xScale = xScale * scalar yScale = yScale * scalar 										-- make scales scale to actual size.
 	local axScale = math.abs(xScale) 														-- precalculate absolute value of scales, differentiating flipping
@@ -69,6 +69,7 @@ function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,
 	local cData = self.characterData[displayObject.__bmpFontCode] 							-- get a reference to the character information
 	local width = cData.width 																-- character width, scale 1.
 	displayObject.xScale,displayObject.yScale = pxScale,pyScale 							-- apply the physical individual scale to the object
+	displayObject.rotation = rotation or 0 													-- internal rotation
 	displayObject.x = x + cData.xOffset * axScale + displayObject.width / 2 * axScale + xOffset * xScale
 	displayObject.y = y + cData.yOffset * ayScale + displayObject.height / 2 * ayScale + yOffset * yScale
 	return width * axScale,ayScale * fontSize													-- return space used by this character
@@ -119,6 +120,8 @@ for i = 1,#text do
 	letters[i] = font:getCharacter(c)
 end
 
+local frame = 0
+
 function repaint()
 	local x = 64
 	for i = 1,#text do
@@ -126,12 +129,13 @@ function repaint()
 		if i == 2 or i == 8 then xs = zscale end
 		if i == 8 then xs = 1 / xs end
 		yy = math.sin(i/2) * 10
-		x = x + font:moveScaleCharacter(letters[i],fontSize,x,320,scale,scale,xs,xs,0,yy)
+		rot = frame * 7
+		if i == 9 then rot = - rot end
+		x = x + font:moveScaleCharacter(letters[i],fontSize,x,320,scale,scale,xs,xs,0,yy,rot)
 	end
 	return x -64
 end
 
-local frame = 0
 
 Runtime:addEventListener( "enterFrame", function(e) 
 	frame = frame + 1
