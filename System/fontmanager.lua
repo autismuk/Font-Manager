@@ -55,12 +55,15 @@ function BitmapFont:getCharacter(characterCode)
 end
 
 --
---	This moves the display object to position x,y and positions it correctly allowing for the main scale (xScale,yScale)
---	for actual drawing the scale can be overridden (pxScale,pyScale) but the character will occupy the same space.
+--	This moves the display object to position x,y and positions it correctly allowing for the main scale (xScale,yScale) and fontSize (height in pixels)
+--	for actual drawing the scale can be adjusted (pxScale,pyScale are multipliers of the scale) but the character will occupy the same space.
 -- 	Finally, characters can be set at an offset from the actual position (xAdjust,yAdjust) to allow for wavy font effects and characters to move.
 --
-function BitmapFont:moveScaleCharacter(displayObject,x,y,xScale,yScale,pxScale,pyScale,xAdjust,yAdjust)
-	pxScale = pxScale or xScale pyScale = pyScale or yScale 								-- if no draw scale is used, use the original scale.
+function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,pxScale,pyScale,xAdjust,yAdjust)
+	local scalar = fontSize / self.fontHeight 												-- how much to scale the font by to make it the required size.
+	xScale = xScale * scalar yScale = yScale * scalar
+	pxScale = (pxScale or 1) * xScale  														-- work out final scale
+	pyScale = (pyScale or 1) * yScale 
 	xAdjust = xAdjust or 0 yAdjust = yAdjust or 0 											-- if no adjustment provided, use 0,0
 	local cData = self.characterData[displayObject.__bmpFontCode] 							-- get a reference to the character information
 	local width = cData.width 																-- character width, scale 1.
@@ -69,21 +72,35 @@ function BitmapFont:moveScaleCharacter(displayObject,x,y,xScale,yScale,pxScale,p
 									(pxScale-xScale) * (width/2-cData.xOffset/2) + xAdjust * xScale
 	displayObject.y = y + cData.yOffset * yScale - 
 									(pyScale-yScale) * (self.fontHeight/2-cData.yOffset/2) + yAdjust * yScale
-	return width * xScale 																	-- return space used by this character
+	return width * xScale,yScale * fontSize													-- return space used by this character
 end
 
-function BitmapFont:getCharacterWidth(characterCode,xScale)
-	return self.characterData[characterCode].width * xScale
+function BitmapFont:getCharacterWidth(characterCode,fontSize,xScale) 						-- information functions. These are bounding boxes if you 
+	return self.characterData[characterCode].width * xScale * fontSize / self.fontHeight 	-- don't use pxScale, pyScale, xAdjust and yAdjust (!)
 end
 
-local scale = 1.7
+function BitmapFont:getCharacterHeight(characterCode,fontSize,yScale)
+	return yScale * fontSize
+end
+
+function BitmapFont:getStringWidth(string,fontSize,xScale) 									-- cache this if required, moveScaleCharacter tells you this value too.
+	local total = 0
+	for i = 1,#string do 
+		total = total + self:getCharacterWidth(string:sub(i,i):byte(1),fontSize,xScale)
+	end
+	return total
+end
+
+local fontSize = 40
+local scale = 1
 local zscale = 3
 local letters = {}
 local font = BitmapFont:new("demofont")
 
-display.newCircle(64,320,4)
-
-local text = "Hello, world !"
+local rframe = display.newRect(64,320,20,20)
+rframe.strokeWidth = 1 rframe:setFillColor( 0,0,0,0 )
+rframe.anchorX,rframe.anchorY = 0,0
+local text = "Hello, worldy !"
 for i = 1,#text do
 	local c = text:sub(i,i):byte(1)
 	letters[i] = font:getCharacter(c)
@@ -92,10 +109,12 @@ end
 function repaint()
 	local x = 64
 	for i = 1,#text do
-		local xs = scale
+		local xs = 1
 		if i == 2 then xs = zscale end
-		x = x + font:moveScaleCharacter(letters[i],x,320,scale,scale,xs,scale,0,(xs-2)*20)
+		yy = math.sin(i/2) * 10
+		x = x + font:moveScaleCharacter(letters[i],fontSize,x,320,scale,scale,xs,xs,0,yy)
 	end
+	return x -64
 end
 
 local frame = 0
@@ -105,6 +124,7 @@ Runtime:addEventListener( "enterFrame", function(e)
 	local p = math.floor(frame) % 40
 	if p > 20 then p = 40-p end
 	zscale = 0.1 + p/5
-	repaint()
-
+	w = repaint()
+	rframe.height = font:getCharacterHeight(' ',fontSize,scale)
+	rframe.width = font:getStringWidth(text,fontSize,scale)
 end)
