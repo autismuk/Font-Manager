@@ -48,7 +48,7 @@ end
 
 function BitmapFont:getCharacter(characterCode) 											
 	local obj = display.newImage(self.imageSheet,self.characterData[characterCode].spriteID)-- create it.
-	obj.anchorX,obj.anchorY = 0,0 															-- we anchor around the top left position.
+	obj.anchorX,obj.anchorY = 0.5,0.5 														-- we anchor around the centre of the graphic for rotating and zooming.
 	obj.__bmpFontCode = characterCode 														-- move/scale needs the character code.
 	return obj
 end
@@ -58,7 +58,7 @@ end
 --	for actual drawing the scale can be adjusted (pxScale,pyScale are multipliers of the scale) but the character will occupy the same space.
 -- 	Finally, characters can be set at an offset from the actual position (xAdjust,yAdjust) to allow for wavy font effects and characters to move.
 --
-function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,pxScale,pyScale,xAdjust,yAdjust)
+function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,pxScale,pyScale,xOffset,yOffset)
 	local scalar = fontSize / self.fontHeight 												-- how much to scale the font by to make it the required size.
 	xScale = xScale * scalar yScale = yScale * scalar 										-- make scales scale to actual size.
 	local axScale = math.abs(xScale) 														-- precalculate absolute value of scales, differentiating flipping
@@ -69,11 +69,8 @@ function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,
 	local cData = self.characterData[displayObject.__bmpFontCode] 							-- get a reference to the character information
 	local width = cData.width 																-- character width, scale 1.
 	displayObject.xScale,displayObject.yScale = pxScale,pyScale 							-- apply the physical individual scale to the object
-	displayObject.x = x + cData.xOffset * axScale - 										-- set position, allowing for offset and scale differences.
-									(math.abs(pxScale)-axScale) * (width/2-cData.xOffset/2) + xAdjust * axScale
-	if xScale < 0 then displayObject.x = displayObject.x + width * axScale end
-	displayObject.y = y + cData.yOffset * yScale - 
-									(pyScale-yScale) * (self.fontHeight/2-cData.yOffset/2) + yAdjust * yScale
+	displayObject.x = x + cData.xOffset * axScale + displayObject.width / 2 * axScale + xOffset * xScale
+	displayObject.y = y + cData.yOffset * ayScale + displayObject.height / 2 * ayScale + yOffset * yScale
 	return width * axScale,ayScale * fontSize													-- return space used by this character
 end
 
@@ -93,9 +90,8 @@ function BitmapFont:getStringWidth(string,fontSize,xScale) 									-- cache thi
 	return total
 end
 
--- TODO: can we do negative scaling ?
-
 -- text (constructor)
+-- array of character codes, mapped to 32.
 -- array of display objects
 -- direction
 -- font (constructor,default, invariant)
@@ -109,7 +105,7 @@ end
 
 
 local fontSize = 20
-local scale = 2
+local scale = 2.4
 local zscale = 3
 local letters = {}
 local font = BitmapFont:new("demofont")
@@ -128,8 +124,9 @@ function repaint()
 	for i = 1,#text do
 		local xs = 1
 		if i == 2 or i == 8 then xs = zscale end
+		if i == 8 then xs = 1 / xs end
 		yy = math.sin(i/2) * 10
-		x = x + font:moveScaleCharacter(letters[i],fontSize,x,320,-scale,scale,xs,xs,0,yy)
+		x = x + font:moveScaleCharacter(letters[i],fontSize,x,320,scale,scale,xs,xs,0,yy)
 	end
 	return x -64
 end
@@ -143,5 +140,5 @@ Runtime:addEventListener( "enterFrame", function(e)
 	zscale = 0.1 + p/5
 	w = repaint()
 	rframe.height = font:getCharacterHeight(' ',fontSize,scale)
-	rframe.width = font:getStringWidth(text,fontSize,scale)
+	rframe.width = w -- font:getStringWidth(text,fontSize,scale)
 end)
