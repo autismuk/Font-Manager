@@ -78,7 +78,6 @@ function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,
 	displayObject.rotation = rotation or 0 													-- internal rotation
 	displayObject.x = x + cData.xOffset * axScale + displayObject.width / 2 * axScale + xOffset * xScale
 	displayObject.y = y + cData.yOffset * ayScale + displayObject.height / 2 * ayScale + yOffset * yScale
-	return displayObject.x,displayObject.y
 end
 
 function BitmapFont:mapCharacterToFont(characterCode)
@@ -88,12 +87,12 @@ end
 
 function BitmapFont:getCharacterWidth(characterCode,fontSize,xScale) 						-- information functions. These are bounding boxes if you 
 	assert(self.characterData[characterCode] ~= nil,"Character unsupported in font")
-	return self.characterData[characterCode].width * xScale * fontSize / self.fontHeight 	-- don't use pxScale, pyScale, xAdjust and yAdjust (!)
+	return self.characterData[characterCode].width * math.abs(xScale) * fontSize / self.fontHeight 	-- don't use pxScale, pyScale, xAdjust and yAdjust (!)
 end
 
 function BitmapFont:getCharacterHeight(characterCode,fontSize,yScale)
 	assert(self.characterData[characterCode] ~= nil,"Character unsupported in font")
-	return yScale * fontSize
+	return math.abs(yScale) * fontSize
 end
 
 function BitmapFont:getAspectRatio()
@@ -176,9 +175,8 @@ end
 function BitmapString:reformat() 															-- reposition the string on the screen.
 	if self.length == 0 then return end 													-- if length is zero, we don't have to do anything.
 
-	local nextX,nextY = 0,0 															-- where the next character goes.
-	local charXPositions = {} 																-- X Positions of character (needed for directional drawing)
-	local charXWidth = {} 																	-- The character widths
+	local nextX,nextY = 160,240 															-- where the next character goes.
+	local charWidths = {} 																	-- we remember character widths
 
 	for i = 1,self.length do 																
 		local charWidth = self.font:getCharacterWidth(self.characterCodes[i],				-- calculate the width of the character.
@@ -190,37 +188,32 @@ function BitmapString:reformat() 															-- reposition the string on the 
 												 nextY,
 									 			 self.xScale,self.yScale) --TO DO Put post position modifications in
 
-		charXPositions[i] = xctr 															-- save the X position for rotation, if we are rotating.
-		charXWidth[i] = charWidth 															-- save the character widths.
-		nextX = nextX + charWidth + self.spacingAdjust * self.xScale 						-- move to next position.
+		nextX = nextX + charWidth + self.spacingAdjust * math.abs(self.xScale) 				-- move to next position.
+		charWidths[i] = charWidth 															-- save the character width
 	end
 
 	if self.length > 1 and self.direction % 360 ~= 0 then 									-- if two things to display, and not left -> right then
 		local radians = math.rad(self.direction) 											-- get direction in radians
 		for i = 2,self.length do 															-- now reposition all the other characters.
-			local prop = (charXPositions[i] - charXPositions[1]) 				 			-- this is how far the distance is.
-			self.displayObjects[i].x = self.displayObjects[1].x + prop * math.cos(radians) 	-- adjust all the positions using the cos and sine of the angle
-			self.displayObjects[i].y = self.displayObjects[i].y - prop * math.sin(radians)  -- x is offset from object 1, y from the current position.
+			local prop = (self.displayObjects[i].x - self.displayObjects[1].x) 	 			-- this is how far the distance is.
+			local xo,yo = prop * math.cos(radians), -prop * math.sin(radians) 				-- calculate the offsets.
+			self.displayObjects[i].x = self.displayObjects[1].x + xo 						-- apply to the physical positions
+			self.displayObjects[i].y = self.displayObjects[i].y + yo
 		end
 	end
 
-	local maxx,maxy,minx,miny = -999,-999,999,999 											-- work out the bounding box for the whole thing, so we can 
-	for i = 1,self.length do 																-- work out where to move it to, finally.
-		minx = math.min(minx,self.displayObjects[i].x-charXWidth[i]/2)
-		miny = math.min(minx,self.displayObjects[i].y-self.fontSize*math.abs(self.yScale/2))
-		maxx = math.max(maxx,self.displayObjects[i].x+charXWidth[i]/2)
-		maxy = math.max(maxy,self.displayObjects[i].y+self.fontSize*math.abs(self.yScale/2))
-	end
-
+	local minx,miny,maxx,maxy = 999,999,-999,-999 											-- Work the bounding box using the object positions and character widths
 	print(minx,miny,maxx,maxy)
+--	r = display.newRect( minx,miny,maxx-minx,maxy-miny)
+--	r.anchorY,r.anchorX = 0,0 r.strokeWidth = 1 r:setFillColor( 0,0,0,0 )
 end
 
 local font = BitmapFont:new("demofont")
 local str = BitmapString:new(font,32)
 str.x = 160
 str.y = 240
-str.xScale, str.yScale = 2,2
-str.direction = -2
+str.xScale, str.yScale = 1.2,1.3
+str.direction = -20
 str:setText("Test string")
 display.newLine(0,240,320,240)
 display.newLine(160,0,160,480)
