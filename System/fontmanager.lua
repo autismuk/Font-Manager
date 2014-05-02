@@ -11,7 +11,6 @@
 -- Standard OOP (with Constructor parameters added.)
 _G.Base =  _G.Base or { new = function(s,...) local o = { } setmetatable(o,s) s.__index = s s:initialise(...) return o end, initialise = function() end }
 
-
 --- ************************************************************************************************************************************************************************
 ---											Class representing a bit map font, with methods for processing that font
 --- ************************************************************************************************************************************************************************
@@ -22,18 +21,18 @@ BitmapFont.fontDirectory = "fonts" 															-- where fonts are, lua and pn
 
 function BitmapFont:initialise(fontName)
 	self.fontName = fontName 																-- save font name.
-	self.rawFontInformation = require(BitmapFont.fontDirectory .. "." .. fontName) 			-- load the raw font information
-	self.fontHeight = 0 																	-- actual font height, in pixels.
+	self.rawFontInformation = require(BitmapFont.fontDirectory .. "." .. fontName) 			-- load the raw font information as a lua file.
+	self.fontHeight = 0 																	-- actual physical font height, in pixels.
 	self.characterData = {} 																-- mapping of character code to character data sizes.
 	self.imageSheet = graphics.newImageSheet("fonts/" .. fontName .. ".png", 				-- create an image sheet from analysing the font data.
 											 self:_analyseFontData())
 end
 
-function BitmapFont:_analyseFontData()
+function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
 	local options = { frames = {} }															-- this will be the spritesheet 'options' structure.
 	local maxy,miny = 0,0
 	for spriteID,definition in ipairs(self.rawFontInformation) do 							-- scan the raw data and get what we need.
-		if type(definition) == "table" then
+		if type(definition) == "table" and definition.frame ~= nil then 					-- is it a table with a frame member ?
 			options.frames[spriteID] = definition.frame 									-- copy the frame (x,y,w,h) of the sprite into the options structure.
 			local charData = { width = definition.width, xOffset = definition.xOffset,		-- create the character data table.
 														yOffset = definition.yOffset,spriteID = spriteID }
@@ -61,18 +60,21 @@ end
 --
 function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,pxScale,pyScale,xAdjust,yAdjust)
 	local scalar = fontSize / self.fontHeight 												-- how much to scale the font by to make it the required size.
-	xScale = xScale * scalar yScale = yScale * scalar
+	xScale = xScale * scalar yScale = yScale * scalar 										-- make scales scale to actual size.
+	local axScale = math.abs(xScale) 														-- precalculate absolute value of scales, differentiating flipping
+	local ayScale = math.abs(yScale) 														-- and scaling.
 	pxScale = (pxScale or 1) * xScale  														-- work out final scale
 	pyScale = (pyScale or 1) * yScale 
 	xAdjust = xAdjust or 0 yAdjust = yAdjust or 0 											-- if no adjustment provided, use 0,0
 	local cData = self.characterData[displayObject.__bmpFontCode] 							-- get a reference to the character information
 	local width = cData.width 																-- character width, scale 1.
 	displayObject.xScale,displayObject.yScale = pxScale,pyScale 							-- apply the physical individual scale to the object
-	displayObject.x = x + cData.xOffset * xScale - 											-- set position, allowing for offset and scale differences.
-									(pxScale-xScale) * (width/2-cData.xOffset/2) + xAdjust * xScale
+	displayObject.x = x + cData.xOffset * axScale - 										-- set position, allowing for offset and scale differences.
+									(math.abs(pxScale)-axScale) * (width/2-cData.xOffset/2) + xAdjust * axScale
+	if xScale < 0 then displayObject.x = displayObject.x + width * axScale end
 	displayObject.y = y + cData.yOffset * yScale - 
 									(pyScale-yScale) * (self.fontHeight/2-cData.yOffset/2) + yAdjust * yScale
-	return width * xScale,yScale * fontSize													-- return space used by this character
+	return width * axScale,ayScale * fontSize													-- return space used by this character
 end
 
 function BitmapFont:getCharacterWidth(characterCode,fontSize,xScale) 						-- information functions. These are bounding boxes if you 
@@ -91,8 +93,23 @@ function BitmapFont:getStringWidth(string,fontSize,xScale) 									-- cache thi
 	return total
 end
 
-local fontSize = 40
-local scale = 1
+-- TODO: can we do negative scaling ?
+
+-- text (constructor)
+-- array of display objects
+-- direction
+-- font (constructor,default, invariant)
+-- base size
+-- horizontal, vertical scale
+-- spacing scalar
+-- encapsulating rectangle (unmodified)
+-- modifier.
+
+
+
+
+local fontSize = 20
+local scale = 2
 local zscale = 3
 local letters = {}
 local font = BitmapFont:new("demofont")
@@ -110,9 +127,9 @@ function repaint()
 	local x = 64
 	for i = 1,#text do
 		local xs = 1
-		if i == 2 then xs = zscale end
+		if i == 2 or i == 8 then xs = zscale end
 		yy = math.sin(i/2) * 10
-		x = x + font:moveScaleCharacter(letters[i],fontSize,x,320,scale,scale,xs,xs,0,yy)
+		x = x + font:moveScaleCharacter(letters[i],fontSize,x,320,-scale,scale,xs,xs,0,yy)
 	end
 	return x -64
 end
