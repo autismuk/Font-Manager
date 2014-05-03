@@ -269,6 +269,10 @@ function BitmapString:setFontSize(size)
 	return self
 end
 
+-- non animated shapers and scalers
+-- create the manager and control text existence
+-- animated shapers and scalers.
+
 display.newLine(0,240,320,240)
 display.newLine(160,0,160,480)
 
@@ -278,6 +282,6 @@ local str = BitmapString:new(font,32)
 str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1,1):setDirection(0):setSpacing(0):setFontSize(64)
 str:setText("Text String")
 str:setText("Another demo")
-transition.to(str:getView(),{ time = 10000,rotation = 360, xScale = 0.5, yScale = 0.5})
+transition.to(str:getView(),{ time = 4000,rotation = 720, xScale = 0.5, yScale = 0.5})
 
 return { BitmapFont = BitmapFont }
