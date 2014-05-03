@@ -100,6 +100,13 @@ function BitmapFont:getAspectRatio()
 end
 
 --- ************************************************************************************************************************************************************************
+--- 												Bitmap String class. It's slightly odd, to put it mildly :) 
+---
+---	It uses a view group object for basic positioning. Scaling and rotating, it depends. If you create a string, you can scale it and rotate it with transitions, just 
+--- as you do with any object.  But if you want a string with animated effects, you cannot use transitions as well. The reason for this is if you 'animate' xScale,yScale
+--- with transition.to its scaling effects on the object will be reset by the animation - basically they argue about scaling.
+---
+---	With animated objects, you can set alpha, and you can move it with transition, but anything else will be wierd.
 --- ************************************************************************************************************************************************************************
 
 local BitmapString = Base:new()
@@ -112,16 +119,19 @@ function BitmapString:initialise(font,fontSize)
 	self.length = 0 																		-- number of characters.
 	self.characterCodes = {} 																-- Character codes of string, fed through mapper.
 	self.displayObjects = {} 																-- Corresponding display objects
-	self.direction = 0 																		-- text direction, in degrees.
+	self.direction = 0 																		-- text direction, in degrees (right angles only)
 	self.xScale, self.yScale = 1,1 															-- text standard scale.
 	self.spacingAdjust = 0 																	-- spacing adjustment.
 	self.usageCount = 0 																	-- usage count (tracks # of create/deleted objects)
-	self.anchorX,self.anchorY = 0,0 														-- anchor position.
+	self.anchorX,self.anchorY = 0.5,0.5 													-- anchor position.
+	self.viewGroup = display.newGroup() 													-- this is the group the objects are put in.
 end
 
 function BitmapString:destroy()
 	self:setText("") 																		-- this deletes all the display objects.
+	self.viewGroup:removeSelf() 															-- delete the viewgroup
 	self.font = nil self.characterCodes = nil self.displayObjects = nil 					-- then nil all the references.
+	self.viewGroup = nil
 end
 
 function BitmapString:setText(text) 														-- set the text
@@ -138,9 +148,9 @@ function BitmapString:setText(text) 														-- set the text
 		self.displayObjects[i] = self:useOrCreateCharacterObject(code) 						-- create and store display objects
 	end
 	self.length = #text 																	-- store the length of the string.
-	for _,obj in ipairs(self.stockObjects) do 												-- remove any objects left in the stock.
+	for _,obj in pairs(self.stockObjects) do 												-- remove any objects left in the stock.
 		if obj ~= nil then 
-			display.remove(obj) 
+			obj:removeSelf() 																-- remove it from everything.
 			self.usageCount = self.usageCount - 1 											-- reduce the count, so it matches the number of live objects
 		end
 	end
@@ -165,7 +175,9 @@ function BitmapString:useOrCreateCharacterObject(characterCode)
 		end
 	end
 	self.usageCount = self.usageCount + 1 													-- create a new one, so bump the usage counter we check with.
-	return self.font:getCharacter(characterCode) 											-- we need a new one.
+	local newObject = self.font:getCharacter(characterCode) 								-- we need a new one.
+	self.viewGroup:insert(newObject) 														-- put it in the view group
+	return newObject
 end
 
 --
@@ -175,46 +187,97 @@ end
 function BitmapString:reformat() 															-- reposition the string on the screen.
 	if self.length == 0 then return end 													-- if length is zero, we don't have to do anything.
 
-	local nextX,nextY = 160,240 															-- where the next character goes.
-	local charWidths = {} 																	-- we remember character widths
-
+	local nextX,nextY = 0,0		 															-- where the next character goes.
+	local height = self.font:getCharacterHeight(32,self.fontSize,self.yScale) 				-- all characters are the same height, or in the same box.
+	local maxx,maxy,minx,miny 																-- bounding box of the unmodified character.
 	for i = 1,self.length do 																
-		local charWidth = self.font:getCharacterWidth(self.characterCodes[i],				-- calculate the width of the character.
+		local width = self.font:getCharacterWidth(self.characterCodes[i],					-- calculate the width of the character.
 																self.fontSize,self.xScale)
-		local xctr,yctr 																	-- centre point of unmodified characters.
-		xctr,yctr = self.font:moveScaleCharacter(self.displayObjects[i],
+
+		if i == 1 then minx,miny,maxx,maxy = 0,0,width,height end 							-- initialise bounding box to first char first time.
+
+		self.font:moveScaleCharacter(self.displayObjects[i],
 												 self.fontSize,
 												 nextX,
 												 nextY,
-									 			 self.xScale,self.yScale) --TO DO Put post position modifications in
+									 			 self.xScale,self.yScale,
+									 			 s,s,0,0,0)
 
-		nextX = nextX + charWidth + self.spacingAdjust * math.abs(self.xScale) 				-- move to next position.
-		charWidths[i] = charWidth 															-- save the character width
-	end
+		if self.direction == 0 then 														-- advance to next position using character width, updating the bounding box
+			nextX = nextX + width + self.spacingAdjust * math.abs(self.xScale) 			
+			maxx = nextX
+		elseif self.direction == 180 then  													-- when going left, we need the width of the *next* character.
+			if i < self.length then
+				local pWidth = self.font:getCharacterWidth(self.characterCodes[i+1],self.fontSize,self.xScale)
+				nextX = nextX - pWidth - self.spacingAdjust * math.abs(self.xScale) 	
+				minx = nextX
+			end
+		elseif self.direction == 270 then  													-- up and down tend to be highly spaced, because the kerning stuff is not
+			nextY = nextY + height + self.spacingAdjust * math.abs(self.xScale) 			-- designed for this. You can fix it with setSpacing()
+			maxy = nextY
+		else
+			miny = nextY
+			nextY = nextY - height - self.spacingAdjust * math.abs(self.xScale) 			
 
-	if self.length > 1 and self.direction % 360 ~= 0 then 									-- if two things to display, and not left -> right then
-		local radians = math.rad(self.direction) 											-- get direction in radians
-		for i = 2,self.length do 															-- now reposition all the other characters.
-			local prop = (self.displayObjects[i].x - self.displayObjects[1].x) 	 			-- this is how far the distance is.
-			local xo,yo = prop * math.cos(radians), -prop * math.sin(radians) 				-- calculate the offsets.
-			self.displayObjects[i].x = self.displayObjects[1].x + xo 						-- apply to the physical positions
-			self.displayObjects[i].y = self.displayObjects[i].y + yo
 		end
 	end
 
-	local minx,miny,maxx,maxy = 999,999,-999,-999 											-- Work the bounding box using the object positions and character widths
-	print(minx,miny,maxx,maxy)
---	r = display.newRect( minx,miny,maxx-minx,maxy-miny)
---	r.anchorY,r.anchorX = 0,0 r.strokeWidth = 1 r:setFillColor( 0,0,0,0 )
+	local xOffset = -minx-(maxx-minx) * self.anchorX 										-- we want it to be centred around the anchor point, we cannot use anchorChildren
+	local yOffset = -miny-(maxy-miny) * self.anchorY 										-- because of the animated modifications, so we calculate it
+
+	for i = 1,self.length do 																-- and move the objects appropriately.
+		self.displayObjects[i].x = self.displayObjects[i].x + xOffset
+		self.displayObjects[i].y = self.displayObjects[i].y + yOffset
+	end
 end
+
+function BitmapString:getView() return self.viewGroup end 									-- a stack of helpers
+
+function BitmapString:moveTo(x,y)
+	self.viewGroup.x,self.viewGroup.y = x,y 
+	return self
+end
+
+function BitmapString:setAnchor(anchorX,anchorY)
+	self.anchorX,self.anchorY = anchorX,anchorY
+	self:reformat()
+	return self
+end
+
+function BitmapString:setScale(xScale,yScale)
+	self.xScale,self.yScale = xScale or 1,yScale or 1
+	self:reformat()
+	return self
+end
+
+function BitmapString:setDirection(direction)
+	self.direction = ((direction or 0)+3600) % 360
+	assert(self.direction/90 == math.floor(self.direction/90),"Only right angle directions allowed")
+	self:reformat()
+	return self
+end
+
+function BitmapString:setSpacing(spacing)
+	self.spacingAdjust = spacing or 0
+	self:reformat()
+	return self
+end
+
+function BitmapString:setFontSize(size)
+	self.fontSize = size
+	self:reformat()
+	return self
+end
+
+display.newLine(0,240,320,240)
+display.newLine(160,0,160,480)
 
 local font = BitmapFont:new("demofont")
 local str = BitmapString:new(font,32)
-str.x = 160
-str.y = 240
-str.xScale, str.yScale = 1.2,1.3
-str.direction = -20
-str:setText("Test string")
-display.newLine(0,240,320,240)
-display.newLine(160,0,160,480)
+
+str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1,1):setDirection(0):setSpacing(0):setFontSize(64)
+str:setText("Text String")
+str:setText("Another demo")
+transition.to(str:getView(),{ time = 10000,rotation = 360, xScale = 0.5, yScale = 0.5})
+
 return { BitmapFont = BitmapFont }
