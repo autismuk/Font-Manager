@@ -20,14 +20,12 @@ local BitmapFont = Base:new()
 BitmapFont.fontDirectory = "fonts" 															-- where fonts are, lua and png.
 
 function BitmapFont:initialise(fontName)
-	print(">>",fontName,self)
 	self.fontName = fontName 																-- save font name.
 	self.rawFontInformation = require(BitmapFont.fontDirectory .. "." .. fontName) 			-- load the raw font information as a lua file.
 	self.fontHeight = 0 																	-- actual physical font height, in pixels.
 	self.characterData = {} 																-- mapping of character code to character data sizes.
 	self.imageSheet = graphics.newImageSheet("fonts/" .. fontName .. ".png", 				-- create an image sheet from analysing the font data.
 											 self:_analyseFontData())
-	print(">>",fontName)
 end
 
 function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
@@ -210,9 +208,9 @@ function BitmapString:reformat() 															-- reposition the string on the 
 		if self.modifier ~= nil then 														-- modifier provided
 			local cPos = (i - 1) / (self.length - 1) 										-- position in string 0->1
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
-				self.modifier:modify(modifier,cPos,elapsed,self.length)
+				self.modifier:modify(modifier,cPos,elapsed,i,self.length)
 			else 																			-- otherwise, call it as a function.
-				self.modifier(modifier,cPos,elapsed,self.length)
+				self.modifier(modifier,cPos,elapsed,i,self.length)
 			end
 			if math.abs(modifier.xScale) < 0.001 then modifier.xScale = 0.001 end 			-- very low value scaling does not work, zero causes an error
 			if math.abs(modifier.yScale) < 0.001 then modifier.yScale = 0.001 end
@@ -307,7 +305,7 @@ end
 --- ************************************************************************************************************************************************************************
 
 local modClass = Base:new()
-function modClass:modify(m,cPos,elapsed,length) 
+function modClass:modify(m,cPos,elapsed,index,length) 
 	local a = math.floor(cPos * 180*2) % 180
 	m.yScale = (math.sin(math.rad(a))+0.3)*3
 end
@@ -320,12 +318,12 @@ local font1 = BitmapFont:new("font2")
 
 local str = BitmapString:new(font1,44)
 
-str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1,1):setDirection(0):setSpacing(0):setFontSize(48)
+str:moveTo(160,240):setAnchor(0.5,0.5):setScale(2,2):setDirection(0):setSpacing(0):setFontSize(48)
 str:setText("Another demo")
 str:setModifier(modClass:new())
 -- str:setFont(font2)
 
-transition.to(str:getView(),{ time = 400,rotation = 72, xScale = 0.5, yScale = 0.5})
+transition.to(str:getView(),{ time = 4000,rotation = 720, y = 100, xScale = 0.5, yScale = 0.5})
 
 return { BitmapFont = BitmapFont, BitmapString = BitmapString }
 
