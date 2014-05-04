@@ -1,7 +1,7 @@
 --- ************************************************************************************************************************************************************************
 ---
----				Name : 		scenemgr.lua
----				Purpose :	Manage Scene transitions and state
+---				Name : 		fontmananger.lua
+---				Purpose :	Manage and Animate strings of bitmap fonts.
 ---				Created:	30 April 2014
 ---				Author:		Paul Robson (paul@robsons.org.uk)
 ---				License:	MIT
@@ -9,7 +9,7 @@
 --- ************************************************************************************************************************************************************************
 
 -- Standard OOP (with Constructor parameters added.)
-_G.Base =  _G.Base or { new = function(s,...) local o = { } setmetatable(o,s) s.__index = s s:initialise(...) return o end, initialise = function() end }
+_G.Base =  _G.Base or { new = function(s,...) local o = { } setmetatable(o,s) s.__index = s o:initialise(...) return o end, initialise = function() end }
 
 --- ************************************************************************************************************************************************************************
 ---											Class representing a bit map font, with methods for processing that font
@@ -20,12 +20,14 @@ local BitmapFont = Base:new()
 BitmapFont.fontDirectory = "fonts" 															-- where fonts are, lua and png.
 
 function BitmapFont:initialise(fontName)
+	print(">>",fontName,self)
 	self.fontName = fontName 																-- save font name.
 	self.rawFontInformation = require(BitmapFont.fontDirectory .. "." .. fontName) 			-- load the raw font information as a lua file.
 	self.fontHeight = 0 																	-- actual physical font height, in pixels.
 	self.characterData = {} 																-- mapping of character code to character data sizes.
 	self.imageSheet = graphics.newImageSheet("fonts/" .. fontName .. ".png", 				-- create an image sheet from analysing the font data.
 											 self:_analyseFontData())
+	print(">>",fontName)
 end
 
 function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
@@ -41,7 +43,7 @@ function BitmapFont:_analyseFontData()														-- generate SpriteSheet stru
 			self.characterData[definition.code] = charData 									-- and store it in the character data table 
 			miny = math.min(miny,definition.yOffset) 										-- work out the uppermost position and the lowermost.
 			maxy = math.max(maxy,definition.yOffset + definition.frame.height)
-			assert(definition.yOffset >= 0,"BitmapFont needs changes to handle -ve yoffset")-- needs tweaks if yOffset is < 0, doesn't seem to be.
+--			assert(definition.yOffset >= 0,"BitmapFont needs changes to handle -ve yoffset")-- needs tweaks if yOffset is < 0, doesn't seem to be.
 			widthTotal = widthTotal + definition.width 										-- add width to width total
 			widthCount = widthCount + 1 													-- bump width count.
 		end
@@ -104,15 +106,16 @@ end
 ---
 ---	It uses a view group object for basic positioning. Scaling and rotating, it depends. If you create a string, you can scale it and rotate it with transitions, just 
 --- as you do with any object.  But if you want a string with animated effects, you cannot use transitions as well. The reason for this is if you 'animate' xScale,yScale
---- with transition.to its scaling effects on the object will be reset by the animation - basically they argue about scaling.
----
----	With animated objects, you can set alpha, and you can move it with transition, but anything else will be wierd.
+--- with transition.to its scaling effects on the object will be reset by the animation - basically they argue about who does the scaling. The xOffset,yOffset is additional
+--- to the actual position, rotation probably won't work either (not sure ?)
 --- ************************************************************************************************************************************************************************
 
 local BitmapString = Base:new()
 
 function BitmapString:initialise(font,fontSize)
-	-- TODO: Look up string in Font Manager Singleton.
+	if type(font) == "string" then 															-- Font can be a bitmap font instance or a name of a font.
+		-- TODO: Look up string in Font Manager Singleton if it is a string
+	end
 	self.font = font 																		-- Save reference to a bitmap font.
 	self.fontSize = fontSize 																-- Save reference to the font size.
 	self.text = "" 																			-- text as string.
@@ -259,6 +262,10 @@ function BitmapString:moveTo(x,y)
 	return self
 end
 
+function BitmapString:setFont(font)
+	return self
+end
+
 function BitmapString:setAnchor(anchorX,anchorY)
 	self.anchorX,self.anchorY = anchorX,anchorY
 	self:reformat()
@@ -308,18 +315,23 @@ end
 display.newLine(0,240,320,240):setStrokeColor( 0,1,0 )
 display.newLine(160,0,160,480):setStrokeColor( 0,1,0 )
 
-local font = BitmapFont:new("demofont")
-local str = BitmapString:new(font,44)
+local font2 = BitmapFont:new("demofont")
+local font1 = BitmapFont:new("font2")
 
-str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1.3,1):setDirection(0):setSpacing(0):setFontSize(64)
+local str = BitmapString:new(font1,44)
+
+str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1,1):setDirection(0):setSpacing(0):setFontSize(48)
 str:setText("Another demo")
 str:setModifier(modClass:new())
+-- str:setFont(font2)
 
-transition.to(str:getView(),{ time = 4000,rotation = 720, xScale = 0.5, yScale = 0.5})
+transition.to(str:getView(),{ time = 400,rotation = 72, xScale = 0.5, yScale = 0.5})
 
 return { BitmapFont = BitmapFont, BitmapString = BitmapString }
 
+
 -- TODO List
+-- Refactor slightly so can setFont()
 -- Create a FontManager singleton which tracks strings, clears etc
 -- Make it tick the AnimatedBitmapString subclass which I haven't created yet.
 -- Devise some method for standard shapy sorts of things you can easily tinker with. Sequences may repeat or not or reverse.
