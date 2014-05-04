@@ -125,13 +125,16 @@ function BitmapString:initialise(font,fontSize)
 	self.usageCount = 0 																	-- usage count (tracks # of create/deleted objects)
 	self.anchorX,self.anchorY = 0.5,0.5 													-- anchor position.
 	self.viewGroup = display.newGroup() 													-- this is the group the objects are put in.
+	self.createTime = system.getTimer() 													-- remember bitmap creation time.
+	self.modifier = nil 																	-- modifier function or instance.
 end
 
 function BitmapString:destroy()
 	self:setText("") 																		-- this deletes all the display objects.
 	self.viewGroup:removeSelf() 															-- delete the viewgroup
 	self.font = nil self.characterCodes = nil self.displayObjects = nil 					-- then nil all the references.
-	self.viewGroup = nil
+	self.viewGroup = nil 																	-- no reference to view group
+	self.modifier = nil 																	-- no reference to a modifier instance if there was one
 end
 
 function BitmapString:setText(text) 														-- set the text
@@ -190,18 +193,36 @@ function BitmapString:reformat() 															-- reposition the string on the 
 	local nextX,nextY = 0,0		 															-- where the next character goes.
 	local height = self.font:getCharacterHeight(32,self.fontSize,self.yScale) 				-- all characters are the same height, or in the same box.
 	local maxx,maxy,minx,miny 																-- bounding box of the unmodified character.
+	local elapsed = system.getTimer() - self.createTime 									-- elapsed time since creation.
+	local minScale = 0.6
+
 	for i = 1,self.length do 																
 		local width = self.font:getCharacterWidth(self.characterCodes[i],					-- calculate the width of the character.
 																self.fontSize,self.xScale)
 
 		if i == 1 then minx,miny,maxx,maxy = 0,0,width,height end 							-- initialise bounding box to first char first time.
 
-		self.font:moveScaleCharacter(self.displayObjects[i],
+		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0 }	-- default modifier
+
+		if self.modifier ~= nil then 														-- modifier provided
+			local cPos = (i - 1) / (self.length - 1) 										-- position in string 0->1
+			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
+				self.modifier:modify(modifier,cPos,elapsed,self.length)
+			else 																			-- otherwise, call it as a function.
+				self.modifier(modifier,cPos,elapsed,self.length)
+			end
+			if math.abs(modifier.xScale) < 0.001 then modifier.xScale = 0.001 end 			-- very low value scaling does not work, zero causes an error
+			if math.abs(modifier.yScale) < 0.001 then modifier.yScale = 0.001 end
+		end
+
+		self.font:moveScaleCharacter(self.displayObjects[i], 								-- call moveScaleCharacter with modifier.
 												 self.fontSize,
 												 nextX,
 												 nextY,
 									 			 self.xScale,self.yScale,
-									 			 s,s,0,0,0)
+									 			 modifier.xScale,modifier.yScale,
+									 			 modifier.xOffset,modifier.yOffset,
+									 			 modifier.rotation)
 
 		if self.direction == 0 then 														-- advance to next position using character width, updating the bounding box
 			nextX = nextX + width + self.spacingAdjust * math.abs(self.xScale) 			
@@ -245,6 +266,7 @@ function BitmapString:setAnchor(anchorX,anchorY)
 end
 
 function BitmapString:setScale(xScale,yScale)
+	assert(xScale ~= 0 and yScale ~= 0,"Scales cannot be zero")
 	self.xScale,self.yScale = xScale or 1,yScale or 1
 	self:reformat()
 	return self
@@ -269,19 +291,38 @@ function BitmapString:setFontSize(size)
 	return self
 end
 
--- non animated shapers and scalers
--- create the manager and control text existence
--- animated shapers and scalers.
+function BitmapString:setModifier(funcOrTable)
+	self.modifier = funcOrTable
+	self:reformat()
+	return self
+end
 
-display.newLine(0,240,320,240)
-display.newLine(160,0,160,480)
+--- ************************************************************************************************************************************************************************
+
+local modClass = Base:new()
+function modClass:modify(m,cPos,elapsed,length) 
+	local a = math.floor(cPos * 180*2) % 180
+	m.yScale = (math.sin(math.rad(a))+0.3)*3
+end
+
+display.newLine(0,240,320,240):setStrokeColor( 0,1,0 )
+display.newLine(160,0,160,480):setStrokeColor( 0,1,0 )
 
 local font = BitmapFont:new("demofont")
-local str = BitmapString:new(font,32)
+local str = BitmapString:new(font,44)
 
-str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1,1):setDirection(0):setSpacing(0):setFontSize(64)
-str:setText("Text String")
+str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1.3,1):setDirection(0):setSpacing(0):setFontSize(64)
 str:setText("Another demo")
+str:setModifier(modClass:new())
+
 transition.to(str:getView(),{ time = 4000,rotation = 720, xScale = 0.5, yScale = 0.5})
 
-return { BitmapFont = BitmapFont }
+return { BitmapFont = BitmapFont, BitmapString = BitmapString }
+
+-- TODO List
+-- Create a FontManager singleton which tracks strings, clears etc
+-- Make it tick the AnimatedBitmapString subclass which I haven't created yet.
+-- Devise some method for standard shapy sorts of things you can easily tinker with. Sequences may repeat or not or reverse.
+-- Similarly zoomy things.
+-- Consider auto reformat driven by the textmanager tick (reformat becomes set invalid flag ?)
+-- Write some demos.
