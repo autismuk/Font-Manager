@@ -11,6 +11,9 @@
 -- Standard OOP (with Constructor parameters added.)
 _G.Base =  _G.Base or { new = function(s,...) local o = { } setmetatable(o,s) s.__index = s o:initialise(...) return o end, initialise = function() end }
 
+local FontManager = Base:new() 																-- Fwd reference FontManager - it references and is referenced by the 
+																							-- BitmapFont and BitmapString classes.
+
 --- ************************************************************************************************************************************************************************
 ---											Class representing a bit map font, with methods for processing that font
 --- ************************************************************************************************************************************************************************
@@ -112,10 +115,10 @@ local BitmapString = Base:new()
 
 function BitmapString:initialise(font,fontSize)
 	if type(font) == "string" then 															-- Font can be a bitmap font instance or a name of a font.
-		-- TODO: Look up string in Font Manager Singleton if it is a string
+		font = FontManager:getFont(font) 													-- if it's a name, fetch it from the font manager.
 	end
 	self.font = font 																		-- Save reference to a bitmap font.
-	self.fontSize = fontSize 																-- Save reference to the font size.
+	self.fontSize = fontSize or 32 															-- Save reference to the font size.
 	self.text = "" 																			-- text as string.
 	self.length = 0 																		-- number of characters.
 	self.characterCodes = {} 																-- Character codes of string, fed through mapper.
@@ -128,6 +131,7 @@ function BitmapString:initialise(font,fontSize)
 	self.viewGroup = display.newGroup() 													-- this is the group the objects are put in.
 	self.createTime = system.getTimer() 													-- remember bitmap creation time.
 	self.modifier = nil 																	-- modifier function or instance.
+	FontManager:addStringReference(self) 													-- tell the font manager about the new string.
 end
 
 function BitmapString:destroy()
@@ -138,18 +142,18 @@ function BitmapString:destroy()
 	self.modifier = nil 																	-- no reference to a modifier instance if there was one
 end
 
-function BitmapString:setText(text) 														-- set the text
+function BitmapString:setText(text) 														-- set the text, adjust display objects to suit, reusing where possible.
 	if text == self.text then return self end 												-- if no changes, then return immediately.
 	self.text = text 																		-- save the text
 	self.stockList = self.characterCodes 													-- put all the current objects where we can reuse them if we can.
-	self.stockObjects = self.displayObjects
+	self.stockObjects = self.displayObjects 
 	self.characterCodes = {} 																-- and blank the current list. 
 	self.displayObjects = {}
 	for i = 1,#text do 																		-- work through every character.
 		local code = text:sub(i,i):byte(1)													-- convert to ascii code
 		code = self.font:mapCharacterToFont(code) 											-- map to an available font character.
 		self.characterCodes[i] = code 														-- save the code.
-		self.displayObjects[i] = self:useOrCreateCharacterObject(code) 						-- create and store display objects
+		self.displayObjects[i] = self:_useOrCreateCharacterObject(code) 					-- create and store display objects
 	end
 	self.length = #text 																	-- store the length of the string.
 	for _,obj in pairs(self.stockObjects) do 												-- remove any objects left in the stock.
@@ -169,7 +173,7 @@ end
 -- 	This acquires a display object with the given character. It looks in the 'stock list' - the list of characters used before, if one is 
 -- 	found it recycles it. Otherwise it creates a new one.
 --
-function BitmapString:useOrCreateCharacterObject(characterCode)
+function BitmapString:_useOrCreateCharacterObject(characterCode)
 	for i = 1,#self.stockList do 															-- check through the stock list.
 		if self.stockList[i] == characterCode then 											-- found a matching one.
 			local obj = self.stockObjects[i] 												-- keep a reference to the stock object
@@ -260,7 +264,15 @@ function BitmapString:moveTo(x,y)
 	return self
 end
 
-function BitmapString:setFont(font)
+function BitmapString:setFont(font,fontSize)
+	local originalText = self.text 															-- preserve the original text
+	self:setText("") 																		-- set the text to empty, which clears up the displayObjects etc.
+	if type(font) == "string" then 															-- if it's a name, get the font from the font manager.
+		font = FontManager:getFont(font)
+	end
+	self.font = font 																		-- update font and font size
+	self.fontSize = fontSize or self.fontSize
+	self:setText(originalText) 																-- and put the text back.
 	return self
 end
 
@@ -303,6 +315,38 @@ function BitmapString:setModifier(funcOrTable)
 end
 
 --- ************************************************************************************************************************************************************************
+---																	Font Manager Class
+--- ************************************************************************************************************************************************************************
+
+function FontManager:initialise()
+	self.fontList = {} 																		-- maps font name (l/c) to bitmap object
+	self.currentStrings = {} 																-- list of current strings.
+end
+
+function FontManager:clearText()
+	for _,string in ipairs(self.currentStrings) do 											-- destroy all current strings.
+		string:destroy()
+	end 
+	self.currentStrings = {} 																-- clear the current strings list
+	-- TODO: turn off the event frame if it is not always on.
+end
+
+function FontManager:getFont(fontName) 														-- load a new font.
+	local keyName = fontName:lower() 														-- key used is lower case.
+	if self.fontList[keyName] == nil then 													-- font not known ?
+		self.fontList[keyName] = BitmapFont:new(fontName) 									-- instantiate one, using the uncapitalised name
+	end
+	return self.fontList[keyName] 															-- return a font instance.
+end
+
+function FontManager:addStringReference(bitmapString)
+	self.currentStrings[#self.currentStrings+1] = bitmapString 								-- remember the string we are adding.
+end
+
+FontManager:initialise() 																	-- initialise the font manager so it's a standalone object
+FontManager.new = function() error("FontManager is a singleton instance") end 				-- and clear the new method so you can't instantitate a copy.
+
+--- ************************************************************************************************************************************************************************
 
 local modClass = Base:new()
 function modClass:modify(m,cPos,elapsed,index,length) 
@@ -313,25 +357,19 @@ end
 display.newLine(0,240,320,240):setStrokeColor( 0,1,0 )
 display.newLine(160,0,160,480):setStrokeColor( 0,1,0 )
 
-local font2 = BitmapFont:new("demofont")
-local font1 = BitmapFont:new("font2")
+local str = BitmapString:new("demofont")
 
-local str = BitmapString:new(font1,44)
-
-str:moveTo(160,240):setAnchor(0.5,0.5):setScale(2,2):setDirection(0):setSpacing(0):setFontSize(48)
+str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1,1):setDirection(0):setSpacing(0):setFontSize(48)
 str:setText("Another demo")
 str:setModifier(modClass:new())
--- str:setFont(font2)
 
-transition.to(str:getView(),{ time = 4000,rotation = 720, y = 100, xScale = 0.5, yScale = 0.5})
+local str2 = BitmapString:new("font2",45):setDirection(270):setText("Bye!"):setAnchor(0,0):setScale(-1,1)
+transition.to(str:getView(),{ time = 4000,rotation = 720, y = 100, onComplete = function() FontManager:clearText() end })
+transition.to(str2:getView(), { time = 4000,x = 320, y = 480, alpha = 0.2,xScale = 0.2,yScale = 0.2 })
 
-return { BitmapFont = BitmapFont, BitmapString = BitmapString }
+return { BitmapFont = BitmapFont, BitmapString = BitmapString, FontManager = FontManager }
 
-
--- TODO List
--- Refactor slightly so can setFont()
--- Create a FontManager singleton which tracks strings, clears etc
--- Make it tick the AnimatedBitmapString subclass which I haven't created yet.
+-- Make it tick the AnimatedBitmapString subclass which I haven't created yet - should it be always on or disable on clear, enable on animation instance.
 -- Devise some method for standard shapy sorts of things you can easily tinker with. Sequences may repeat or not or reverse.
 -- Similarly zoomy things.
 -- Consider auto reformat driven by the textmanager tick (reformat becomes set invalid flag ?)
