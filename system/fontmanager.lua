@@ -357,7 +357,7 @@ end
 display.newLine(0,240,320,240):setStrokeColor( 0,1,0 )
 display.newLine(160,0,160,480):setStrokeColor( 0,1,0 )
 
-local str = BitmapString:new("demofont")
+local str = BitmapString:new("retroFont")
 
 str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1,1):setDirection(0):setSpacing(0):setFontSize(48)
 str:setText("Another demo")
