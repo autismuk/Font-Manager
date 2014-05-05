@@ -131,6 +131,7 @@ function BitmapString:initialise(font,fontSize)
 	self.viewGroup = display.newGroup() 													-- this is the group the objects are put in.
 	self.createTime = system.getTimer() 													-- remember bitmap creation time.
 	self.modifier = nil 																	-- modifier function or instance.
+	self.fontAnimated = false 																-- not an animated bitmap
 	FontManager:addStringReference(self) 													-- tell the font manager about the new string.
 end
 
@@ -212,9 +213,9 @@ function BitmapString:reformat() 															-- reposition the string on the 
 		if self.modifier ~= nil then 														-- modifier provided
 			local cPos = (i - 1) / (self.length - 1) 										-- position in string 0->1
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
-				self.modifier:modify(modifier,cPos,elapsed,i,self.length)
+				self.fontAnimated = self.modifier:modify(modifier,cPos,elapsed,i,self.length)
 			else 																			-- otherwise, call it as a function.
-				self.modifier(modifier,cPos,elapsed,i,self.length)
+				self.fontAnimated = self.modifier(modifier,cPos,elapsed,i,self.length)
 			end
 			if math.abs(modifier.xScale) < 0.001 then modifier.xScale = 0.001 end 			-- very low value scaling does not work, zero causes an error
 			if math.abs(modifier.yScale) < 0.001 then modifier.yScale = 0.001 end
@@ -258,6 +259,7 @@ function BitmapString:reformat() 															-- reposition the string on the 
 end
 
 function BitmapString:getView() return self.viewGroup end 									-- a stack of helpers
+function BitmapString:isAnimated() return self.fontAnimated end 
 
 function BitmapString:moveTo(x,y)
 	self.viewGroup.x,self.viewGroup.y = x,y 
@@ -321,6 +323,9 @@ end
 function FontManager:initialise()
 	self.fontList = {} 																		-- maps font name (l/c) to bitmap object
 	self.currentStrings = {} 																-- list of current strings.
+	self.eventListenerAttached = false 														-- enter Frame is not attached.
+	self.animationsPerSecond = 10 															-- animation rate hertz
+	self.nextAnimation = 0 																	-- time of next animation
 end
 
 function FontManager:clearText()
@@ -328,7 +333,11 @@ function FontManager:clearText()
 		string:destroy()
 	end 
 	self.currentStrings = {} 																-- clear the current strings list
-	-- TODO: turn off the event frame if it is not always on.
+	self:_stopEnterFrame() 																	-- we don't need animation any more
+end
+
+function FontManager:setAnimationRate(frequency) 											-- method to set the animations frequency.
+	self.animationsPerSecond = frequency
 end
 
 function FontManager:getFont(fontName) 														-- load a new font.
@@ -343,8 +352,35 @@ function FontManager:addStringReference(bitmapString)
 	self.currentStrings[#self.currentStrings+1] = bitmapString 								-- remember the string we are adding.
 end
 
+function FontManager:_startEnterFrame() 													-- turn animation on.
+	if not self.eventListenerAttached then
+		Runtime:addEventListener( "enterFrame", self )
+		self.eventListenerAttached = true
+	end
+end
+
+function FontManager:_stopEnterFrame() 														-- turn animation off
+	if self.eventListenerAttached then
+		Runtime:removeEventListener("enterFrame",self)
+		self.eventListenerAttached = false
+	end
+end
+
+function FontManager:enterFrame(e)
+	local currentTime = system.getTimer() 													-- elapsed time in milliseconds
+	if currentTime > self.nextAnimation then 												-- time to animate - we animated at a fixed rate, irrespective of fps.
+		self.nextAnimation = currentTime + 1000 / self.animationsPerSecond 					-- very approximate, not too worried about errors.
+		for _,string in ipairs(self.currentStrings) do 										-- iterate through current strings.
+			if string:isAnimated() then 													-- if the string is animated, then reformat it.
+				string:reformat() 															-- changes will pick up in the Modifier class/function.
+			end
+		end
+	end
+end
+
 FontManager:initialise() 																	-- initialise the font manager so it's a standalone object
 FontManager.new = function() error("FontManager is a singleton instance") end 				-- and clear the new method so you can't instantitate a copy.
+FontManager:_startEnterFrame()
 
 --- ************************************************************************************************************************************************************************
 
@@ -352,6 +388,8 @@ local modClass = Base:new()
 function modClass:modify(m,cPos,elapsed,index,length) 
 	local a = math.floor(cPos * 180*2) % 180
 	m.yScale = (math.sin(math.rad(a))+0.3)*3
+	m.yOffset = math.random(-20,20)
+	return true
 end
 
 display.newLine(0,240,320,240):setStrokeColor( 0,1,0 )
@@ -364,7 +402,7 @@ str:setText("Another demo")
 str:setModifier(modClass:new())
 
 local str2 = BitmapString:new("font2",45):setDirection(270):setText("Bye!"):setAnchor(0,0):setScale(-1,1)
-transition.to(str:getView(),{ time = 4000,rotation = 720, y = 100, onComplete = function() FontManager:clearText() end })
+transition.to(str:getView(),{ time = 4000,rotation = 0, y = 100, onComplete = function() FontManager:clearText() end })
 transition.to(str2:getView(), { time = 4000,x = 320, y = 480, alpha = 0.2,xScale = 0.2,yScale = 0.2 })
 
 return { BitmapFont = BitmapFont, BitmapString = BitmapString, FontManager = FontManager }
