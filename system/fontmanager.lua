@@ -322,6 +322,9 @@ function BitmapString:setFontSize(size)
 end
 
 function BitmapString:setModifier(funcOrTable)
+	if type(funcOrTable) == "string" then 													-- get it from the directory if is a string
+		funcOrTable = FontManager:getModifier(funcOrTable)
+	end
 	self.modifier = funcOrTable
 	self:reformat()
 	return self
@@ -337,6 +340,7 @@ function FontManager:initialise()
 	self.eventListenerAttached = false 														-- enter Frame is not attached.
 	self.animationsPerSecond = 15 															-- animation rate hertz
 	self.nextAnimation = 0 																	-- time of next animation
+	self.modifierDirectory = {} 															-- no known modifiers
 end
 
 function FontManager:clearText()
@@ -408,39 +412,96 @@ function FontManager:curve(curveDefinition,position)
 	return result
 end
 
+function FontManager:registerModifier(name,instance)
+	name = name : lower()
+	assert(self.modifierDirectory[name] == nil,"Duplicate modifier")
+	self.modifierDirectory[name] = instance
+end
+
+function FontManager:getModifier(name)
+	name = name:lower()
+	assert(self.modifierDirectory[name] ~= nil,"Unknown modifier "..name)
+	return self.modifierDirectory[name]
+end
+
 FontManager:initialise() 																	-- initialise the font manager so it's a standalone object
 FontManager.new = function() error("FontManager is a singleton instance") end 				-- and clear the new method so you can't instantitate a copy.
 
 --- ************************************************************************************************************************************************************************
+---																				Some Modifier Classes
+--- ************************************************************************************************************************************************************************
 
-local modClass = Base:new()
-function modClass:modify(m,cPos,elapsed,index,length) 
-	local r = FontManager:curve({ curveCount = 2, formula = "sin" },cPos)
-	m.yOffset = -r *40 + 1
-	m.yScale = r * 3 + 1
-	if index == 1 then m.yScale = -m.yScale end
+local Modifier = Base:new() 																-- establish a base class.
+
+local WobbleModifier = Modifier:new()					 									-- Wobble Modifier makes it,err.... wobble ?
+
+function WobbleModifier:initialise(violence) self.violence = violence or 1 end 
+
+function WobbleModifier:modify(modifier,cPos,elapsed,index,length)
+	modifier.xOffset = math.random(-self.violence,self.violence)
+	modifier.yOffset = math.random(-self.violence,self.violence)
+	modifier.xScale = math.random(-self.violence,self.violence) / 10 + 1
+	modifier.yScale = math.random(-self.violence,self.violence) / 10 + 1
+	modifier.rotation = math.random(-self.violence,self.violence) * 2
 end
+
+local SimpleCurveModifier = Modifier:new()													-- curvepos curves the text positionally vertically
+
+function SimpleCurveModifier:initialise(start,enda,scale,count)
+	self.curveDesc = { startAngle = start or 0, endAngle = enda or 180, curveCount = count or 1 }
+	self.scale = scale or 1
+end
+
+function SimpleCurveModifier:modify(modifier,cPos,elapsed,index,length)
+	modifier.yOffset = FontManager:curve(self.curveDesc,cPos) * 50 * self.scale
+end
+
+local SimpleCurveScaleModifier = SimpleCurveModifier:new()						 			-- curvepos scales the text vertically rather than the position.
+
+function SimpleCurveScaleModifier:modify(modifier,cPos,elapsed,index,length)
+	modifier.yScale = FontManager:curve(self.curveDesc,cPos)*self.scale+1
+end
+
+local JaggedModifier = Modifier:new()														-- jagged alternates left and right rotation.
+
+function JaggedModifier:modify(modifier,cPos,elapsed,index,length)
+	modifier.rotation = ((index % 2 * 2) - 1) * 15
+end
+
+FontManager:registerModifier("wobble",WobbleModifier:new())									-- tell the system about them.
+FontManager:registerModifier("curve",SimpleCurveModifier:new())
+FontManager:registerModifier("scale",SimpleCurveScaleModifier:new())
+FontManager:registerModifier("jagged",JaggedModifier:new())
+
+--- ************************************************************************************************************************************************************************
 
 display.newLine(0,240,320,240):setStrokeColor( 0,1,0 )
 display.newLine(160,0,160,480):setStrokeColor( 0,1,0 )
 
-local str = BitmapString:new("retroFont")
+local str = BitmapString:new("retrofont")
 
 str:moveTo(160,240):setAnchor(0.5,0.5):setScale(0.7,1):setDirection(0):setSpacing(0):setFontSize(48)
 str:setText("Another demo curve")
-str:setModifier(modClass:new()):animate(6)
+str:setModifier("scale"):animate(6)
 
 local str2 = BitmapString:new("font2",45):setDirection(270):setText("Bye!"):setAnchor(0,0):setScale(-1,1)
 
-local str3 = BitmapString:new("demofont",30):moveTo(160,400):setText("Another one")
-str3:setModifier(modClass:new()):animate(1)
+local str3 = BitmapString:new("demofont",30):moveTo(160,400):setText("Another one"):setScale(2,2)
 
-transition.to(str:getView(),{ time = 4000,rotation = 0, y = 100, onComplete = function() --[[FontManager:clearText()--]] end })
-transition.to(str2:getView(), { time = 4000,x = 320, y = 480, alpha = 0.2,xScale = 0.2,yScale = 0.2 })
-transition.to(str3:getView(), { time = 4000, rotation = 180 })
+-- str3:setModifier(WobbleModifier:new())
+-- str3:setModifier(SimpleCurveModifier:new(0,180,4,2))
+-- str3:setModifier(SimpleCurveScaleModifier:new(0,180,4,2))
+
+str3:setModifier("wobble"):animate()
+
+local t = 10000
+
+transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.5,yScale = 0.5,onComplete = function() FontManager:clearText() end })
+transition.to(str2:getView(), { time = t,x = 320, y = 480, alpha = 0.2,xScale = 0.2,yScale = 0.2 })
+transition.to(str3:getView(), { time = t,rotation = 360 })
+
 return { BitmapFont = BitmapFont, BitmapString = BitmapString, FontManager = FontManager }
 
--- Devise some method for standard shapy sorts of things you can easily tinker with. Sequences may repeat or not or reverse.
--- Similarly zoomy things.
+-- Similarly zoomy things (zoomin, zoomout, scale 0->1)
 -- Consider auto reformat driven by the textmanager tick (reformat becomes set invalid flag ?)
 -- Write some demos.
