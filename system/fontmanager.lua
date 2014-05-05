@@ -34,8 +34,6 @@ end
 function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
 	local options = { frames = {} }															-- this will be the spritesheet 'options' structure.
 	local maxy,miny = 0,0
-	local widthTotal = 0 																	-- total number of widths (for calculating aspect ratio)
-	local widthCount = 0
 	for spriteID,definition in ipairs(self.rawFontInformation) do 							-- scan the raw data and get what we need.
 		if type(definition) == "table" and definition.frame ~= nil then 					-- is it a table with a frame member ?
 			options.frames[spriteID] = definition.frame 									-- copy the frame (x,y,w,h) of the sprite into the options structure.
@@ -44,13 +42,9 @@ function BitmapFont:_analyseFontData()														-- generate SpriteSheet stru
 			self.characterData[definition.code] = charData 									-- and store it in the character data table 
 			miny = math.min(miny,definition.yOffset) 										-- work out the uppermost position and the lowermost.
 			maxy = math.max(maxy,definition.yOffset + definition.frame.height)
---			assert(definition.yOffset >= 0,"BitmapFont needs changes to handle -ve yoffset")-- needs tweaks if yOffset is < 0, doesn't seem to be.
-			widthTotal = widthTotal + definition.width 										-- add width to width total
-			widthCount = widthCount + 1 													-- bump width count.
 		end
 	end
 	self.fontHeight = maxy - miny + 1														-- calculate the overall height of the font.
-	self.aspectRatio = (widthTotal/widthCount)/self.fontHeight 								-- calculate the aspect ratio, on average.
 	return options
 end
 
@@ -338,7 +332,7 @@ function FontManager:initialise()
 	self.fontList = {} 																		-- maps font name (l/c) to bitmap object
 	self.currentStrings = {} 																-- list of current strings.
 	self.eventListenerAttached = false 														-- enter Frame is not attached.
-	self.animationsPerSecond = 15 															-- animation rate hertz
+	self.animationsPerSecond = 10 															-- animation rate hertz
 	self.nextAnimation = 0 																	-- time of next animation
 	self.modifierDirectory = {} 															-- no known modifiers
 end
@@ -431,7 +425,7 @@ FontManager.new = function() error("FontManager is a singleton instance") end 		
 ---																				Some Modifier Classes
 --- ************************************************************************************************************************************************************************
 
-local Modifier = Base:new() 																-- establish a base class.
+local Modifier = Base:new() 																-- establish a base class. Probably isn't necessary :)
 
 local WobbleModifier = Modifier:new()					 									-- Wobble Modifier makes it,err.... wobble ?
 
@@ -442,7 +436,7 @@ function WobbleModifier:modify(modifier,cPos,elapsed,index,length)
 	modifier.yOffset = math.random(-self.violence,self.violence)
 	modifier.xScale = math.random(-self.violence,self.violence) / 10 + 1
 	modifier.yScale = math.random(-self.violence,self.violence) / 10 + 1
-	modifier.rotation = math.random(-self.violence,self.violence) * 2
+	modifier.rotation = math.random(-self.violence,self.violence) * 5
 end
 
 local SimpleCurveModifier = Modifier:new()													-- curvepos curves the text positionally vertically
@@ -468,10 +462,30 @@ function JaggedModifier:modify(modifier,cPos,elapsed,index,length)
 	modifier.rotation = ((index % 2 * 2) - 1) * 15
 end
 
+local ZoomOutModifier = Modifier:new() 														-- Zoom out from nothing to standard
+																							-- this scales letters back spaced - if you want a classic zoom
+function ZoomOutModifier:initialise(zoomTime)												-- use transition.to to scale it :)
+	self.zoomTime = zoomTime or 3000 				
+end
+
+function ZoomOutModifier:modify(modifier,cPos,elapsed,index,length)
+	local scale = math.min(1,elapsed / self.zoomTime)
+	modifier.xScale,modifier.yScale = scale,scale
+end
+
+local ZoomInModifier = ZoomOutModifier:new() 												-- Zoom in, as zoom out but the other way round
+
+function ZoomInModifier:modify(modifier,cPos,elapsed,index,length)
+	local scale = math.min(1,elapsed / self.zoomTime)
+	modifier.xScale,modifier.yScale = 1-scale,1-scale
+end
+
 FontManager:registerModifier("wobble",WobbleModifier:new())									-- tell the system about them.
 FontManager:registerModifier("curve",SimpleCurveModifier:new())
 FontManager:registerModifier("scale",SimpleCurveScaleModifier:new())
 FontManager:registerModifier("jagged",JaggedModifier:new())
+FontManager:registerModifier("zoomout",ZoomOutModifier:new())
+FontManager:registerModifier("zoomin",ZoomInModifier:new())
 
 --- ************************************************************************************************************************************************************************
 
@@ -480,9 +494,9 @@ display.newLine(160,0,160,480):setStrokeColor( 0,1,0 )
 
 local str = BitmapString:new("retrofont")
 
-str:moveTo(160,240):setAnchor(0.5,0.5):setScale(0.7,1):setDirection(0):setSpacing(0):setFontSize(48)
+str:moveTo(160,240):setAnchor(0.5,0.5):setScale(2,2):setDirection(0):setSpacing(0):setFontSize(48)
 str:setText("Another demo curve")
-str:setModifier("scale"):animate(6)
+str:setModifier("curve"):animate(4)
 
 local str2 = BitmapString:new("font2",45):setDirection(270):setText("Bye!"):setAnchor(0,0):setScale(-1,1)
 
@@ -494,14 +508,13 @@ local str3 = BitmapString:new("demofont",30):moveTo(160,400):setText("Another on
 
 str3:setModifier("wobble"):animate()
 
-local t = 10000
+local t = 4000
 
-transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.5,yScale = 0.5,onComplete = function() FontManager:clearText() end })
-transition.to(str2:getView(), { time = t,x = 320, y = 480, alpha = 0.2,xScale = 0.2,yScale = 0.2 })
+transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.4,yScale = 0.7,onComplete = function() --[[ FontManager:clearText()--]] end })
+transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 0.4,yScale = 0.4 })
 transition.to(str3:getView(), { time = t,rotation = 360 })
 
-return { BitmapFont = BitmapFont, BitmapString = BitmapString, FontManager = FontManager }
+return { BitmapString = BitmapString, FontManager = FontManager }
 
--- Similarly zoomy things (zoomin, zoomout, scale 0->1)
 -- Consider auto reformat driven by the textmanager tick (reformat becomes set invalid flag ?)
 -- Write some demos.
