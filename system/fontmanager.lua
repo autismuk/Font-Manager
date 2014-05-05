@@ -211,7 +211,7 @@ function BitmapString:reformat() 															-- reposition the string on the 
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0 }	-- default modifier
 
 		if self.modifier ~= nil then 														-- modifier provided
-			local cPos = (i - 1) / (self.length - 1) 										-- position in string 0->1
+			local cPos = math.round(100 * (i - 1) / (self.length - 1)) 						-- position in string 0->100
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
 				self.fontAnimated = self.modifier:modify(modifier,cPos,elapsed,i,self.length)
 			else 																			-- otherwise, call it as a function.
@@ -324,8 +324,9 @@ function FontManager:initialise()
 	self.fontList = {} 																		-- maps font name (l/c) to bitmap object
 	self.currentStrings = {} 																-- list of current strings.
 	self.eventListenerAttached = false 														-- enter Frame is not attached.
-	self.animationsPerSecond = 10 															-- animation rate hertz
+	self.animationsPerSecond = 15 															-- animation rate hertz
 	self.nextAnimation = 0 																	-- time of next animation
+	self:_startEnterFrame() 																-- enable timer that drives animation
 end
 
 function FontManager:clearText()
@@ -333,7 +334,6 @@ function FontManager:clearText()
 		string:destroy()
 	end 
 	self.currentStrings = {} 																-- clear the current strings list
-	self:_stopEnterFrame() 																	-- we don't need animation any more
 end
 
 function FontManager:setAnimationRate(frequency) 											-- method to set the animations frequency.
@@ -378,17 +378,37 @@ function FontManager:enterFrame(e)
 	end
 end
 
+function FontManager:curve(curveDefinition,position,offset)
+	curveDefinition.startAngle = curveDefinition.startAngle or 0 							-- where in the curve the font is, so by default it is 0-90
+	curveDefinition.endAngle = curveDefinition.endAngle or 180
+	curveDefinition.curveCount = curveDefinition.curveCount or 1 							-- number of iterations of that curve over the whole range.
+	curveDefinition.formula = curveDefinition.formula or "sin" 								-- use sin by default.
+	offset = offset or 0
+	position = (math.round(position) * curveDefinition.curveCount) % 100 					-- allow for the repetition of curves.
+	position = math.floor(position + offset + 10000) % 100 									-- work out the offset position.
+	local angle = curveDefinition.startAngle + 												-- work out how far through the angle it is.
+								(curveDefinition.endAngle - curveDefinition.startAngle) * position / 100
+	angle = math.rad(angle) 																-- convert to radians
+	local formula = curveDefinition.formula:lower() 										-- get formula in lower case.
+	local result
+	if formula == "sin" 	then result = math.sin(angle) 									-- calculate the result
+	elseif formula == "cos"	then result = math.cos(angle)
+	elseif formula == "tan" then result = math.tan(angle)
+	else error("Unknown formula "..formula)
+	end
+	return result
+end
+
 FontManager:initialise() 																	-- initialise the font manager so it's a standalone object
 FontManager.new = function() error("FontManager is a singleton instance") end 				-- and clear the new method so you can't instantitate a copy.
-FontManager:_startEnterFrame()
 
 --- ************************************************************************************************************************************************************************
 
 local modClass = Base:new()
 function modClass:modify(m,cPos,elapsed,index,length) 
-	local a = math.floor(cPos * 180*2) % 180
-	m.yScale = (math.sin(math.rad(a))+0.3)*3
-	m.yOffset = math.random(-20,20)
+	local r = FontManager:curve({ curveCount = 2, formula = "sin" },cPos,elapsed/20)
+	--m.yOffset = r *100 + 1
+	m.yScale = r * 3 + 1
 	return true
 end
 
@@ -397,17 +417,16 @@ display.newLine(160,0,160,480):setStrokeColor( 0,1,0 )
 
 local str = BitmapString:new("retroFont")
 
-str:moveTo(160,240):setAnchor(0.5,0.5):setScale(1,1):setDirection(0):setSpacing(0):setFontSize(48)
-str:setText("Another demo")
+str:moveTo(160,240):setAnchor(0.5,0.5):setScale(0.7,1):setDirection(0):setSpacing(0):setFontSize(48)
+str:setText("Another demo curve")
 str:setModifier(modClass:new())
 
 local str2 = BitmapString:new("font2",45):setDirection(270):setText("Bye!"):setAnchor(0,0):setScale(-1,1)
-transition.to(str:getView(),{ time = 4000,rotation = 0, y = 100, onComplete = function() FontManager:clearText() end })
+transition.to(str:getView(),{ time = 4000,rotation = 0, y = 100, onComplete = function() --[[FontManager:clearText()--]] end })
 transition.to(str2:getView(), { time = 4000,x = 320, y = 480, alpha = 0.2,xScale = 0.2,yScale = 0.2 })
 
 return { BitmapFont = BitmapFont, BitmapString = BitmapString, FontManager = FontManager }
 
--- Make it tick the AnimatedBitmapString subclass which I haven't created yet - should it be always on or disable on clear, enable on animation instance.
 -- Devise some method for standard shapy sorts of things you can easily tinker with. Sequences may repeat or not or reverse.
 -- Similarly zoomy things.
 -- Consider auto reformat driven by the textmanager tick (reformat becomes set invalid flag ?)
