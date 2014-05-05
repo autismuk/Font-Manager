@@ -269,7 +269,6 @@ function BitmapString:isInvalid() return not self.isValid end
 function BitmapString:animate(speedScalar)
 	self.fontAnimated = true 	 															-- enable animation
 	self.animationSpeedScalar = speedScalar or 1 											-- set speed scalar
-	FontManager:_startEnterFrame() 															-- start the font manager event if it wasn't already going
 	return self
 end
 
@@ -366,6 +365,7 @@ end
 
 function FontManager:addStringReference(bitmapString)
 	self.currentStrings[#self.currentStrings+1] = bitmapString 								-- remember the string we are adding.
+	self:_startEnterFrame() 																-- we now need the enter frame tick.
 end
 
 function FontManager:_startEnterFrame() 													-- turn animation on.
