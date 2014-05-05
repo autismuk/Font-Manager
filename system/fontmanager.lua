@@ -111,6 +111,7 @@ function BitmapString:initialise(font,fontSize)
 	if type(font) == "string" then 															-- Font can be a bitmap font instance or a name of a font.
 		font = FontManager:getFont(font) 													-- if it's a name, fetch it from the font manager.
 	end
+	self.isValid = false 																	-- needs repainting ?
 	self.font = font 																		-- Save reference to a bitmap font.
 	self.fontSize = fontSize or 32 															-- Save reference to the font size.
 	self.text = "" 																			-- text as string.
@@ -185,12 +186,17 @@ function BitmapString:_useOrCreateCharacterObject(characterCode)
 end
 
 --
---	This repositions everything after any change that effects the display.
+--	Marks the string as invalid and in need of repainting.
 --
 
 function BitmapString:reformat() 															-- reposition the string on the screen.
-	if self.length == 0 then return end 													-- if length is zero, we don't have to do anything.
+	self.isValid = false
+end
 
+
+function BitmapString:repositionAndScale()
+	self.isValid = true 																	-- it will be valid at this point.
+	if self.length == 0 then return end 													-- if length is zero, we don't have to do anything.
 	local nextX,nextY = 0,0		 															-- where the next character goes.
 	local height = self.font:getCharacterHeight(32,self.fontSize,self.yScale) 				-- all characters are the same height, or in the same box.
 	local maxx,maxy,minx,miny 																-- bounding box of the unmodified character.
@@ -258,6 +264,7 @@ end
 
 function BitmapString:getView() return self.viewGroup end 									-- a stack of helpers
 function BitmapString:isAnimated() return self.fontAnimated end
+function BitmapString:isInvalid() return not self.isValid end
 
 function BitmapString:animate(speedScalar)
 	self.fontAnimated = true 	 															-- enable animation
@@ -380,8 +387,8 @@ function FontManager:enterFrame(e)
 	if currentTime > self.nextAnimation then 												-- time to animate - we animated at a fixed rate, irrespective of fps.
 		self.nextAnimation = currentTime + 1000 / self.animationsPerSecond 					-- very approximate, not too worried about errors.
 		for _,string in ipairs(self.currentStrings) do 										-- iterate through current strings.
-			if string:isAnimated() then 													-- if the string is animated, then reformat it.
-				string:reformat() 															-- changes will pick up in the Modifier class/function.
+			if string:isAnimated() or string:isInvalid() then 								-- if the string is animated or invalid, then reformat it.
+				string:repositionAndScale() 												-- changes will pick up in the Modifier class/function.
 			end
 		end
 	end
@@ -489,5 +496,5 @@ FontManager:registerModifier("zoomin",ZoomInModifier:new())
 
 return { BitmapString = BitmapString, FontManager = FontManager }
 
--- Consider auto reformat driven by the textmanager tick (reformat becomes set invalid flag ?)
 -- Write some demos.
+-- Read FNT files directly ?
