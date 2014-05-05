@@ -23,11 +23,12 @@ local str2 = fm.BitmapString:new("font2",45):setDirection(270):setText("Bye!"):s
 
 local str3 = fm.BitmapString:new("demofont",30):moveTo(160,400):setText("Another one"):setScale(2,2)
 
--- str3:setModifier(WobbleModifier:new())
+str3:setModifier(fm.Modifiers.WobbleModifier:new(2))
 -- str3:setModifier(SimpleCurveModifier:new(0,180,4,2))
 -- str3:setModifier(SimpleCurveScaleModifier:new(0,180,4,2))
 
-str3:setModifier("wobble"):animate()
+-- str3:setModifier("wobble")
+str3:animate()
 
 local t = 4000
 

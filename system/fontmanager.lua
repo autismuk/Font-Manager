@@ -494,7 +494,14 @@ FontManager:registerModifier("jagged",JaggedModifier:new())
 FontManager:registerModifier("zoomout",ZoomOutModifier:new())
 FontManager:registerModifier("zoomin",ZoomInModifier:new())
 
-return { BitmapString = BitmapString, FontManager = FontManager }
+local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so we can provide the Modifiers.
+					SimpleCurveModifier = SimpleCurveModifier,
+					SimpleCurveScaleModifier = SimpleCurveScaleModifier,
+					JaggedModifier = JaggedModifier,
+					ZoomOutModifier = ZoomOutModifier,
+					ZoomInModifier = ZoomInModifier }
+
+return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers }
 
 -- Write some demos.
 -- Read FNT files directly ?
