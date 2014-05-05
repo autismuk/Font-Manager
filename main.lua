@@ -15,7 +15,7 @@ fm = require("system.fontmanager")
 
 local str = fm.BitmapString:new("retrofont")
 
-str:moveTo(160,240):setAnchor(0.5,0.5):setScale(2,2):setDirection(0):setSpacing(0):setFontSize(48)
+str:moveTo(160,240):setScale(2,2):setDirection(0):setSpacing(0):setFontSize(48)
 str:setText("Another demo curve")
 str:setModifier("curve"):animate(4)
 

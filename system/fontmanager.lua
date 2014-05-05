@@ -22,6 +22,9 @@ local BitmapFont = Base:new()
 
 BitmapFont.fontDirectory = "fonts" 															-- where fonts are, lua and png.
 
+--
+--		Bitmap Font constructor
+--
 function BitmapFont:initialise(fontName)
 	self.fontName = fontName 																-- save font name.
 	self.rawFontInformation = require(BitmapFont.fontDirectory .. "." .. fontName) 			-- load the raw font information as a lua file.
@@ -31,6 +34,9 @@ function BitmapFont:initialise(fontName)
 											 self:_analyseFontData())
 end
 
+--
+--		Helper function ; converts the lua version of the .FNT file into useable animation structure, calculates the working height of the font.
+--
 function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
 	local options = { frames = {} }															-- this will be the spritesheet 'options' structure.
 	local maxy,miny = 0,0
@@ -48,6 +54,9 @@ function BitmapFont:_analyseFontData()														-- generate SpriteSheet stru
 	return options
 end
 
+--
+--		Get a display object with the given character in it, centred around the middle
+--
 function BitmapFont:getCharacter(characterCode) 											
 	assert(self.characterData[characterCode] ~= nil,"Character unsupported in font")
 	local obj = display.newImage(self.imageSheet,self.characterData[characterCode].spriteID)-- create it.
@@ -77,23 +86,29 @@ function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,
 	displayObject.y = y + cData.yOffset * ayScale + displayObject.height / 2 * ayScale + yOffset * yScale
 end
 
+--
+--		Map any character to a code - currently maps any unsupported character to ? but could be extended to (say) map a-acute and a-grave to a 
+-- 		in French.
+--
 function BitmapFont:mapCharacterToFont(characterCode)
 	if self.characterData[characterCode] == nil then characterCode = '?' end 				-- map unknown chaaracters onto question marks.
 	return characterCode
 end
 
+--
+--		Get the character width, after scaling.
+--
 function BitmapFont:getCharacterWidth(characterCode,fontSize,xScale) 						-- information functions. These are bounding boxes if you 
 	assert(self.characterData[characterCode] ~= nil,"Character unsupported in font")
 	return self.characterData[characterCode].width * math.abs(xScale) * fontSize / self.fontHeight 	-- don't use pxScale, pyScale, xAdjust and yAdjust (!)
 end
 
+--
+--		Get the character height, after scaling. Note that this is constant for a font
+--
 function BitmapFont:getCharacterHeight(characterCode,fontSize,yScale)
 	assert(self.characterData[characterCode] ~= nil,"Character unsupported in font")
 	return math.abs(yScale) * fontSize
-end
-
-function BitmapFont:getAspectRatio()
-	return self.aspectRatio
 end
 
 --- ************************************************************************************************************************************************************************
@@ -107,6 +122,9 @@ end
 
 local BitmapString = Base:new()
 
+--
+--		Constructor. Font can be a reference or a string (in this case the FontManager looks it up), font Size defaults to 32 pixels.
+--
 function BitmapString:initialise(font,fontSize)
 	if type(font) == "string" then 															-- Font can be a bitmap font instance or a name of a font.
 		font = FontManager:getFont(font) 													-- if it's a name, fetch it from the font manager.
@@ -131,6 +149,9 @@ function BitmapString:initialise(font,fontSize)
 	FontManager:addStringReference(self) 													-- tell the font manager about the new string.
 end
 
+--
+--		Destructor, not called by lua, but used by clear screen method - tidies up bitmap font and frees all resources.
+--
 function BitmapString:destroy()
 	self:setText("") 																		-- this deletes all the display objects.
 	self.viewGroup:removeSelf() 															-- delete the viewgroup
@@ -139,6 +160,10 @@ function BitmapString:destroy()
 	self.modifier = nil 																	-- no reference to a modifier instance if there was one
 end
 
+--
+--		Set the text. It uses the current text as a basis for display objects for the font, reusing them when possible, then frees any that are left over
+--		If there isn't a character to reuse, it creates one.
+--
 function BitmapString:setText(text) 														-- set the text, adjust display objects to suit, reusing where possible.
 	if text == self.text then return self end 												-- if no changes, then return immediately.
 	self.text = text 																		-- save the text
@@ -167,8 +192,8 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 end
 
 --
--- 	This acquires a display object with the given character. It looks in the 'stock list' - the list of characters used before, if one is 
--- 	found it recycles it. Otherwise it creates a new one.
+-- 		This acquires a display object with the given character. It looks in the 'stock list' - the list of characters used before, if one is 
+-- 		found it recycles it. Otherwise it creates a new one.
 --
 function BitmapString:_useOrCreateCharacterObject(characterCode)
 	for i = 1,#self.stockList do 															-- check through the stock list.
@@ -186,13 +211,20 @@ function BitmapString:_useOrCreateCharacterObject(characterCode)
 end
 
 --
---	Marks the string as invalid and in need of repainting.
+--		Marks the string as invalid and in need of repainting.
 --
 
 function BitmapString:reformat() 															-- reposition the string on the screen.
 	self.isValid = false
 end
 
+--
+--		Reposition and Scale the whole string dependent on the settings - called when text is changed, scale changed etc. However, it is not called
+--		directly ; those changes mark the string display as invalid and they are checked by the font manager - that way we don't repaint with every
+--		change. It starts by putting it at 0,0 but then moves it to fit the anchor and position settings.
+--		We cannot use the ViewGroups version because the effects - scaling and so on - would move it about. The view group positioning is based
+-- 		on unmodified characters - otherwise anchoring would not work.
+--
 
 function BitmapString:repositionAndScale()
 	self.isValid = true 																	-- it will be valid at this point.
@@ -262,21 +294,33 @@ function BitmapString:repositionAndScale()
 	end
 end
 
+--
+--		Helpers to get current view, to check if it is an animated font, and to check if it needs repainting
+--	
 function BitmapString:getView() return self.viewGroup end 									-- a stack of helpers
 function BitmapString:isAnimated() return self.fontAnimated end
 function BitmapString:isInvalid() return not self.isValid end
 
+--
+--		Turns animation on.
+--
 function BitmapString:animate(speedScalar)
 	self.fontAnimated = true 	 															-- enable animation
 	self.animationSpeedScalar = speedScalar or 1 											-- set speed scalar
 	return self
 end
 
+--
+--		Move the view group 
+--
 function BitmapString:moveTo(x,y)
 	self.viewGroup.x,self.viewGroup.y = x,y 
 	return self
 end
 
+--
+--		Change the font used, optionally change its size (there is another helper to just change the size)
+--
 function BitmapString:setFont(font,fontSize)
 	local originalText = self.text 															-- preserve the original text
 	self:setText("") 																		-- set the text to empty, which clears up the displayObjects etc.
@@ -289,12 +333,18 @@ function BitmapString:setFont(font,fontSize)
 	return self
 end
 
+--
+--		Set the anchor position
+--
 function BitmapString:setAnchor(anchorX,anchorY)
 	self.anchorX,self.anchorY = anchorX,anchorY
 	self:reformat()
 	return self
 end
 
+--
+--		Set the overall scale.
+--
 function BitmapString:setScale(xScale,yScale)
 	assert(xScale ~= 0 and yScale ~= 0,"Scales cannot be zero")
 	self.xScale,self.yScale = xScale or 1,yScale or 1
@@ -302,6 +352,9 @@ function BitmapString:setScale(xScale,yScale)
 	return self
 end
 
+--
+--		Set the direction - we only support 4 main compass points, and the font is always upright. 
+--
 function BitmapString:setDirection(direction)
 	self.direction = ((direction or 0)+3600) % 360
 	assert(self.direction/90 == math.floor(self.direction/90),"Only right angle directions allowed")
@@ -309,18 +362,27 @@ function BitmapString:setDirection(direction)
 	return self
 end
 
+--
+--		Allows you to adjust the spacing between letters.
+--
 function BitmapString:setSpacing(spacing)
 	self.spacingAdjust = spacing or 0
 	self:reformat()
 	return self
 end
 
+--
+--		Set the Font Size
+--
 function BitmapString:setFontSize(size)
 	self.fontSize = size
 	self:reformat()
 	return self
 end
 
+--
+--		Set the modifier (class, function or string) which shapes and optionally animates the string.
+--
 function BitmapString:setModifier(funcOrTable)
 	if type(funcOrTable) == "string" then 													-- get it from the directory if is a string
 		funcOrTable = FontManager:getModifier(funcOrTable)
@@ -334,6 +396,9 @@ end
 ---																	Font Manager Class
 --- ************************************************************************************************************************************************************************
 
+--
+--		Constructor - note this is the prototype and the instance.
+--
 function FontManager:initialise()
 	self.fontList = {} 																		-- maps font name (l/c) to bitmap object
 	self.currentStrings = {} 																-- list of current strings.
@@ -343,6 +408,9 @@ function FontManager:initialise()
 	self.modifierDirectory = {} 															-- no known modifiers
 end
 
+--
+--		Erase all text - clear screen effectively. All new text strings are registered with the font mananger.
+--
 function FontManager:clearText()
 	for _,string in ipairs(self.currentStrings) do 											-- destroy all current strings.
 		string:destroy()
@@ -351,10 +419,16 @@ function FontManager:clearText()
 	FontManager:_stopEnterFrame() 															-- turn the animation off.
 end
 
+--
+--		Set the animation rate - how many updates are a done a second. If this is > fps it will be fps.
+--
 function FontManager:setAnimationRate(frequency) 											-- method to set the animations frequency.
 	self.animationsPerSecond = frequency
 end
 
+--
+--		Get font by name, creating it if required.
+--
 function FontManager:getFont(fontName) 														-- load a new font.
 	local keyName = fontName:lower() 														-- key used is lower case.
 	if self.fontList[keyName] == nil then 													-- font not known ?
@@ -363,11 +437,17 @@ function FontManager:getFont(fontName) 														-- load a new font.
 	return self.fontList[keyName] 															-- return a font instance.
 end
 
+--
+--		Add a string (part of BitmapString constructor) so the FontManager knows about the bitmap strings - then it can update and animate them.
+--
 function FontManager:addStringReference(bitmapString)
 	self.currentStrings[#self.currentStrings+1] = bitmapString 								-- remember the string we are adding.
 	self:_startEnterFrame() 																-- we now need the enter frame tick.
 end
 
+--
+--		Turn on the eventframe event.
+--
 function FontManager:_startEnterFrame() 													-- turn animation on.
 	if not self.eventListenerAttached then
 		Runtime:addEventListener( "enterFrame", self )
@@ -375,6 +455,9 @@ function FontManager:_startEnterFrame() 													-- turn animation on.
 	end
 end
 
+--
+--		Turn off the event frame event
+--
 function FontManager:_stopEnterFrame() 														-- turn animation off
 	if self.eventListenerAttached then
 		Runtime:removeEventListener("enterFrame",self)
@@ -382,6 +465,9 @@ function FontManager:_stopEnterFrame() 														-- turn animation off
 	end
 end
 
+--
+--		Handle the enter frame event. Repaints if either (i) it is invalid or (ii) it is animated.
+--
 function FontManager:enterFrame(e)
 	local currentTime = system.getTimer() 													-- elapsed time in milliseconds
 	if currentTime > self.nextAnimation then 												-- time to animate - we animated at a fixed rate, irrespective of fps.
@@ -394,6 +480,10 @@ function FontManager:enterFrame(e)
 	end
 end
 
+--
+--		Helper function which calculates curves according to the definition - basically can take a segment of a trigonometrical curve and apply it to 
+--		whatever you want, it can be repeated over a range, so you could say apply the sin curve from 0-180 5 times and get 5 'humps'
+--
 function FontManager:curve(curveDefinition,position)
 	curveDefinition.startAngle = curveDefinition.startAngle or 0 							-- where in the curve the font is, so by default it is 0-90
 	curveDefinition.endAngle = curveDefinition.endAngle or 180
@@ -408,17 +498,23 @@ function FontManager:curve(curveDefinition,position)
 	if formula == "sin" 	then result = math.sin(angle) 									-- calculate the result
 	elseif formula == "cos"	then result = math.cos(angle)
 	elseif formula == "tan" then result = math.tan(angle)
-	else error("Unknown formula "..formula)
+	else error("Unknown formula "..formula) 												-- add extra formulae here
 	end
-	return result
+	return result 																			-- this will be 0-1 (usually)
 end
 
+--
+--		Register one of the standard modifiers
+--
 function FontManager:registerModifier(name,instance)
 	name = name : lower()
 	assert(self.modifierDirectory[name] == nil,"Duplicate modifier")
 	self.modifierDirectory[name] = instance
 end
 
+--
+--		Access one of the standard modifiers
+--
 function FontManager:getModifier(name)
 	name = name:lower()
 	assert(self.modifierDirectory[name] ~= nil,"Unknown modifier "..name)
@@ -432,6 +528,17 @@ FontManager.new = function() error("FontManager is a singleton instance") end 		
 ---																				Some Modifier Classes
 --- ************************************************************************************************************************************************************************
 
+--
+--		Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters
+--
+--			modifier 		structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can
+-- 							tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.
+--			cPos 			the character position, from 0-100 - how far along the string this is. This does not correlate to string character
+-- 							position, as this is changed to animate the display.
+-- 			elapsed 		Number of ms elapsed since the text object was created (see how pulser in main.lua uses this)
+-- 			index 			Current character being checked (see how JaggedModifier uses this)
+--			length 			Total length of string.
+--
 local Modifier = Base:new() 																-- establish a base class. Probably isn't necessary :)
 
 local WobbleModifier = Modifier:new()					 									-- Wobble Modifier makes it,err.... wobble ?
@@ -439,7 +546,7 @@ local WobbleModifier = Modifier:new()					 									-- Wobble Modifier makes it,
 function WobbleModifier:initialise(violence) self.violence = violence or 1 end 
 
 function WobbleModifier:modify(modifier,cPos,elapsed,index,length)
-	modifier.xOffset = math.random(-self.violence,self.violence)
+	modifier.xOffset = math.random(-self.violence,self.violence) 							-- adjust all these values by the random level of 'violence'
 	modifier.yOffset = math.random(-self.violence,self.violence)
 	modifier.xScale = math.random(-self.violence,self.violence) / 10 + 1
 	modifier.yScale = math.random(-self.violence,self.violence) / 10 + 1
@@ -449,24 +556,25 @@ end
 local SimpleCurveModifier = Modifier:new()													-- curvepos curves the text positionally vertically
 
 function SimpleCurveModifier:initialise(start,enda,scale,count)
-	self.curveDesc = { startAngle = start or 0, endAngle = enda or 180, curveCount = count or 1 }
+	self.curveDesc = { startAngle = start or 0, endAngle = enda or 180, 					-- by default, sine curve from 0 - 180 degrees replicated once.
+															curveCount = count or 1 }
 	self.scale = scale or 1
 end
 
 function SimpleCurveModifier:modify(modifier,cPos,elapsed,index,length)
-	modifier.yOffset = FontManager:curve(self.curveDesc,cPos) * 50 * self.scale
+	modifier.yOffset = FontManager:curve(self.curveDesc,cPos) * 50 * self.scale 			
 end
 
 local SimpleCurveScaleModifier = SimpleCurveModifier:new()						 			-- curvepos scales the text vertically rather than the position.
 
 function SimpleCurveScaleModifier:modify(modifier,cPos,elapsed,index,length)
-	modifier.yScale = FontManager:curve(self.curveDesc,cPos)*self.scale+1
+	modifier.yScale = FontManager:curve(self.curveDesc,cPos)*self.scale+1 					-- so we just override the bit that applies it.
 end
 
 local JaggedModifier = Modifier:new()														-- jagged alternates left and right rotation.
 
 function JaggedModifier:modify(modifier,cPos,elapsed,index,length)
-	modifier.rotation = ((index % 2 * 2) - 1) * 15
+	modifier.rotation = ((index % 2 * 2) - 1) * 15 											-- generates -15 and +15 rotation alternately on index.
 end
 
 local ZoomOutModifier = Modifier:new() 														-- Zoom out from nothing to standard
@@ -501,7 +609,7 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 					ZoomOutModifier = ZoomOutModifier,
 					ZoomInModifier = ZoomInModifier }
 
-return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers }
+return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 	-- hand it back to the caller so it can use it.
 
 -- Write some demos.
 -- Read FNT files directly ?
