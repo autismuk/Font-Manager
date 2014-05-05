@@ -23,15 +23,25 @@ local str2 = fm.BitmapString:new("font2",45):setDirection(270):setText("Bye!"):s
 
 local str3 = fm.BitmapString:new("demofont",30):moveTo(160,400):setText("Another one"):setScale(2,2)
 
-str3:setModifier(fm.Modifiers.WobbleModifier:new(2))
+-- str3:setModifier(fm.Modifiers.WobbleModifier:new(2))
 -- str3:setModifier(SimpleCurveModifier:new(0,180,4,2))
 -- str3:setModifier(SimpleCurveScaleModifier:new(0,180,4,2))
 
--- str3:setModifier("wobble")
+str3:setModifier("wobble")
 str3:animate()
 
-local t = 4000
+function pulser(modifier, cPos, elapsed, index, length)
+	local w = math.floor(elapsed/360) % length + 1
+	if index == w then 
+		modifier.xScale,modifier.yScale = 2,2
+		-- modifier.rotation = elapsed % 360
+	end
+end
+
+local str4 = fm.BitmapString:new("retrofont",80):setText("pulse"):moveTo(160,240):setModifier(pulser):animate()
+local t = 8000
 
 transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.4,yScale = 0.7,onComplete = function() --[[ FontManager:clearText()--]] end })
 transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 0.4,yScale = 0.4 })
 transition.to(str3:getView(), { time = t,rotation = 360 })
+transition.to(str4:getView(), { time = t, xScale = 2,yScale = 2})
