@@ -33,12 +33,21 @@ function BitmapFont:initialise(fontName)
 	self.fontName = fontName 																-- save font name.
 	self.fontHeight = 0 																	-- actual physical font height, in pixels.
 	self.characterData = {} 																-- mapping of character code to character data sizes.
+	self:loadFont(fontName)																	-- load the font.
+end
+
+--//	Load the font names. Populates self.characterData (code -> character information). This is a structure which contains the character code (code)
+--//	the xOffset and yOffset, the width and frame is a sub-table containing x,y,width and height in the image sheet.
+--//	@fontName [string] 	name of font
+
+function BitmapFont:loadFont(fontName)
 	self.rawFontInformation = require(BitmapFont.fontDirectory .. "." .. fontName) 			-- load the raw font information as a lua file.
 	self.imageSheet = graphics.newImageSheet("fonts/" .. fontName .. ".png", 				-- create an image sheet from analysing the font data.
 											 self:_analyseFontData())
 end
 
 --//	Helper function ; converts the lua version of the .FNT file into useable animation structure, calculates the working height of the font.
+--//	@return [ImageSheet Definition]	Structure compatible with Corona ImageSheet
 
 function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
 	local options = { frames = {} }															-- this will be the spritesheet 'options' structure.
@@ -728,5 +737,5 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 	-- hand it back to the caller so it can use it.
 
--- Write some demos.
 -- Read FNT files directly ?
+-- Write some demos.
