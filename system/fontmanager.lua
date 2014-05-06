@@ -563,38 +563,50 @@ function FontManager:registerModifier(name,instance)
 	self.modifierDirectory[name] = instance
 end
 
---
---		Access one of the standard modifiers
---
+--//	Access one of the standard modifiers
+--//	@name [string] 			Name of modifier you want to access
+--//	@return [Modifier]		Modifier that does what you want.
+
 function FontManager:getModifier(name)
-	name = name:lower()
+	name = name:lower() 																	-- case doesn't matter.
 	assert(self.modifierDirectory[name] ~= nil,"Unknown modifier "..name)
-	return self.modifierDirectory[name]
+	return self.modifierDirectory[name]			
 end
 
 FontManager:initialise() 																	-- initialise the font manager so it's a standalone object
 FontManager.new = function() error("FontManager is a singleton instance") end 				-- and clear the new method so you can't instantitate a copy.
 
 --- ************************************************************************************************************************************************************************
----																				Some Modifier Classes
+--
+--//		Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul>
+--//
+--//			<li>modifier 		structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can
+--// 							tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li>
+--//			<li>cPos 			the character position, from 0-100 - how far along the string this is. This does not correlate to string character
+--// 							position, as this is changed to animate the display. </li>
+--// 			<li>elapsed 		Number of ms elapsed since the text object was created (see how pulser in main.lua uses this)</li>
+--// 			<li>index 			Current character being checked (see how JaggedModifier uses this)</li>
+--//			<li>length 			Total length of string.</li></ul>
+--
 --- ************************************************************************************************************************************************************************
 
---
---		Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters
---
---			modifier 		structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can
--- 							tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.
---			cPos 			the character position, from 0-100 - how far along the string this is. This does not correlate to string character
--- 							position, as this is changed to animate the display.
--- 			elapsed 		Number of ms elapsed since the text object was created (see how pulser in main.lua uses this)
--- 			index 			Current character being checked (see how JaggedModifier uses this)
---			length 			Total length of string.
---
 local Modifier = Base:new() 																-- establish a base class. Probably isn't necessary :)
+
+--//	Class which wobbles the characters randomly
 
 local WobbleModifier = Modifier:new()					 									-- Wobble Modifier makes it,err.... wobble ?
 
+--//	Constructor, sets the violence of the wobble.
+--//	@violence [number]	degree of wobbliness, defaults to 1.
+
 function WobbleModifier:initialise(violence) self.violence = violence or 1 end 
+
+--//	Make the font wobble by changing values just a little bit
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@elapsed [number] ms elapsed since creation of bitmap string
+--//	@index [number] character number
+--//	@length [number] string length
 
 function WobbleModifier:modify(modifier,cPos,elapsed,index,length)
 	modifier.xOffset = math.random(-self.violence,self.violence) 							-- adjust all these values by the random level of 'violence'
@@ -604,7 +616,15 @@ function WobbleModifier:modify(modifier,cPos,elapsed,index,length)
 	modifier.rotation = math.random(-self.violence,self.violence) * 5
 end
 
+--//	Modifier which changes the vertical position on a curve
+
 local SimpleCurveModifier = Modifier:new()													-- curvepos curves the text positionally vertically
+
+--//	Initialise the curve modifier
+--//	@start [number] 	start angle of cuve
+--//	@enda [number]		end angle of curve
+--//	@scale [number]     degree to which it affects the bitmapstring
+--//	@count [number]		number of segments to map onto the text
 
 function SimpleCurveModifier:initialise(start,enda,scale,count)
 	self.curveDesc = { startAngle = start or 0, endAngle = enda or 180, 					-- by default, sine curve from 0 - 180 degrees replicated once.
@@ -612,34 +632,80 @@ function SimpleCurveModifier:initialise(start,enda,scale,count)
 	self.scale = scale or 1
 end
 
+--//	Make the modifications needed to change the vertical position
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@elapsed [number] ms elapsed since creation of bitmap string
+--//	@index [number] character number
+--//	@length [number] string length
+
 function SimpleCurveModifier:modify(modifier,cPos,elapsed,index,length)
 	modifier.yOffset = FontManager:curve(self.curveDesc,cPos) * 50 * self.scale 			
 end
 
+--//	Modifier which changes the vertical scale on a curve
+
 local SimpleCurveScaleModifier = SimpleCurveModifier:new()						 			-- curvepos scales the text vertically rather than the position.
+
+--//	Make the modifications needed to change the vertical scale
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@elapsed [number] ms elapsed since creation of bitmap string
+--//	@index [number] character number
+--//	@length [number] string length
 
 function SimpleCurveScaleModifier:modify(modifier,cPos,elapsed,index,length)
 	modifier.yScale = FontManager:curve(self.curveDesc,cPos)*self.scale+1 					-- so we just override the bit that applies it.
 end
 
+--//	Modifier which turns alternate characters 15 degrees in different directions
+
 local JaggedModifier = Modifier:new()														-- jagged alternates left and right rotation.
+
+--//	Make the modifications needed to look jagged
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@elapsed [number] ms elapsed since creation of bitmap string
+--//	@index [number] character number
+--//	@length [number] string length
 
 function JaggedModifier:modify(modifier,cPos,elapsed,index,length)
 	modifier.rotation = ((index % 2 * 2) - 1) * 15 											-- generates -15 and +15 rotation alternately on index.
 end
 
+--//	Modifier which zooms characters from 0->1 but the base positions don't change.
+
 local ZoomOutModifier = Modifier:new() 														-- Zoom out from nothing to standard
+
+--//	Initialise the zoom
+--//	@zoomTime [number] how long the zoom takes, defaults to three seconds.
 																							-- this scales letters back spaced - if you want a classic zoom
 function ZoomOutModifier:initialise(zoomTime)												-- use transition.to to scale it :)
 	self.zoomTime = zoomTime or 3000 				
 end
+
+--//	Make the modifications to cause the zoom
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@elapsed [number] ms elapsed since creation of bitmap string
+--//	@index [number] character number
+--//	@length [number] string length
 
 function ZoomOutModifier:modify(modifier,cPos,elapsed,index,length)
 	local scale = math.min(1,elapsed / self.zoomTime)
 	modifier.xScale,modifier.yScale = scale,scale
 end
 
+--//	Modifier which zooms characters from 1->0 but the base positions don't change.
+
 local ZoomInModifier = ZoomOutModifier:new() 												-- Zoom in, as zoom out but the other way round
+
+--//	Make the modifications to cause the zoom.
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@elapsed [number] ms elapsed since creation of bitmap string
+--//	@index [number] character number
+--//	@length [number] string length
 
 function ZoomInModifier:modify(modifier,cPos,elapsed,index,length)
 	local scale = math.min(1,elapsed / self.zoomTime)

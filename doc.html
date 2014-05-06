@@ -158,139 +158,142 @@
 <h2>(constructor)()</h2>
 <p>Constructor - note this is the prototype and the instance.</p>
 <h2>_startEnterFrame()</h2>
-<p></p>
+<p>Turn on the eventframe event.</p>
 <h2>_stopEnterFrame()</h2>
-<p></p>
+<p>Turn off the event frame event</p>
 <h2>addStringReference(bitmapString)</h2>
 <table>
-<tr><td>bitmapString</td><td></td><td></td></tr>
+<tr><td>bitmapString</td><td>BitmapString</td><td>Newly created bitmap string object which the manager kneeds to know about</td></tr>
 </table>
-<p></p>
+<p>Add a string (part of BitmapString constructor) so the FontManager knows about the bitmap strings - then it can update and animate them.</p>
 <h2>clearText()</h2>
-<p></p>
+<p>Erase all text - clear screen effectively. All new text strings are registered with the font mananger.</p>
 <h2>curve(curveDefinition,position)</h2>
 <table>
-<tr><td>curveDefinition</td><td></td><td></td></tr>
-<tr><td>position</td><td></td><td></td></tr>
+<tr><td>curveDefinition</td><td>Modifier Descriptor</td><td>Table containing startAngle,endAngle,curveCount,formula</td></tr>
+<tr><td>position</td><td>number</td><td>Position in curve 0 to 100</td></tr>
+<tr><td>return</td><td>number</td><td>Value of curve (normally between 0 and 1)</td></tr>
 </table>
-<p></p>
+<p>Helper function which calculates curves according to the definition - basically can take a segment of a trigonometrical curve and apply it to whatever you want, it can be repeated over a range, so you could say apply the sin curve from 0-180 5 times and get 5 'humps'</p>
 <h2>enterFrame(e)</h2>
 <table>
-<tr><td>e</td><td></td><td></td></tr>
+<tr><td>e</td><td>Event Object</td><td>Event data from Corona SDK</td></tr>
 </table>
-<p></p>
+<p>Handle the enter frame event. Repaints if either (i) it is invalid or (ii) it is animated.</p>
 <h2>getFont(fontName)</h2>
 <table>
-<tr><td>fontName</td><td></td><td></td></tr>
+<tr><td>fontName</td><td>string</td><td>Name of font to acquire</td></tr>
+<tr><td>return</td><td>BitmapFont</td><td>Font from cache,or loaded</td></tr>
 </table>
-<p></p>
+<p>Get font by name, creating it if required.</p>
 <h2>getModifier(name)</h2>
 <table>
-<tr><td>name</td><td></td><td></td></tr>
+<tr><td>name</td><td>string</td><td>Name of modifier you want to access</td></tr>
+<tr><td>return</td><td>Modifier</td><td>Modifier that does what you want.</td></tr>
 </table>
-<p></p>
+<p>Access one of the standard modifiers</p>
 <h2>registerModifier(name,instance)</h2>
 <table>
-<tr><td>name</td><td></td><td></td></tr>
-<tr><td>instance</td><td></td><td></td></tr>
+<tr><td>name</td><td>string</td><td>Name of modifier (case irrelevant)</td></tr>
+<tr><td>instance</td><td>Modifier</td><td>Modifier instance</td></tr>
 </table>
-<p></p>
+<p>Register one of the standard modifiers</p>
 <h2>setAnimationRate(frequency)</h2>
 <table>
-<tr><td>frequency</td><td></td><td></td></tr>
+<tr><td>frequency</td><td>number</td><td>updates per second of the animation rate, defaults to 15 updates per second.</td></tr>
 </table>
-<p></p>
+<p>Set the animation rate - how many updates are a done a second. If this is > fps it will be fps.</p>
 <hr><h1>JaggedModifier</h1>
 <p><h3>Extends Modifier</h3></p>
-<p></p><hr>
+<p>Modifier which turns alternate characters 15 degrees in different directions</p><hr>
 <h2>modify(modifier,cPos,elapsed,index,length)</h2>
 <table>
-<tr><td>modifier</td><td></td><td></td></tr>
-<tr><td>cPos</td><td></td><td></td></tr>
-<tr><td>elapsed</td><td></td><td></td></tr>
-<tr><td>index</td><td></td><td></td></tr>
-<tr><td>length</td><td></td><td></td></tr>
+<tr><td>modifier</td><td>Modifier Table</td><td>Structure to modify to change effects</td></tr>
+<tr><td>cPos</td><td>number</td><td>Position in effect</td></tr>
+<tr><td>elapsed</td><td>number</td><td>ms elapsed since creation of bitmap string</td></tr>
+<tr><td>index</td><td>number</td><td>character number</td></tr>
+<tr><td>length</td><td>number</td><td>string length</td></tr>
 </table>
-<p></p>
+<p>Make the modifications needed to look jagged</p>
 <hr><h1>Modifier</h1>
 <p><h3>Extends Base</h3></p>
-<p></p><hr>
+<p>Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul> <li>modifier structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li> <li>cPos the character position, from 0-100 - how far along the string this is. This does not correlate to string character position, as this is changed to animate the display. </li> <li>elapsed Number of ms elapsed since the text object was created (see how pulser in main.lua uses this)</li> <li>index Current character being checked (see how JaggedModifier uses this)</li> <li>length  Total length of string.</li></ul></p><hr>
 <hr><h1>SimpleCurveModifier</h1>
 <p><h3>Extends Modifier</h3></p>
-<p></p><hr>
+<p>Modifier which changes the vertical position on a curve</p><hr>
 <h2>(constructor)(start,enda,scale,count)</h2>
 <table>
-<tr><td>start</td><td></td><td></td></tr>
-<tr><td>enda</td><td></td><td></td></tr>
-<tr><td>scale</td><td></td><td></td></tr>
-<tr><td>count</td><td></td><td></td></tr>
+<tr><td>start</td><td>number</td><td>start angle of cuve</td></tr>
+<tr><td>enda</td><td>number</td><td>end angle of curve</td></tr>
+<tr><td>scale</td><td>number</td><td>degree to which it affects the bitmapstring</td></tr>
+<tr><td>count</td><td>number</td><td>number of segments to map onto the text</td></tr>
 </table>
-<p></p>
+<p>Initialise the curve modifier</p>
 <h2>modify(modifier,cPos,elapsed,index,length)</h2>
 <table>
-<tr><td>modifier</td><td></td><td></td></tr>
-<tr><td>cPos</td><td></td><td></td></tr>
-<tr><td>elapsed</td><td></td><td></td></tr>
-<tr><td>index</td><td></td><td></td></tr>
-<tr><td>length</td><td></td><td></td></tr>
+<tr><td>modifier</td><td>Modifier Table</td><td>Structure to modify to change effects</td></tr>
+<tr><td>cPos</td><td>number</td><td>Position in effect</td></tr>
+<tr><td>elapsed</td><td>number</td><td>ms elapsed since creation of bitmap string</td></tr>
+<tr><td>index</td><td>number</td><td>character number</td></tr>
+<tr><td>length</td><td>number</td><td>string length</td></tr>
 </table>
-<p></p>
+<p>Make the modifications needed to change the vertical position</p>
 <hr><h1>SimpleCurveScaleModifier</h1>
 <p><h3>Extends SimpleCurveModifier</h3></p>
-<p></p><hr>
+<p>Modifier which changes the vertical scale on a curve</p><hr>
 <h2>modify(modifier,cPos,elapsed,index,length)</h2>
 <table>
-<tr><td>modifier</td><td></td><td></td></tr>
-<tr><td>cPos</td><td></td><td></td></tr>
-<tr><td>elapsed</td><td></td><td></td></tr>
-<tr><td>index</td><td></td><td></td></tr>
-<tr><td>length</td><td></td><td></td></tr>
+<tr><td>modifier</td><td>Modifier Table</td><td>Structure to modify to change effects</td></tr>
+<tr><td>cPos</td><td>number</td><td>Position in effect</td></tr>
+<tr><td>elapsed</td><td>number</td><td>ms elapsed since creation of bitmap string</td></tr>
+<tr><td>index</td><td>number</td><td>character number</td></tr>
+<tr><td>length</td><td>number</td><td>string length</td></tr>
 </table>
-<p></p>
+<p>Make the modifications needed to change the vertical scale</p>
 <hr><h1>WobbleModifier</h1>
 <p><h3>Extends Modifier</h3></p>
-<p></p><hr>
+<p>Class which wobbles the characters randomly</p><hr>
 <h2>(constructor)(violence)</h2>
 <table>
-<tr><td>violence</td><td></td><td></td></tr>
+<tr><td>violence</td><td>number</td><td>degree of wobbliness, defaults to 1.</td></tr>
 </table>
-<p></p>
+<p>Constructor, sets the violence of the wobble.</p>
 <h2>modify(modifier,cPos,elapsed,index,length)</h2>
 <table>
-<tr><td>modifier</td><td></td><td></td></tr>
-<tr><td>cPos</td><td></td><td></td></tr>
-<tr><td>elapsed</td><td></td><td></td></tr>
-<tr><td>index</td><td></td><td></td></tr>
-<tr><td>length</td><td></td><td></td></tr>
+<tr><td>modifier</td><td>Modifier Table</td><td>Structure to modify to change effects</td></tr>
+<tr><td>cPos</td><td>number</td><td>Position in effect</td></tr>
+<tr><td>elapsed</td><td>number</td><td>ms elapsed since creation of bitmap string</td></tr>
+<tr><td>index</td><td>number</td><td>character number</td></tr>
+<tr><td>length</td><td>number</td><td>string length</td></tr>
 </table>
-<p></p>
+<p>Make the font wobble by changing values just a little bit</p>
 <hr><h1>ZoomInModifier</h1>
 <p><h3>Extends ZoomOutModifier</h3></p>
-<p></p><hr>
+<p>Modifier which zooms characters from 1->0 but the base positions don't change.</p><hr>
 <h2>modify(modifier,cPos,elapsed,index,length)</h2>
 <table>
-<tr><td>modifier</td><td></td><td></td></tr>
-<tr><td>cPos</td><td></td><td></td></tr>
-<tr><td>elapsed</td><td></td><td></td></tr>
-<tr><td>index</td><td></td><td></td></tr>
-<tr><td>length</td><td></td><td></td></tr>
+<tr><td>modifier</td><td>Modifier Table</td><td>Structure to modify to change effects</td></tr>
+<tr><td>cPos</td><td>number</td><td>Position in effect</td></tr>
+<tr><td>elapsed</td><td>number</td><td>ms elapsed since creation of bitmap string</td></tr>
+<tr><td>index</td><td>number</td><td>character number</td></tr>
+<tr><td>length</td><td>number</td><td>string length</td></tr>
 </table>
-<p></p>
+<p>Make the modifications to cause the zoom.</p>
 <hr><h1>ZoomOutModifier</h1>
 <p><h3>Extends Modifier</h3></p>
-<p></p><hr>
+<p>Modifier which zooms characters from 0->1 but the base positions don't change.</p><hr>
 <h2>(constructor)(zoomTime)</h2>
 <table>
-<tr><td>zoomTime</td><td></td><td></td></tr>
+<tr><td>zoomTime</td><td>number</td><td>how long the zoom takes, defaults to three seconds.</td></tr>
 </table>
-<p></p>
+<p>Initialise the zoom</p>
 <h2>modify(modifier,cPos,elapsed,index,length)</h2>
 <table>
-<tr><td>modifier</td><td></td><td></td></tr>
-<tr><td>cPos</td><td></td><td></td></tr>
-<tr><td>elapsed</td><td></td><td></td></tr>
-<tr><td>index</td><td></td><td></td></tr>
-<tr><td>length</td><td></td><td></td></tr>
+<tr><td>modifier</td><td>Modifier Table</td><td>Structure to modify to change effects</td></tr>
+<tr><td>cPos</td><td>number</td><td>Position in effect</td></tr>
+<tr><td>elapsed</td><td>number</td><td>ms elapsed since creation of bitmap string</td></tr>
+<tr><td>index</td><td>number</td><td>character number</td></tr>
+<tr><td>length</td><td>number</td><td>string length</td></tr>
 </table>
-<p></p>
+<p>Make the modifications to cause the zoom</p>
 <hr><p><i>LUA Autodoc by Paul Robson 2014</i></p><hr></body></html>
