@@ -11,32 +11,35 @@
 -- Standard OOP (with Constructor parameters added.)
 _G.Base =  _G.Base or { new = function(s,...) local o = { } setmetatable(o,s) s.__index = s o:initialise(...) return o end, initialise = function() end }
 
+--//	The fontmananger class controls, animates and updates all the fonts on the screen. It also tracks what fonts are used, and keeps a library of standard
+--// 	effects. It is a singleton.
+
 local FontManager = Base:new() 																-- Fwd reference FontManager - it references and is referenced by the 
 																							-- BitmapFont and BitmapString classes.
 
 --- ************************************************************************************************************************************************************************
----											Class representing a bit map font, with methods for processing that font
+--// 	This class encapsulates a bitmap font, producing characters 'on demand'. This version relies on the conversion from .FNT to .LUA but I will extend it soon
+--//	so it works with .FNT files.
 --- ************************************************************************************************************************************************************************
 
 local BitmapFont = Base:new()
 
 BitmapFont.fontDirectory = "fonts" 															-- where fonts are, lua and png.
 
---
---		Bitmap Font constructor
---
+--//	The Bitmap Font constructor. This reads in the font data 
+--//	@fontName [string] name of font (case is sensitive, so I advise use of lower case only)
+
 function BitmapFont:initialise(fontName)
 	self.fontName = fontName 																-- save font name.
-	self.rawFontInformation = require(BitmapFont.fontDirectory .. "." .. fontName) 			-- load the raw font information as a lua file.
 	self.fontHeight = 0 																	-- actual physical font height, in pixels.
 	self.characterData = {} 																-- mapping of character code to character data sizes.
+	self.rawFontInformation = require(BitmapFont.fontDirectory .. "." .. fontName) 			-- load the raw font information as a lua file.
 	self.imageSheet = graphics.newImageSheet("fonts/" .. fontName .. ".png", 				-- create an image sheet from analysing the font data.
 											 self:_analyseFontData())
 end
 
---
---		Helper function ; converts the lua version of the .FNT file into useable animation structure, calculates the working height of the font.
---
+--//	Helper function ; converts the lua version of the .FNT file into useable animation structure, calculates the working height of the font.
+
 function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
 	local options = { frames = {} }															-- this will be the spritesheet 'options' structure.
 	local maxy,miny = 0,0
@@ -54,9 +57,10 @@ function BitmapFont:_analyseFontData()														-- generate SpriteSheet stru
 	return options
 end
 
---
---		Get a display object with the given character in it, centred around the middle
---
+--//		Get a display object with the given character in it, centred around the middle - roughly :)
+--//		@characterCode [number] 	character code of the character required
+--//		@return [displayObject]		a display object representing the character.
+
 function BitmapFont:getCharacter(characterCode) 											
 	assert(self.characterData[characterCode] ~= nil,"Character unsupported in font")
 	local obj = display.newImage(self.imageSheet,self.characterData[characterCode].spriteID)-- create it.
@@ -65,11 +69,22 @@ function BitmapFont:getCharacter(characterCode)
 	return obj
 end
 
+--//	This moves the display object to position x,y and positions it correctly allowing for the main scale (xScale,yScale) and fontSize (height in pixels)
+--//	for actual drawing the scale can be adjusted (pxScale,pyScale are multipliers of the scale) but the character will occupy the same space.
+--//	Finally, characters can be set at an offset from the actual position (xAdjust,yAdjust) to allow for wavy font effects and characters to move.
 --
---	This moves the display object to position x,y and positions it correctly allowing for the main scale (xScale,yScale) and fontSize (height in pixels)
---	for actual drawing the scale can be adjusted (pxScale,pyScale are multipliers of the scale) but the character will occupy the same space.
--- 	Finally, characters can be set at an offset from the actual position (xAdjust,yAdjust) to allow for wavy font effects and characters to move.
---
+--//	@displayObject 	[display Object]		Corona SDK Object from the getCharacter() factory
+--//	@fontSize 		[number]				Font height in pixels - scales from the bitmap height automatically
+--//	@x 				[number]				Horizontal position of charcter centre, with offset adjustment.
+--//	@y 				[number]				Vertictal position of charcter centre, with offset adjustment.
+--//	@xScale 		[number]				Horizontal main scale
+--//	@yScale 		[number]				Vertical main scale
+--//	@pxScale 		[number]				Auxiliary Scalar for the horiziontal scale
+--//	@pyScale 		[number]				Auxiliary Scalar for the vertical scale
+--//	@xOffset 		[number] 				Horizontal Offset from the given position
+--//	@yOffset 		[number] 				Vertical Offset from the given position
+--//	@rotation 		[number]				Rotation of character around its centre.
+	
 function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,pxScale,pyScale,xOffset,yOffset,rotation)
 	local scalar = fontSize / self.fontHeight 												-- how much to scale the font by to make it the required size.
 	xScale = xScale * scalar yScale = yScale * scalar 										-- make scales scale to actual size.
@@ -86,45 +101,52 @@ function BitmapFont:moveScaleCharacter(displayObject,fontSize,x,y,xScale,yScale,
 	displayObject.y = y + cData.yOffset * ayScale + displayObject.height / 2 * ayScale + yOffset * yScale
 end
 
---
---		Map any character to a code - currently maps any unsupported character to ? but could be extended to (say) map a-acute and a-grave to a 
--- 		in French.
---
+--//	Map any character to a code - currently maps any unsupported character to ? but could be extended to (say) map a-acute and a-grave to a 
+--//	in French.
+--//	@characterCode [number]		Character code to map
+--//	@return [number]			Code of character which does actually exist in the font.
+
 function BitmapFont:mapCharacterToFont(characterCode)
 	if self.characterData[characterCode] == nil then characterCode = '?' end 				-- map unknown chaaracters onto question marks.
 	return characterCode
 end
 
---
---		Get the character width, after scaling.
---
+--//	Get the character width, after scaling.
+--//	@characterCode [number]		Character code of character to measure
+--//	@fontSize 		[number]	Size of the font (horizontal pixels)
+--//	@xScale 		[number]	Horizontal Scaling
+--//	@return 		[number]	Horizontal width in pixels.
+
 function BitmapFont:getCharacterWidth(characterCode,fontSize,xScale) 						-- information functions. These are bounding boxes if you 
 	assert(self.characterData[characterCode] ~= nil,"Character unsupported in font")
 	return self.characterData[characterCode].width * math.abs(xScale) * fontSize / self.fontHeight 	-- don't use pxScale, pyScale, xAdjust and yAdjust (!)
 end
 
---
---		Get the character height, after scaling. Note that this is constant for a font
---
+--//	Get the character height, after scaling.
+--//	@characterCode [number]		Character code of character to measure. Not actually needed as all characters are a fixed height
+--//	@fontSize 		[number]	Size of the font (horizontal pixels)
+--//	@xScale 		[number]	Vertical Scaling
+--//	@return 		[number]	Vertical width in pixels.
+
 function BitmapFont:getCharacterHeight(characterCode,fontSize,yScale)
 	assert(self.characterData[characterCode] ~= nil,"Character unsupported in font")
 	return math.abs(yScale) * fontSize
 end
 
 --- ************************************************************************************************************************************************************************
---- 												Bitmap String class. It's slightly odd, to put it mildly :) 
----
----	It uses a view group object for basic positioning. Scaling and rotating, it depends. If you create a string, you can scale it and rotate it with transitions, just 
---- as you do with any object.  But if you want a string with animated effects, you cannot use transitions as well. The reason for this is if you 'animate' xScale,yScale
---- with transition.to its scaling effects on the object will be reset by the animation - basically they argue about who does the scaling. The xOffset,yOffset is additional
---- to the actual position, rotation probably won't work either (not sure ?)
+--// 	It uses a view group object for basic positioning. Scaling and rotating, it depends. If you create a string, you can scale it and rotate it with transitions, just 
+--// 	as you do with any object.  But if you want a string with animated effects, you cannot use transitions as well. The reason for this is if you 'animate' xScale,yScale
+--// 	with transition.to its scaling effects on the object will be reset by the animation - basically they argue about who does the scaling. The xOffset,yOffset is additional
+--// 	to the actual position, rotation probably won't work either (not sure ?)
 --- ************************************************************************************************************************************************************************
 
 local BitmapString = Base:new()
 
---
---		Constructor. Font can be a reference or a string (in this case the FontManager looks it up), font Size defaults to 32 pixels.
---
+--//		Constructor. Font can be a reference or a string (in this case the FontManager looks it up), font Size defaults to 32 pixels. Creates an empty
+--//		Bitmap String.
+--//		@font [String/Reference]	Font to use to create string
+--//		@fontSize [number]			Height of font in pixels, default is 32 if ommitted.
+
 function BitmapString:initialise(font,fontSize)
 	if type(font) == "string" then 															-- Font can be a bitmap font instance or a name of a font.
 		font = FontManager:getFont(font) 													-- if it's a name, fetch it from the font manager.
@@ -149,9 +171,9 @@ function BitmapString:initialise(font,fontSize)
 	FontManager:addStringReference(self) 													-- tell the font manager about the new string.
 end
 
---
---		Destructor, not called by lua, but used by clear screen method - tidies up bitmap font and frees all resources.
---
+--//		Destructor, not called by lua, but used by clear screen method - tidies up bitmap font and frees all resources, so ClearScreen can be used
+--//		on scene exit event or similar.
+
 function BitmapString:destroy()
 	self:setText("") 																		-- this deletes all the display objects.
 	self.viewGroup:removeSelf() 															-- delete the viewgroup
@@ -160,10 +182,12 @@ function BitmapString:destroy()
 	self.modifier = nil 																	-- no reference to a modifier instance if there was one
 end
 
+--//	Set the text. It uses the current text as a basis for display objects for the font, reusing them when possible, then frees any that are left over
+--//	If there isn't a character to reuse, it creates one.
 --
---		Set the text. It uses the current text as a basis for display objects for the font, reusing them when possible, then frees any that are left over
---		If there isn't a character to reuse, it creates one.
---
+--//	@text [string]			text string to set it to.
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:setText(text) 														-- set the text, adjust display objects to suit, reusing where possible.
 	if text == self.text then return self end 												-- if no changes, then return immediately.
 	self.text = text 																		-- save the text
@@ -191,10 +215,12 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 	return self 																			-- permit chaining.
 end
 
+--// 	This acquires a display object with the given character. It looks in the 'stock list' - the list of characters used before, if one is 
+--//	found it recycles it. Otherwise it creates a new one.
 --
--- 		This acquires a display object with the given character. It looks in the 'stock list' - the list of characters used before, if one is 
--- 		found it recycles it. Otherwise it creates a new one.
---
+--//	@characterCode [number] 	character code to be either recycled from stock, or created.
+--//	@return [display Object]	Corona Display Object representing the character.
+
 function BitmapString:_useOrCreateCharacterObject(characterCode)
 	for i = 1,#self.stockList do 															-- check through the stock list.
 		if self.stockList[i] == characterCode then 											-- found a matching one.
@@ -210,21 +236,18 @@ function BitmapString:_useOrCreateCharacterObject(characterCode)
 	return newObject
 end
 
---
---		Marks the string as invalid and in need of repainting.
---
+--//	Marks the string as invalid and in need of repainting.
+--//	Many functions call this if they change something that means the string needs repainting or rescaling.
 
 function BitmapString:reformat() 															-- reposition the string on the screen.
 	self.isValid = false
 end
 
---
---		Reposition and Scale the whole string dependent on the settings - called when text is changed, scale changed etc. However, it is not called
---		directly ; those changes mark the string display as invalid and they are checked by the font manager - that way we don't repaint with every
---		change. It starts by putting it at 0,0 but then moves it to fit the anchor and position settings.
---		We cannot use the ViewGroups version because the effects - scaling and so on - would move it about. The view group positioning is based
--- 		on unmodified characters - otherwise anchoring would not work.
---
+--//	Reposition and Scale the whole string dependent on the settings - called when text is changed, scale changed etc. However, it is not called
+--//	directly ; those changes mark the string display as invalid and they are checked by the font manager - that way we don't repaint with every
+--//	change. It starts by putting it at 0,0 but then moves it to fit the anchor and position settings.
+--//	We cannot use the ViewGroups version because the effects - scaling and so on - would move it about. The view group positioning is based
+--// 	on unmodified characters - otherwise anchoring would not work.
 
 function BitmapString:repositionAndScale()
 	self.isValid = true 																	-- it will be valid at this point.
@@ -294,33 +317,49 @@ function BitmapString:repositionAndScale()
 	end
 end
 
---
---		Helpers to get current view, to check if it is an animated font, and to check if it needs repainting
---	
-function BitmapString:getView() return self.viewGroup end 									-- a stack of helpers
+--//	Return the view group if you want to animate it using transition.to
+--//	@return [display Group]	the strings display group
+
+function BitmapString:getView() return self.viewGroup end 								
+
+--//	Check to see if the string is animated or not. (e.g. has animate() been called)
+--//	@return [boolean] true if string is animated
+
 function BitmapString:isAnimated() return self.fontAnimated end
+
+--//	Check to see if the string is 'invalid' e.g. its current position does not reflect what it should look like
+--//	text changed, position changed, scaled etc.
+--//	@return [boolean] true if string needs reorganising
+
 function BitmapString:isInvalid() return not self.isValid end
 
---
---		Turns animation on.
---
+--//	Turns animation on, with an optional speed scalar. This causes the 'cPos' in modifiers to change with time
+--//	allowing the various animation effects
+--//	@speedScalar [number]	Speed Scalar, defaults to 1. 3 is three times as fast.
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:animate(speedScalar)
 	self.fontAnimated = true 	 															-- enable animation
 	self.animationSpeedScalar = speedScalar or 1 											-- set speed scalar
 	return self
 end
 
---
---		Move the view group 
---
+--//	Move the view group - i.e. the font
+--//	@x 		[number]		Horizontal position
+--//	@y 		[number]		Vertictal position
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:moveTo(x,y)
 	self.viewGroup.x,self.viewGroup.y = x,y 
 	return self
 end
 
---
---		Change the font used, optionally change its size (there is another helper to just change the size)
---
+--//	Change the font used, optionally change its size (there is another helper to just change the size). This involves freeing and reallocating
+--//	the whole font objects - if you just want to change the base size, use that helper.
+--//	@font [String/Reference]	Font to use to create string
+--//	@fontSize [number]			Height of font in pixels, default is current size if ommitted.
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:setFont(font,fontSize)
 	local originalText = self.text 															-- preserve the original text
 	self:setText("") 																		-- set the text to empty, which clears up the displayObjects etc.
@@ -333,18 +372,22 @@ function BitmapString:setFont(font,fontSize)
 	return self
 end
 
---
---		Set the anchor position
---
+--//	Set the anchor position - same as Corona except it is done with a method not by assigning member variables.
+--//	@anchorX 	[number]			X anchor position 0->1
+--//	@anchorY 	[number]			Y anchor position 0->1
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:setAnchor(anchorX,anchorY)
 	self.anchorX,self.anchorY = anchorX,anchorY
 	self:reformat()
 	return self
 end
 
---
---		Set the overall scale.
---
+--//	Set the overall scale of the font (e.g. pre-modifier)
+--//	@xScale 	[number]			Horizontal scaling of string
+--//	@yScale 	[number]			Vertical scaling of string
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:setScale(xScale,yScale)
 	assert(xScale ~= 0 and yScale ~= 0,"Scales cannot be zero")
 	self.xScale,self.yScale = xScale or 1,yScale or 1
@@ -352,37 +395,42 @@ function BitmapString:setScale(xScale,yScale)
 	return self
 end
 
---
---		Set the direction - we only support 4 main compass points, and the font is always upright. 
---
+--//	Set the direction - we only support 4 main compass points, and the font is always upright. 
+--//	@direction [number] string direction (degrees) 0 (default), 90, 180 or 360.
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:setDirection(direction)
-	self.direction = ((direction or 0)+3600) % 360
+	self.direction = ((direction or 0)+3600) % 360 											-- force into sensible range
 	assert(self.direction/90 == math.floor(self.direction/90),"Only right angle directions allowed")
 	self:reformat()
 	return self
 end
 
---
---		Allows you to adjust the spacing between letters.
---
+--//	Allows you to adjust the spacing between letters.
+--//	@spacing [number]	Pixels to insert between letters (or remove, can be negative) - scaled by x Scaling.
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:setSpacing(spacing)
 	self.spacingAdjust = spacing or 0
 	self:reformat()
 	return self
 end
 
---
---		Set the Font Size
---
+--//	Set the Font Size
+--//	@size [number]	new font size (vertical pixel height), default is no change
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:setFontSize(size)
-	self.fontSize = size
+	self.fontSize = size or self.fontSize
 	self:reformat()
 	return self
 end
 
---
---		Set the modifier (class, function or string) which shapes and optionally animates the string.
---
+--//	Set the modifier (class, function or string) which shapes and optionally animates the string. For examples, see the main.lua file
+--//	and the sample modifiers.
+--//	@funcOrTable [String/Class/Function] a function, class or string defining how you want the bitmap font to be modified.
+--//	@return [BitmapString]	allows chaining.
+
 function BitmapString:setModifier(funcOrTable)
 	if type(funcOrTable) == "string" then 													-- get it from the directory if is a string
 		funcOrTable = FontManager:getModifier(funcOrTable)
@@ -393,12 +441,11 @@ function BitmapString:setModifier(funcOrTable)
 end
 
 --- ************************************************************************************************************************************************************************
----																	Font Manager Class
+-- 									this is the actual implementation of the FontManager which is forward referenced.
 --- ************************************************************************************************************************************************************************
 
---
---		Constructor - note this is the prototype and the instance.
---
+--//	Constructor - note this is the prototype and the instance.
+
 function FontManager:initialise()
 	self.fontList = {} 																		-- maps font name (l/c) to bitmap object
 	self.currentStrings = {} 																-- list of current strings.
@@ -408,9 +455,9 @@ function FontManager:initialise()
 	self.modifierDirectory = {} 															-- no known modifiers
 end
 
---
---		Erase all text - clear screen effectively. All new text strings are registered with the font mananger.
---
+
+--//	Erase all text - clear screen effectively. All new text strings are registered with the font mananger.
+
 function FontManager:clearText()
 	for _,string in ipairs(self.currentStrings) do 											-- destroy all current strings.
 		string:destroy()
@@ -419,16 +466,18 @@ function FontManager:clearText()
 	FontManager:_stopEnterFrame() 															-- turn the animation off.
 end
 
---
---		Set the animation rate - how many updates are a done a second. If this is > fps it will be fps.
---
+--//	Set the animation rate - how many updates are a done a second. If this is > fps it will be fps.
+--//	@frequency [number]		updates per second of the animation rate, defaults to 15 updates per second.
+
 function FontManager:setAnimationRate(frequency) 											-- method to set the animations frequency.
-	self.animationsPerSecond = frequency
+	self.animationsPerSecond = frequency or 15
 end
 
---
---		Get font by name, creating it if required.
---
+
+--//	Get font by name, creating it if required.
+--//	@fontName [string]		Name of font to acquire
+--//	@return [BitmapFont]	Font from cache,or loaded
+
 function FontManager:getFont(fontName) 														-- load a new font.
 	local keyName = fontName:lower() 														-- key used is lower case.
 	if self.fontList[keyName] == nil then 													-- font not known ?
@@ -437,17 +486,16 @@ function FontManager:getFont(fontName) 														-- load a new font.
 	return self.fontList[keyName] 															-- return a font instance.
 end
 
---
---		Add a string (part of BitmapString constructor) so the FontManager knows about the bitmap strings - then it can update and animate them.
---
+--//	Add a string (part of BitmapString constructor) so the FontManager knows about the bitmap strings - then it can update and animate them.
+--//	@bitmapString [BitmapString]	Newly created bitmap string object which the manager kneeds to know about
+
 function FontManager:addStringReference(bitmapString)
 	self.currentStrings[#self.currentStrings+1] = bitmapString 								-- remember the string we are adding.
 	self:_startEnterFrame() 																-- we now need the enter frame tick.
 end
 
---
---		Turn on the eventframe event.
---
+--//	Turn on the eventframe event.
+
 function FontManager:_startEnterFrame() 													-- turn animation on.
 	if not self.eventListenerAttached then
 		Runtime:addEventListener( "enterFrame", self )
@@ -455,9 +503,8 @@ function FontManager:_startEnterFrame() 													-- turn animation on.
 	end
 end
 
---
---		Turn off the event frame event
---
+--//	Turn off the event frame event
+
 function FontManager:_stopEnterFrame() 														-- turn animation off
 	if self.eventListenerAttached then
 		Runtime:removeEventListener("enterFrame",self)
@@ -465,9 +512,9 @@ function FontManager:_stopEnterFrame() 														-- turn animation off
 	end
 end
 
---
---		Handle the enter frame event. Repaints if either (i) it is invalid or (ii) it is animated.
---
+--//	Handle the enter frame event. Repaints if either (i) it is invalid or (ii) it is animated.
+--//	@e [Event Object]	Event data from Corona SDK
+
 function FontManager:enterFrame(e)
 	local currentTime = system.getTimer() 													-- elapsed time in milliseconds
 	if currentTime > self.nextAnimation then 												-- time to animate - we animated at a fixed rate, irrespective of fps.
@@ -480,10 +527,13 @@ function FontManager:enterFrame(e)
 	end
 end
 
+--//	Helper function which calculates curves according to the definition - basically can take a segment of a trigonometrical curve and apply it to 
+--//	whatever you want, it can be repeated over a range, so you could say apply the sin curve from 0-180 5 times and get 5 'humps'
 --
---		Helper function which calculates curves according to the definition - basically can take a segment of a trigonometrical curve and apply it to 
---		whatever you want, it can be repeated over a range, so you could say apply the sin curve from 0-180 5 times and get 5 'humps'
---
+--//	@curveDefinition 	[Modifier Descriptor]	Table containing startAngle,endAngle,curveCount,formula
+--//	@position 			[number]				Position in curve 0 to 100
+--//	@return 			[number]				Value of curve (normally between 0 and 1)
+
 function FontManager:curve(curveDefinition,position)
 	curveDefinition.startAngle = curveDefinition.startAngle or 0 							-- where in the curve the font is, so by default it is 0-90
 	curveDefinition.endAngle = curveDefinition.endAngle or 180
@@ -503,9 +553,10 @@ function FontManager:curve(curveDefinition,position)
 	return result 																			-- this will be 0-1 (usually)
 end
 
---
---		Register one of the standard modifiers
---
+--//	Register one of the standard modifiers
+--//	@name [string]			Name of modifier (case irrelevant)
+--//	@instance [Modifier]	Modifier instance
+
 function FontManager:registerModifier(name,instance)
 	name = name : lower()
 	assert(self.modifierDirectory[name] == nil,"Duplicate modifier")
