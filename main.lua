@@ -13,7 +13,7 @@ display.setStatusBar(display.HiddenStatusBar)
 fm = require("system.fontmanager")																-- get an instance of the font manager.
 
 
-local str = fm.BitmapString:new("retrofont") 													-- create a string using retrofont,32
+local str = fm.BitmapString:new("font2") 														-- create a string using fontw,32
 
 str:moveTo(160,240):setScale(2,2):setFontSize(48) 												-- centre it, double the scale, size 48.
 str:setText("Another demo curve")																-- set the text
@@ -30,16 +30,16 @@ local str3 = fm.BitmapString:new("demofont",30):												-- a third string
 -- str3:setModifier(SimpleCurveModifier:new(0,180,4,2))
 -- str3:setModifier(SimpleCurveScaleModifier:new(0,180,4,2))
 str3:setModifier("wobble")
-
 str3:animate() 																					-- make this one animate.
 
 --
---	A sample function type modifier.
+--	A sample function type modifier, okay , so I chose 360 because it saves me scaling the rotation :)
 --
 function pulser(modifier, cPos, elapsed, index, length)
 	local w = math.floor(elapsed/360) % length + 1 												-- every 360ms change character, creates a number 1 .. length
 	if index == w then  																		-- are we scaling this character
-		modifier.xScale,modifier.yScale = 2,2 													-- yes, double the size
+		local newScale = 1 + (elapsed % 360) / 360 												-- calculate the scale zoom
+		modifier.xScale,modifier.yScale = newScale,newScale 									-- scale it up
 		-- modifier.rotation = elapsed % 360 													-- this looks ridiculous, but it's interesting
 	end
 end
@@ -54,7 +54,7 @@ local t = 8000 																					-- run over 8 seconds.
 --
 --	Remove the comments, the screen clears at the end.
 --
-transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.4,yScale = 0.7,onComplete = function() --[[ FontManager:clearText()--]] end })
+transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.35,yScale = 0.9,onComplete = function() --[[ FontManager:clearText()--]] end })
 
 transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 0.4,yScale = 0.4 })
 

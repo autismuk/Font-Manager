@@ -34,6 +34,7 @@ function BitmapFont:initialise(fontName)
 	self.fontHeight = 0 																	-- actual physical font height, in pixels.
 	self.characterData = {} 																-- mapping of character code to character data sizes.
 	self:loadFont(fontName)																	-- load the font.
+	self:calculateFontHeight() 																-- calculate the font height
 end
 
 --//	Load the font names. Populates self.characterData (code -> character information). This is a structure which contains the character code (code)
@@ -51,21 +52,28 @@ end
 
 function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
 	local options = { frames = {} }															-- this will be the spritesheet 'options' structure.
-	local maxy,miny = 0,0
 	for spriteID,definition in ipairs(self.rawFontInformation) do 							-- scan the raw data and get what we need.
 		if type(definition) == "table" and definition.frame ~= nil then 					-- is it a table with a frame member ?
 			options.frames[spriteID] = definition.frame 									-- copy the frame (x,y,w,h) of the sprite into the options structure.
 			local charData = { width = definition.width, xOffset = definition.xOffset,		-- create the character data table.
-														yOffset = definition.yOffset,spriteID = spriteID }
+														yOffset = definition.yOffset,spriteID = spriteID, frame = definition.frame }
 			self.characterData[definition.code] = charData 									-- and store it in the character data table 
-			miny = math.min(miny,definition.yOffset) 										-- work out the uppermost position and the lowermost.
-			maxy = math.max(maxy,definition.yOffset + definition.frame.height)
 		end
 	end
-	self.fontHeight = maxy - miny + 1														-- calculate the overall height of the font.
 	return options
 end
 
+--//	calculates the font height of the loaded bitmap
+
+function BitmapFont:calculateFontHeight()
+	local maxy,miny = -999,999 																-- start ranges from top and botom
+	for _,def in pairs(self.characterData) do 												-- work through the font characters
+		miny = math.min(miny,def.yOffset) 													-- work out the uppermost position and the lowermost.
+		maxy = math.max(maxy,def.yOffset + def.frame.height)
+	end
+	self.fontHeight = maxy - miny + 1														-- calculate the overall height of the font.
+	print(self.fontHeight)
+end
 --//		Get a display object with the given character in it, centred around the middle - roughly :)
 --//		@characterCode [number] 	character code of the character required
 --//		@return [displayObject]		a display object representing the character.
@@ -737,5 +745,7 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 	-- hand it back to the caller so it can use it.
 
+
+-- Move Fontheight calculation out seperately.
 -- Read FNT files directly ?
 -- Write some demos.
