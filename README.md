@@ -73,5 +73,4 @@ will create it, set its modifier and run it until you clear the screen.
 
 Note: fm, assumes you've done something like fm = require("fontmanager")
 
-
 Paul Robson.

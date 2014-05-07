@@ -1,4 +1,4 @@
--- generated from retroFont.fnt
+-- generated from retrofont.fnt
 return {
 {code=32,frame={x=75,y=475,width=0,height=0},xOffset=0,yOffset=71,width=18},
 {code=33,frame={x=116,y=146,width=20,height=59},xOffset=5,yOffset=13,width=25},
@@ -95,5 +95,5 @@ return {
 {code=124,frame={x=341,y=2,width=13,height=68},xOffset=6,yOffset=9,width=19},
 {code=125,frame={x=101,y=2,width=31,height=76},xOffset=1,yOffset=13,width=31},
 {code=126,frame={x=428,y=431,width=42,height=18},xOffset=7,yOffset=12,width=51},
-"retroFont.png"
+"retrofont.png"
 }

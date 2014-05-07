@@ -12,7 +12,7 @@ display.setStatusBar(display.HiddenStatusBar)
 
 fm = require("system.fontmanager")																-- get an instance of the font manager.
 
-local str = fm.BitmapString:new("font2") 														-- create a string using fontw,32
+local str = fm.BitmapString:new("testfont") 													-- create a string OOP method.
 
 
 str:moveTo(160,240):setScale(2,2):setFontSize(48) 												-- centre it, double the scale, size 48.
@@ -20,7 +20,7 @@ str:setText("Another demo curve")																-- set the text
 str:setModifier("curve")																		-- shape with a curve
 str:animate(4)																					-- animate it - if you comment this out it will curve but not animate
 
-str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !
+str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !  - YAY !!!!
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
 str2:setAnchor(0,0):setScale(-1,1):setDirection(270)											-- and setAnchor() for example, rather than accessing members directly.
 
@@ -39,7 +39,7 @@ str3:animate() 																					-- make this one animate.
 function pulser(modifier, cPos, elapsed, index, length)
 	local w = math.floor(elapsed/360) % length + 1 												-- every 360ms change character, creates a number 1 .. length
 	if index == w then  																		-- are we scaling this character
-		local newScale = 1 + (elapsed % 360) / 360 												-- calculate the scale zoom
+		local newScale = 1 + (elapsed % 360) / 360 												-- calculate the scale zoom - make it 2- rather than 1+, it goes backwards
 		modifier.xScale,modifier.yScale = newScale,newScale 									-- scale it up
 		-- modifier.rotation = elapsed % 360 													-- this looks ridiculous, but it's interesting
 	end
