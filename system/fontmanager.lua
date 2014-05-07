@@ -37,7 +37,7 @@ function BitmapFont:initialise(fontName)
 	self:calculateFontHeight() 																-- calculate the font height
 end
 
---//	Load the font names. Populates self.characterData (code -> character information). This is a structure which contains the character code (code)
+--//%	Load the font names. Populates self.characterData (code -> character information). This is a structure which contains the character code (code)
 --//	the xOffset and yOffset, the width and frame is a sub-table containing x,y,width and height in the image sheet.
 --//	@fontName [string] 	name of font
 
@@ -47,7 +47,7 @@ function BitmapFont:loadFont(fontName)
 											 self:_analyseFontData())
 end
 
---//	Helper function ; converts the lua version of the .FNT file into useable animation structure, calculates the working height of the font.
+--//%	Helper function ; converts the lua version of the .FNT file into useable animation structure, calculates the working height of the font.
 --//	@return [ImageSheet Definition]	Structure compatible with Corona ImageSheet
 
 function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
@@ -63,17 +63,17 @@ function BitmapFont:_analyseFontData()														-- generate SpriteSheet stru
 	return options
 end
 
---//	calculates the font height of the loaded bitmap
+--//%	calculates the font height of the loaded bitmap
 
 function BitmapFont:calculateFontHeight()
-	local maxy,miny = -999,999 																-- start ranges from top and botom
+	local maxy,miny = -999,999 																-- start ranges from top and bottom
 	for _,def in pairs(self.characterData) do 												-- work through the font characters
 		miny = math.min(miny,def.yOffset) 													-- work out the uppermost position and the lowermost.
 		maxy = math.max(maxy,def.yOffset + def.frame.height)
 	end
 	self.fontHeight = maxy - miny + 1														-- calculate the overall height of the font.
-	print(self.fontHeight)
 end
+
 --//		Get a display object with the given character in it, centred around the middle - roughly :)
 --//		@characterCode [number] 	character code of the character required
 --//		@return [displayObject]		a display object representing the character.
@@ -86,7 +86,7 @@ function BitmapFont:getCharacter(characterCode)
 	return obj
 end
 
---//	This moves the display object to position x,y and positions it correctly allowing for the main scale (xScale,yScale) and fontSize (height in pixels)
+--//%	This moves the display object to position x,y and positions it correctly allowing for the main scale (xScale,yScale) and fontSize (height in pixels)
 --//	for actual drawing the scale can be adjusted (pxScale,pyScale are multipliers of the scale) but the character will occupy the same space.
 --//	Finally, characters can be set at an offset from the actual position (xAdjust,yAdjust) to allow for wavy font effects and characters to move.
 --
@@ -188,7 +188,7 @@ function BitmapString:initialise(font,fontSize)
 	FontManager:addStringReference(self) 													-- tell the font manager about the new string.
 end
 
---//		Destructor, not called by lua, but used by clear screen method - tidies up bitmap font and frees all resources, so ClearScreen can be used
+--//%		Destructor, not called by lua, but used by clear screen method - tidies up bitmap font and frees all resources, so ClearScreen can be used
 --//		on scene exit event or similar.
 
 function BitmapString:destroy()
@@ -232,7 +232,7 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 	return self 																			-- permit chaining.
 end
 
---// 	This acquires a display object with the given character. It looks in the 'stock list' - the list of characters used before, if one is 
+--// %	This acquires a display object with the given character. It looks in the 'stock list' - the list of characters used before, if one is 
 --//	found it recycles it. Otherwise it creates a new one.
 --
 --//	@characterCode [number] 	character code to be either recycled from stock, or created.
@@ -253,14 +253,14 @@ function BitmapString:_useOrCreateCharacterObject(characterCode)
 	return newObject
 end
 
---//	Marks the string as invalid and in need of repainting.
+--//%	Marks the string as invalid and in need of repainting.
 --//	Many functions call this if they change something that means the string needs repainting or rescaling.
 
 function BitmapString:reformat() 															-- reposition the string on the screen.
 	self.isValid = false
 end
 
---//	Reposition and Scale the whole string dependent on the settings - called when text is changed, scale changed etc. However, it is not called
+--//%	Reposition and Scale the whole string dependent on the settings - called when text is changed, scale changed etc. However, it is not called
 --//	directly ; those changes mark the string display as invalid and they are checked by the font manager - that way we don't repaint with every
 --//	change. It starts by putting it at 0,0 but then moves it to fit the anchor and position settings.
 --//	We cannot use the ViewGroups version because the effects - scaling and so on - would move it about. The view group positioning is based
@@ -344,7 +344,7 @@ function BitmapString:getView() return self.viewGroup end
 
 function BitmapString:isAnimated() return self.fontAnimated end
 
---//	Check to see if the string is 'invalid' e.g. its current position does not reflect what it should look like
+--//%	Check to see if the string is 'invalid' e.g. its current position does not reflect what it should look like
 --//	text changed, position changed, scaled etc.
 --//	@return [boolean] true if string needs reorganising
 
@@ -503,7 +503,7 @@ function FontManager:getFont(fontName) 														-- load a new font.
 	return self.fontList[keyName] 															-- return a font instance.
 end
 
---//	Add a string (part of BitmapString constructor) so the FontManager knows about the bitmap strings - then it can update and animate them.
+--//%	Add a string (part of BitmapString constructor) so the FontManager knows about the bitmap strings - then it can update and animate them.
 --//	@bitmapString [BitmapString]	Newly created bitmap string object which the manager kneeds to know about
 
 function FontManager:addStringReference(bitmapString)
@@ -511,7 +511,7 @@ function FontManager:addStringReference(bitmapString)
 	self:_startEnterFrame() 																-- we now need the enter frame tick.
 end
 
---//	Turn on the eventframe event.
+--//%	Turn on the eventframe event.
 
 function FontManager:_startEnterFrame() 													-- turn animation on.
 	if not self.eventListenerAttached then
@@ -520,7 +520,7 @@ function FontManager:_startEnterFrame() 													-- turn animation on.
 	end
 end
 
---//	Turn off the event frame event
+--//%	Turn off the event frame event
 
 function FontManager:_stopEnterFrame() 														-- turn animation off
 	if self.eventListenerAttached then
@@ -529,7 +529,7 @@ function FontManager:_stopEnterFrame() 														-- turn animation off
 	end
 end
 
---//	Handle the enter frame event. Repaints if either (i) it is invalid or (ii) it is animated.
+--//%	Handle the enter frame event. Repaints if either (i) it is invalid or (ii) it is animated.
 --//	@e [Event Object]	Event data from Corona SDK
 
 function FontManager:enterFrame(e)
@@ -570,7 +570,7 @@ function FontManager:curve(curveDefinition,position)
 	return result 																			-- this will be 0-1 (usually)
 end
 
---//	Register one of the standard modifiers
+--//%	Register one of the standard modifiers
 --//	@name [string]			Name of modifier (case irrelevant)
 --//	@instance [Modifier]	Modifier instance
 
@@ -618,7 +618,7 @@ local WobbleModifier = Modifier:new()					 									-- Wobble Modifier makes it,
 
 function WobbleModifier:initialise(violence) self.violence = violence or 1 end 
 
---//	Make the font wobble by changing values just a little bit
+--// %	Make the font wobble by changing values just a little bit
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
 --//	@elapsed [number] ms elapsed since creation of bitmap string
@@ -637,7 +637,7 @@ end
 
 local SimpleCurveModifier = Modifier:new()													-- curvepos curves the text positionally vertically
 
---//	Initialise the curve modifier
+--// 	Initialise the curve modifier
 --//	@start [number] 	start angle of cuve
 --//	@enda [number]		end angle of curve
 --//	@scale [number]     degree to which it affects the bitmapstring
@@ -649,7 +649,7 @@ function SimpleCurveModifier:initialise(start,enda,scale,count)
 	self.scale = scale or 1
 end
 
---//	Make the modifications needed to change the vertical position
+--// %	Make the modifications needed to change the vertical position
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
 --//	@elapsed [number] ms elapsed since creation of bitmap string
@@ -664,7 +664,7 @@ end
 
 local SimpleCurveScaleModifier = SimpleCurveModifier:new()						 			-- curvepos scales the text vertically rather than the position.
 
---//	Make the modifications needed to change the vertical scale
+--// %	Make the modifications needed to change the vertical scale
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
 --//	@elapsed [number] ms elapsed since creation of bitmap string
@@ -675,11 +675,11 @@ function SimpleCurveScaleModifier:modify(modifier,cPos,elapsed,index,length)
 	modifier.yScale = FontManager:curve(self.curveDesc,cPos)*self.scale+1 					-- so we just override the bit that applies it.
 end
 
---//	Modifier which turns alternate characters 15 degrees in different directions
+--// 	Modifier which turns alternate characters 15 degrees in different directions
 
 local JaggedModifier = Modifier:new()														-- jagged alternates left and right rotation.
 
---//	Make the modifications needed to look jagged
+--// %	Make the modifications needed to look jagged
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
 --//	@elapsed [number] ms elapsed since creation of bitmap string
@@ -701,7 +701,7 @@ function ZoomOutModifier:initialise(zoomTime)												-- use transition.to to
 	self.zoomTime = zoomTime or 3000 				
 end
 
---//	Make the modifications to cause the zoom
+--// %	Make the modifications to cause the zoom
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
 --//	@elapsed [number] ms elapsed since creation of bitmap string
@@ -717,7 +717,7 @@ end
 
 local ZoomInModifier = ZoomOutModifier:new() 												-- Zoom in, as zoom out but the other way round
 
---//	Make the modifications to cause the zoom.
+--// %	Make the modifications to cause the zoom.
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
 --//	@elapsed [number] ms elapsed since creation of bitmap string
@@ -745,7 +745,7 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 	-- hand it back to the caller so it can use it.
 
-
--- Move Fontheight calculation out seperately.
+-- Modify luadoc so it hides functions. (prefix comment with %)
+-- Update the files and documents.
 -- Read FNT files directly ?
 -- Write some demos.
