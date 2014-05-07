@@ -18,8 +18,7 @@ local FontManager = Base:new() 																-- Fwd reference FontManager - it
 																							-- BitmapFont and BitmapString classes.
 
 --- ************************************************************************************************************************************************************************
---// 	This class encapsulates a bitmap font, producing characters 'on demand'. This version relies on the conversion from .FNT to .LUA but I will extend it soon
---//	so it works with .FNT files.
+--// 						This class encapsulates a bitmap font, producing characters 'on demand'. (Note, no longer requires a .lua file)
 --- ************************************************************************************************************************************************************************
 
 local BitmapFont = Base:new()
@@ -37,30 +36,45 @@ function BitmapFont:initialise(fontName)
 	self:calculateFontHeight() 																-- calculate the font height
 end
 
---//%	Load the font names. Populates self.characterData (code -> character information). This is a structure which contains the character code (code)
---//	the xOffset and yOffset, the width and frame is a sub-table containing x,y,width and height in the image sheet.
---//	@fontName [string] 	name of font
+--//%	Load the font from the .fnt definition - the stub is provided (e.g. 'fred' loads fonts/fred.fnt). Parses the .fnt file to get the character
+--//	information, and the image file name.
 
 function BitmapFont:loadFont(fontName)
-	self.rawFontInformation = require(BitmapFont.fontDirectory .. "." .. fontName) 			-- load the raw font information as a lua file.
-	self.imageSheet = graphics.newImageSheet("fonts/" .. fontName .. ".png", 				-- create an image sheet from analysing the font data.
-											 self:_analyseFontData())
-end
+	local fontFile = BitmapFont.fontDirectory .. "/" .. fontName .. ".fnt" 					-- this is the directory the font is in.
+	local source = io.lines(system.pathForFile(fontFile,system.ResourceDirectory)) 			-- read the lines from this file.
+	local options = { frames = {} }															-- this is going to be the options read in (see newImageSheet() function)
+	local spriteCount = 1 																	-- next available 'frame'
+	local imageFile = nil 																	-- this is the sprite image file which will be read in eventually.
 
---//%	Helper function ; converts the lua version of the .FNT file into useable animation structure, calculates the working height of the font.
---//	@return [ImageSheet Definition]	Structure compatible with Corona ImageSheet
+	for l in source do 
+		local page,fileName = l:match('^%s*page%s*id%s*=%s*(%d+)%s*file%s*=%s*%"(.*)%"$') 	-- is it the page line, which tells us the file name ?
+		if page ~= nil then 																-- if so , use it for the file name.
+			assert(page == "0","We do not support font files with page > 0. If you have one contact the author")
+			imageFile = BitmapFont.fontDirectory .. "/" .. fileName 						-- not currently supporting multi page files, are there any ?
+		end
+		if l:match("^%s*char%sid") ~= nil then 												-- found a "char id" ? (not chars)
+																							-- rip out the x,y,width,height bit that says where the text is.
+			local x,y,w,h = l:match("x%s*=%s*(%d+)%s*y%s*=%s*(%d+)%s*width%s*=%s*(%d+)%s*height%s*=%s*(%d+)%s*")
+			assert(h ~= nil,"Failure to read line in .fnt file, contact author") 			-- check this parsed out okay.
+			local optionsEntry = { x = x*1, y = y*1, width = w*1, height = h*1 } 			-- create a suitable table for use by the imagesheet code.
+			options.frames[spriteCount] = optionsEntry 										-- store in the options structure
 
-function BitmapFont:_analyseFontData()														-- generate SpriteSheet structure and calculate font actual height.
-	local options = { frames = {} }															-- this will be the spritesheet 'options' structure.
-	for spriteID,definition in ipairs(self.rawFontInformation) do 							-- scan the raw data and get what we need.
-		if type(definition) == "table" and definition.frame ~= nil then 					-- is it a table with a frame member ?
-			options.frames[spriteID] = definition.frame 									-- copy the frame (x,y,w,h) of the sprite into the options structure.
-			local charData = { width = definition.width, xOffset = definition.xOffset,		-- create the character data table.
-														yOffset = definition.yOffset,spriteID = spriteID, frame = definition.frame }
-			self.characterData[definition.code] = charData 									-- and store it in the character data table 
+																							-- now rip out id, xoffset and yoffset
+			local charID,xOffset,yOffset,xAdvance = l:match("id%s*=%s*(%d+).*xoffset%s*=%s*([%-%d]+).*yoffset%s*=%s*([%-%d]+).*xadvance%s*=%s*([%-%d]+)")
+			assert(xAdvance ~= nil,"Failure to read line in .fnt file, contact author")
+			local charInfo = { width = xAdvance*1, xOffset = xOffset*1, yOffset = yOffset*1}-- copy this information into the info structure
+			charInfo.spriteID = spriteCount 												-- tell it which sprite this character is
+			charInfo.frame = optionsEntry 													-- and store a reference to the sprite rectangle in the image sheet
+
+			assert(self.characterData[charID] == nil,"Duplicate character code, contact author")
+			self.characterData[charID*1] = charInfo
+
+			spriteCount = spriteCount + 1 													-- bump the number of sprites
 		end
 	end
-	return options
+	assert(imageFile ~= nil,"No image file in fnt file, contact the author")				-- didn't find a 'page' entry i.e. no file name
+	self.imageSheet = graphics.newImageSheet(imageFile,options) 							-- load in the image sheet
+	assert(self.imageSheet ~= nil,"Image file " .. imageFile .. "failed to load for fnt file ".. fontFile)	
 end
 
 --//%	calculates the font height of the loaded bitmap
@@ -785,5 +799,4 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
--- Read FNT files directly ?
 -- Write some demos.
