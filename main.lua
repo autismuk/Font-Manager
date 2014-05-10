@@ -66,7 +66,7 @@ local t = 8000 																					-- run over 8 seconds.
 --
 --	Remove the comments, the screen clears at the end.
 --
-transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.35,yScale = 0.9,
+transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.35,yScale = 0.35,
 	onComplete = function()  
 		fm.FontManager:clearText() 
 	end })
