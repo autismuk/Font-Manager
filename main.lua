@@ -17,8 +17,8 @@ local str = fm.BitmapString:new("testfont") 													-- create a string OOP 
 
 str:moveTo(160,240):setScale(2,2):setFontSize(48) 												-- centre it, double the scale, size 48.
 str:setText("Another demo curve")																-- set the text
-str:setModifier("curve")																		-- shape with a curve
-str:animate(4)																					-- animate it - if you comment this out it will curve but not animate
+str:setModifier("iscale")																		-- shape with a curve
+--str:animate(4)																					-- animate it - if you comment this out it will curve but not animate
 
 str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !  - YAY !!!!
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
@@ -48,6 +48,17 @@ end
 local str4 = display.newBitmapText("pulse",160,240,"retrofont",80) 								-- create a new string
 str4:setModifier(pulser):animate() 																-- make it use the above modifier, and animate it.
 
+local demoTarget = {}
+function demoTarget.tap(event) print("tap",event) end
+
+str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you tap it.
+-- str4:removeEventListener("tap")
+
+
+-- str4:remove()
+-- for _,n in pairs(str4) do print(_,n) end
+
+
 local t = 8000 																					-- run over 8 seconds.
 
 --
@@ -55,7 +66,10 @@ local t = 8000 																					-- run over 8 seconds.
 --
 --	Remove the comments, the screen clears at the end.
 --
-transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.35,yScale = 0.9,onComplete = function()  --[[ fm.FontManager:clearText() --]] end })
+transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.35,yScale = 0.9,
+	onComplete = function()  
+		fm.FontManager:clearText() 
+	end })
 
 transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 0.4,yScale = 0.4 })
 

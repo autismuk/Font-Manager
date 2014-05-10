@@ -2,14 +2,13 @@
 <a name="BitmapFont"></a>
 <hr><h1>BitmapFont</h1>
 <p><h3>Extends Base</h3></p>
-<p>This class encapsulates a bitmap font, producing characters 'on demand'. This version relies on the conversion from .FNT to .LUA but I will extend it soon so it works with .FNT files.</p>
+<p>This class encapsulates a bitmap font, producing characters 'on demand'. (Note, no longer requires a .lua file)</p>
 <p>Methods : <a href="#BitmapFont_(constructor)"/>(constructor)</a>,<a href="#BitmapFont_getCharacter"/>getCharacter</a>,<a href="#BitmapFont_getCharacterHeight"/>getCharacterHeight</a>,<a href="#BitmapFont_getCharacterWidth"/>getCharacterWidth</a>,<a href="#BitmapFont_mapCharacterToFont"/>mapCharacterToFont</a></p><hr><a name="BitmapFont_(constructor)"></a>
 <h2>(constructor)(fontName)</h2>
 <table>
 <tr><td>fontName</td><td>string</td><td>name of font (case is sensitive, so I advise use of lower case only)</td></tr>
 </table>
 <p>The Bitmap Font constructor. This reads in the font data</p>
-<a name="BitmapFont__analyseFontData"></a>
 <a name="BitmapFont_calculateFontHeight"></a>
 <a name="BitmapFont_getCharacter"></a>
 <h2>getCharacter(characterCode)</h2>
@@ -49,14 +48,22 @@
 <hr><h1>BitmapString</h1>
 <p><h3>Extends Base</h3></p>
 <p>It uses a view group object for basic positioning. Scaling and rotating, it depends. If you create a string, you can scale it and rotate it with transitions, just as you do with any object. But if you want a string with animated effects, you cannot use transitions as well. The reason for this is if you 'animate' xScale,yScale with transition.to its scaling effects on the object will be reset by the animation - basically they argue about who does the scaling. The xOffset,yOffset is additional to the actual position, rotation probably won't work either (not sure ?)</p>
-<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_isAnimated"/>isAnimated</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a></p><hr><a name="BitmapString_(constructor)"></a>
+<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_addEventListener"/>addEventListener</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_isAnimated"/>isAnimated</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_remove"/>remove</a>,<a href="#BitmapString_removeEventListener"/>removeEventListener</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a></p><hr><a name="BitmapString_(constructor)"></a>
 <h2>(constructor)(font,fontSize)</h2>
 <table>
 <tr><td>font</td><td>String/Reference</td><td>Font to use to create string</td></tr>
 <tr><td>fontSize</td><td>number</td><td>Height of font in pixels, default is 32 if ommitted.</td></tr>
 </table>
 <p>Constructor. Font can be a reference or a string (in this case the FontManager looks it up), font Size defaults to 32 pixels. Creates an empty Bitmap String.</p>
+<a name="BitmapString__destroy"></a>
 <a name="BitmapString__useOrCreateCharacterObject"></a>
+<a name="BitmapString_addEventListener"></a>
+<h2>addEventListener(eventName,handler)</h2>
+<table>
+<tr><td>eventName</td><td>string</td><td>name of event e.g. tap, touch</td></tr>
+<tr><td>handler</td><td>table</td><td>event listener</td></tr>
+</table>
+<p>Add an event listener to the view. This is removed automatically on clear.</p>
 <a name="BitmapString_animate"></a>
 <h2>animate(speedScalar)</h2>
 <table>
@@ -64,7 +71,6 @@
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Turns animation on, with an optional speed scalar. This causes the 'cPos' in modifiers to change with time allowing the various animation effects</p>
-<a name="BitmapString_destroy"></a>
 <a name="BitmapString_getView"></a>
 <h2>getView()</h2>
 <table>
@@ -87,6 +93,15 @@
 </table>
 <p>Move the view group - i.e. the font</p>
 <a name="BitmapString_reformat"></a>
+<a name="BitmapString_remove"></a>
+<h2>remove()</h2>
+<p>Remove the current string from the screen and remove the reference from the list.</p>
+<a name="BitmapString_removeEventListener"></a>
+<h2>removeEventListener(eventName)</h2>
+<table>
+<tr><td>eventName</td><td>string</td><td>name of event e.g. tap</td></tr>
+</table>
+<p>Remove an event listener.</p>
 <a name="BitmapString_repositionAndScale"></a>
 <a name="BitmapString_setAnchor"></a>
 <h2>setAnchor(anchorX,anchorY)</h2>
@@ -184,6 +199,7 @@
 </table>
 <p>Access one of the standard modifiers</p>
 <a name="FontManager_registerModifier"></a>
+<a name="FontManager_removeStringReference"></a>
 <a name="FontManager_setAnimationRate"></a>
 <h2>setAnimationRate(frequency)</h2>
 <table>
@@ -218,6 +234,16 @@
 <p><h3>Extends SimpleCurveModifier</h3></p>
 <p>Modifier which changes the vertical scale on a curve</p>
 <p>Methods : <a href="#SimpleCurveModifier_(constructor)"/><i>(constructor)</i></a></p><hr><a name="SimpleCurveScaleModifier_modify"></a>
+<a name="SimpleInverseCurveModifier"></a>
+<hr><h1>SimpleInverseCurveModifier</h1>
+<p><h3>Extends SimpleCurveModifier</h3></p>
+<p>Extend simple Curve scale Modifier so it is inverted.</p>
+<p>Methods : <a href="#SimpleCurveModifier_(constructor)"/><i>(constructor)</i></a></p><hr><a name="SimpleInverseCurveModifier_modify"></a>
+<a name="SimpleInverseCurveScaleModifier"></a>
+<hr><h1>SimpleInverseCurveScaleModifier</h1>
+<p><h3>Extends SimpleCurveScaleModifier</h3></p>
+<p>Scale but shaped the other way.</p>
+<p>Methods : <a href="#SimpleCurveModifier_(constructor)"/><i>(constructor)</i></a></p><hr><a name="SimpleInverseCurveScaleModifier_modify"></a>
 <a name="WobbleModifier"></a>
 <hr><h1>WobbleModifier</h1>
 <p><h3>Extends Modifier</h3></p>

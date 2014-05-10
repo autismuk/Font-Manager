@@ -71,6 +71,12 @@ You can chain things if you want and not bother with references
 
 will create it, set its modifier and run it until you clear the screen.
 
+You can add an event listener to the view, but there is a method particular to this object
+
+	str4:addEventListener("tap",target)
+
+which will call target.<event> and when you call the clearText() method it will automatically remove it for you.
+
 Note: fm, assumes you've done something like fm = require("fontmanager")
 
 Paul Robson.
