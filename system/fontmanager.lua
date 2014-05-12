@@ -258,6 +258,9 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 	end
 	self.oldData = nil 																		-- clear references to old objects.
 	self:reformat() 																		-- reformat the string.
+	if self.text == "" then 																-- if clearing, check everything is clear.
+		assert(self.usageCount == 0,"usage count wrong, some objects have leaked")
+	end
 	return self 																			-- permit chaining.
 end
 
@@ -316,18 +319,25 @@ end
 
 function BitmapString:repositionAndScale()
 	self.isValid = true 																	-- it will be valid at this point.
-	self.minx,self.miny,self.maxx,self.maxy = 0,0,0,0
-	self:paintandFormatLine(0,0)
-	self:postProcessAnchorFix()
+	self.minx,self.miny,self.maxx,self.maxy = 0,0,0,0 										-- initialise the tracked drawing rectangle
+	self:paintandFormatLine(self.charData,0,0) 												-- repaint that line.
+	self:postProcessAnchorFix()																-- adjust positioning for given anchor.
 end
 
-function BitmapString:paintandFormatLine(nextX,nextY)
-	if self.charData.length == 0 then return end 											-- if length is zero, we don't have to do anything.
+--//	Paint and format the given line.
+--//	@lineData	[table]			table consisting of array of { code, displayObject } with a length property
+--//	@nextX 		[number]		where we start drawing from x
+--//	@nextY 		[number]		where we start drawing from y
+--//	@spacing 	[number]		extra spacing to format the text correctly.
+
+function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing)
+	if lineData.length == 0 then return end 												-- if length is zero, we don't have to do anything.
+	spacing = spacing or 0 																	-- spacing is zero if not provided
 	local height = self.font:getCharacterHeight(32,self.fontSize,self.yScale) 				-- all characters are the same height, or in the same box.
 	local elapsed = system.getTimer() - self.createTime 									-- elapsed time since creation.
 
-	for i = 1,self.charData.length do 																
-		local width = self.font:getCharacterWidth(self.charData[i].code,					-- calculate the width of the character.
+	for i = 1,lineData.length do 																
+		local width = self.font:getCharacterWidth(lineData[i].code,							-- calculate the width of the character.
 																self.fontSize,self.xScale)
 		if i == 1 then 																		-- initialise bounding box to first char first time.
 			self.maxx = math.max(self.maxx,nextX+width)
@@ -337,20 +347,20 @@ function BitmapString:paintandFormatLine(nextX,nextY)
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0 }	-- default modifier
 
 		if self.modifier ~= nil then 														-- modifier provided
-			local cPos = math.round(100 * (i - 1) / (self.charData.length - 1)) 			-- position in string 0->100
+			local cPos = math.round(100 * (i - 1) / (lineData.length - 1)) 					-- position in string 0->100
 			if self.fontAnimated then 														-- if animated then advance that position by time.
 				cPos = math.round(cPos + elapsed / 100 * self.animationSpeedScalar) % 100 
 			end
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
-				self.modifier:modify(modifier,cPos,elapsed,i,self.charData.length)
+				self.modifier:modify(modifier,cPos,elapsed,i,lineData.length)
 			else 																			-- otherwise, call it as a function.
-				self.modifier(modifier,cPos,elapsed,i,self.charData.length)
+				self.modifier(modifier,cPos,elapsed,i,lineData.length)
 			end
 			if math.abs(modifier.xScale) < 0.001 then modifier.xScale = 0.001 end 			-- very low value scaling does not work, zero causes an error
 			if math.abs(modifier.yScale) < 0.001 then modifier.yScale = 0.001 end
 		end
 
-		self.font:moveScaleCharacter(self.charData[i].displayObject, 						-- call moveScaleCharacter with modifier.
+		self.font:moveScaleCharacter(lineData[i].displayObject, 							-- call moveScaleCharacter with modifier.
 												 self.fontSize,
 												 nextX,
 												 nextY,
@@ -359,12 +369,12 @@ function BitmapString:paintandFormatLine(nextX,nextY)
 									 			 modifier.xOffset,modifier.yOffset,
 									 			 modifier.rotation)
 		if self.direction == 0 then 														-- advance to next position using character width, updating the bounding box
-			nextX = nextX + width + self.spacingAdjust * math.abs(self.xScale) 			
+			nextX = nextX + width + (self.spacingAdjust+spacing) * math.abs(self.xScale) 			
 			self.maxx = math.max(self.maxx,nextX)
 		elseif self.direction == 180 then  													-- when going left, we need the width of the *next* character.
-			if i < self.charData.length then
-				local pWidth = self.font:getCharacterWidth(self.charData[i+1].code,self.fontSize,self.xScale)
-				nextX = nextX - pWidth - self.spacingAdjust * math.abs(self.xScale) 	
+			if i < lineData.length then
+				local pWidth = self.font:getCharacterWidth(lineData[i+1].code,self.fontSize,self.xScale)
+				nextX = nextX - pWidth - (self.spacingAdjust+spacing) * math.abs(self.xScale) 	
 				self.minx = math.min(self.minx,nextX)
 			end
 		elseif self.direction == 270 then  													-- up and down tend to be highly spaced, because the kerning stuff is not
@@ -377,6 +387,8 @@ function BitmapString:paintandFormatLine(nextX,nextY)
 		end
 	end
 end
+
+--//	Fix up the positioning to allow for the drawing rectangle (pre-modifier) and the anchors.
 
 function BitmapString:postProcessAnchorFix()
 	local xOffset = -self.minx-(self.maxx-self.minx) * self.anchorX 						-- we want it to be centred around the anchor point, we cannot use anchorChildren
@@ -883,8 +895,7 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
+-- if direction not 0 or 180 then forbid newlines (replace them)
+-- word tracking
+-- line tracking
 
--- check when setting string to "" the usageCount is zero.
--- calculate positioning of string and width ?
--- keep maxx,minx,maxy,miny in structure, and post process it.
--- change repositionAndScale to work with lists, individual characters
