@@ -47,6 +47,7 @@ end
 
 local str4 = display.newBitmapText("pulse",160,240,"retrofont",80) 								-- create a new string
 str4:setModifier(pulser):animate() 																-- make it use the above modifier, and animate it.
+-- str4:setDirection(180)
 
 local demoTarget = {}
 function demoTarget.tap(event) print("tap",event) end
@@ -68,7 +69,7 @@ local t = 8000 																					-- run over 8 seconds.
 --
 transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.35,yScale = 0.35,
 	onComplete = function()  
-		fm.FontManager:clearText() 
+		-- fm.FontManager:clearText() 
 	end })
 
 transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 0.4,yScale = 0.4 })
@@ -76,3 +77,8 @@ transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 
 transition.to(str3:getView(), { time = t,rotation = 360 })
 
 transition.to(str4:getView(), { time = t, xScale = 2,yScale = 2})
+
+-- TODO: Non horizontal directions not multiline.
+-- TODO: Multi line characters.
+-- TODO: Process out positioning
+-- TODO: Odd characters.

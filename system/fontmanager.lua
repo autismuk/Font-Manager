@@ -186,9 +186,7 @@ function BitmapString:initialise(font,fontSize)
 	self.font = font 																		-- Save reference to a bitmap font.
 	self.fontSize = fontSize or 32 															-- Save reference to the font size.
 	self.text = "" 																			-- text as string.
-	self.length = 0 																		-- number of characters.
-	self.characterCodes = {} 																-- Character codes of string, fed through mapper.
-	self.displayObjects = {} 																-- Corresponding display objects
+	self.charData = { length = 0 } 															-- character data array.
 	self.direction = 0 																		-- text direction, in degrees (right angles only)
 	self.xScale, self.yScale = 1,1 															-- text standard scale.
 	self.spacingAdjust = 0 																	-- spacing adjustment.
@@ -239,26 +237,26 @@ end
 function BitmapString:setText(text) 														-- set the text, adjust display objects to suit, reusing where possible.
 	if text == self.text then return self end 												-- if no changes, then return immediately.
 	self.text = text 																		-- save the text
-	self.stockList = self.characterCodes 													-- put all the current objects where we can reuse them if we can.
-	self.stockObjects = self.displayObjects 
-	self.characterCodes = {} 																-- and blank the current list. 
-	self.displayObjects = {}
+	self.oldData = self.charData 															-- save the old character record.
+	self.charData = { length = 0 } 															-- create a new empty character record.
+
 	for i = 1,#text do 																		-- work through every character.
 		local code = text:sub(i,i):byte(1)													-- convert to ascii code
 		code = self.font:mapCharacterToFont(code) 											-- map to an available font character.
-		self.characterCodes[i] = code 														-- save the code.
-		self.displayObjects[i] = self:_useOrCreateCharacterObject(code) 					-- create and store display objects
+		local charRecord = { code = code }													-- save the character code
+		charRecord.displayObject = self:_useOrCreateCharacterObject(code) 					-- create and store display objects
+		self.charData.length = self.charData.length + 1
+		self.charData[self.charData.length] = charRecord 									-- add to the list of characters we have.
 	end
-	self.length = #text 																	-- store the length of the string.
-	for _,obj in pairs(self.stockObjects) do 												-- remove any objects left in the stock.
-		if obj ~= nil then 
-			obj:removeSelf() 																-- remove it from everything.
+
+	for i = 1,self.oldData.length do 														-- remove any objects left in the stock.
+		local obj = self.oldData[i]
+		if obj.displayObject ~= nil then  													-- if it hasn't been used up.
+			obj.displayObject:removeSelf() 													-- remove it from everything.
 			self.usageCount = self.usageCount - 1 											-- reduce the count, so it matches the number of live objects
 		end
 	end
-	self.stockList = nil  																	-- erase the outstanding stock list.
-	self.stockObjects = nil 																-- so there are no outstanding references.
-	assert(self.usageCount == self.length,"Bitmap Object leak")
+	self.oldData = nil 																		-- clear references to old objects.
 	self:reformat() 																		-- reformat the string.
 	return self 																			-- permit chaining.
 end
@@ -270,11 +268,11 @@ end
 --//	@return [display Object]	Corona Display Object representing the character.
 
 function BitmapString:_useOrCreateCharacterObject(characterCode)
-	for i = 1,#self.stockList do 															-- check through the stock list.
-		if self.stockList[i] == characterCode then 											-- found a matching one.
-			local obj = self.stockObjects[i] 												-- keep a reference to the stock object
-			self.stockList[i] = -1 															-- set the character code to an illegal one, won't match again.
-			self.stockObjects[i] = nil 														-- clear the reference to the stock object
+	for i = 1,self.oldData.length do 														-- check through the stock list.
+		if self.oldData[i].code == characterCode then 										-- found a matching one.
+			local obj = self.oldData[i].displayObject 										-- keep a reference to the stock object
+			self.oldData[i].code = -1 														-- set the character code to an illegal one, won't match again.
+			self.oldData[i].displayObject = nil 											-- clear the reference to the stock object
 			return obj 																		-- return the reused object.
 		end
 	end
@@ -318,36 +316,41 @@ end
 
 function BitmapString:repositionAndScale()
 	self.isValid = true 																	-- it will be valid at this point.
-	if self.length == 0 then return end 													-- if length is zero, we don't have to do anything.
-	local nextX,nextY = 0,0		 															-- where the next character goes.
+	self.minx,self.miny,self.maxx,self.maxy = 0,0,0,0
+	self:paintandFormatLine(0,0)
+	self:postProcessAnchorFix()
+end
+
+function BitmapString:paintandFormatLine(nextX,nextY)
+	if self.charData.length == 0 then return end 											-- if length is zero, we don't have to do anything.
 	local height = self.font:getCharacterHeight(32,self.fontSize,self.yScale) 				-- all characters are the same height, or in the same box.
-	local maxx,maxy,minx,miny 																-- bounding box of the unmodified character.
 	local elapsed = system.getTimer() - self.createTime 									-- elapsed time since creation.
-	local minScale = 0.6
 
-	for i = 1,self.length do 																
-		local width = self.font:getCharacterWidth(self.characterCodes[i],					-- calculate the width of the character.
+	for i = 1,self.charData.length do 																
+		local width = self.font:getCharacterWidth(self.charData[i].code,					-- calculate the width of the character.
 																self.fontSize,self.xScale)
-
-		if i == 1 then minx,miny,maxx,maxy = 0,0,width,height end 							-- initialise bounding box to first char first time.
+		if i == 1 then 																		-- initialise bounding box to first char first time.
+			self.maxx = math.max(self.maxx,nextX+width)
+			self.maxy = math.max(self.maxy,nextY+height)
+		end 				
 
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0 }	-- default modifier
 
 		if self.modifier ~= nil then 														-- modifier provided
-			local cPos = math.round(100 * (i - 1) / (self.length - 1)) 						-- position in string 0->100
+			local cPos = math.round(100 * (i - 1) / (self.charData.length - 1)) 			-- position in string 0->100
 			if self.fontAnimated then 														-- if animated then advance that position by time.
 				cPos = math.round(cPos + elapsed / 100 * self.animationSpeedScalar) % 100 
 			end
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
-				self.modifier:modify(modifier,cPos,elapsed,i,self.length)
+				self.modifier:modify(modifier,cPos,elapsed,i,self.charData.length)
 			else 																			-- otherwise, call it as a function.
-				self.modifier(modifier,cPos,elapsed,i,self.length)
+				self.modifier(modifier,cPos,elapsed,i,self.charData.length)
 			end
 			if math.abs(modifier.xScale) < 0.001 then modifier.xScale = 0.001 end 			-- very low value scaling does not work, zero causes an error
 			if math.abs(modifier.yScale) < 0.001 then modifier.yScale = 0.001 end
 		end
 
-		self.font:moveScaleCharacter(self.displayObjects[i], 								-- call moveScaleCharacter with modifier.
+		self.font:moveScaleCharacter(self.charData[i].displayObject, 						-- call moveScaleCharacter with modifier.
 												 self.fontSize,
 												 nextX,
 												 nextY,
@@ -355,32 +358,34 @@ function BitmapString:repositionAndScale()
 									 			 modifier.xScale,modifier.yScale,
 									 			 modifier.xOffset,modifier.yOffset,
 									 			 modifier.rotation)
-
 		if self.direction == 0 then 														-- advance to next position using character width, updating the bounding box
 			nextX = nextX + width + self.spacingAdjust * math.abs(self.xScale) 			
-			maxx = nextX
+			self.maxx = math.max(self.maxx,nextX)
 		elseif self.direction == 180 then  													-- when going left, we need the width of the *next* character.
-			if i < self.length then
-				local pWidth = self.font:getCharacterWidth(self.characterCodes[i+1],self.fontSize,self.xScale)
+			if i < self.charData.length then
+				local pWidth = self.font:getCharacterWidth(self.charData[i+1].code,self.fontSize,self.xScale)
 				nextX = nextX - pWidth - self.spacingAdjust * math.abs(self.xScale) 	
-				minx = nextX
+				self.minx = math.min(self.minx,nextX)
 			end
 		elseif self.direction == 270 then  													-- up and down tend to be highly spaced, because the kerning stuff is not
 			nextY = nextY + height + self.spacingAdjust * math.abs(self.xScale) 			-- designed for this. You can fix it with setSpacing()
-			maxy = nextY
+			self.maxy = math.max(self.maxy,nextY)
 		else
-			miny = nextY
+			self.miny = math.min(self.miny,nextY)
 			nextY = nextY - height - self.spacingAdjust * math.abs(self.xScale) 			
 
 		end
 	end
+end
 
-	local xOffset = -minx-(maxx-minx) * self.anchorX 										-- we want it to be centred around the anchor point, we cannot use anchorChildren
-	local yOffset = -miny-(maxy-miny) * self.anchorY 										-- because of the animated modifications, so we calculate it
+function BitmapString:postProcessAnchorFix()
+	local xOffset = -self.minx-(self.maxx-self.minx) * self.anchorX 						-- we want it to be centred around the anchor point, we cannot use anchorChildren
+	local yOffset = -self.miny-(self.maxy-self.miny) * self.anchorY 						-- because of the animated modifications, so we calculate it
 
-	for i = 1,self.length do 																-- and move the objects appropriately.
-		self.displayObjects[i].x = self.displayObjects[i].x + xOffset
-		self.displayObjects[i].y = self.displayObjects[i].y + yOffset
+	for i = 1,self.charData.length do 														-- and move the objects appropriately.
+		local obj = self.charData[i].displayObject
+		obj.x = obj.x + xOffset
+		obj.y = obj.y + yOffset
 	end
 end
 
@@ -878,4 +883,8 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
--- TODO: Add transitioning to demo ?
+
+-- check when setting string to "" the usageCount is zero.
+-- calculate positioning of string and width ?
+-- keep maxx,minx,maxy,miny in structure, and post process it.
+-- change repositionAndScale to work with lists, individual characters
