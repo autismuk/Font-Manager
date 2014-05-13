@@ -17,19 +17,19 @@ local msg = "Another line\rwith\ra curve."
 
 display.newText(msg,160,460,native.systemFont,24)												-- display text so we can see extended characters.
 
-local str = fm.BitmapString:new("font2") 													-- create a string OOP method.
+local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
 str:moveTo(160,240):setScale(2,2):setFontSize(50) 												-- centre it, double the scale, size 48.
 str:setText(msg)																				-- set the text
 str:setAnchor(0.5,0)
 str:setModifier("iscale")																		-- shape with a curve
-str:setVerticalSpacing(0.6)
+str:setVerticalSpacing(0.5)
 str:animate(4)																					-- animate it - if you comment this out it will curve but not animate
 
 str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !  - YAY !!!!
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
 str2:setAnchor(0,0):setScale(-1,1):setDirection(270)											-- and setAnchor() for example, rather than accessing members directly.
 
-local str3 = fm.BitmapString:new("demofont",30):												-- a third string, created using the constructor.
+local str3 = fm.BitmapString:new("font2",28):												-- a third string, created using the constructor.
 								moveTo(160,400):setText("Wobbly text"):setScale(2,2)
 
 -- str3:setModifier(fm.Modifiers.WobbleModifier:new(2))											-- modifier examples.
