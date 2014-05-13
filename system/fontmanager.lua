@@ -186,7 +186,7 @@ function BitmapString:initialise(font,fontSize)
 	self.font = font 																		-- Save reference to a bitmap font.
 	self.fontSize = fontSize or 32 															-- Save reference to the font size.
 	self.text = "" 																			-- text as string.
-	self.charData = { length = 0 } 															-- character data array.
+	self.lineData = {}																		-- character lines array.
 	self.direction = 0 																		-- text direction, in degrees (right angles only)
 	self.xScale, self.yScale = 1,1 															-- text standard scale.
 	self.spacingAdjust = 0 																	-- spacing adjustment.
@@ -198,6 +198,7 @@ function BitmapString:initialise(font,fontSize)
 	self.fontAnimated = false 																-- not an animated bitmap
 	self.animationSpeedScalar = 1 															-- animation speed adjustment.
 	self.eventListeners = {} 																-- map of event listener name -> handler.
+	self.verticalSpacing = 1 																-- vertical spacing scalar
 	FontManager:addStringReference(self) 													-- tell the font manager about the new string.
 end
 
@@ -238,28 +239,37 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 	if text == self.text then return self end 												-- if no changes, then return immediately.
 	self.text = text 																		-- save the text
 
-	self.oldData = self.charData 															-- save the old character record.
-	self.charData = { length = 0 } 															-- create a new empty character record.
+	self.oldData = self.lineData 															-- save the old line record.
+	self.lineData = { { length = 0, pixelWidth = 0 }} 										-- create a line data record with one empty entry (e.g. the first line)
+	local currentLine = 1 																	-- current line being read in.
 
 	for i = 1,#text do 																		-- work through every character.
 		local code = text:sub(i,i):byte(1)													-- convert to ascii code
 		-- TODO: Process extended characters.
 		if code == 10 or code == 13 then  													-- is it 13 or 10 (\n, \r)
-			-- TODO: New line if horizontal.
+			if self.direction == 0 or self.direction == 180 then 							-- no multilines on vertical characters.
+				currentLine = currentLine + 1 												-- next line.
+				self.lineData[currentLine] =  { length = 0, pixelWidth = 0 }				-- create a blank next line
+			end
 		else 																				-- all other characters
 			code = self.font:mapCharacterToFont(code) 										-- map to an available font character.
 			local charRecord = { code = code }												-- save the character code
 			charRecord.displayObject = self:_useOrCreateCharacterObject(code) 				-- create and store display objects
-			self.charData.length = self.charData.length + 1
-			self.charData[self.charData.length] = charRecord 								-- add to the list of characters we have.
+			local currentRecord = self.lineData[currentLine] 								-- this is the record where it goes.
+			currentRecord.length = currentRecord.length + 1 								-- increment the length of the current record
+			currentRecord.pixelWidth = currentRecord.pixelWidth + 							-- keep track of the scale neutral pixel width
+								self.font:getCharacterWidth(code,self.fontSize,1)
+			currentRecord[currentRecord.length] = charRecord 								-- add to the list of characters we have for this line
 		end
 	end
 
-	for i = 1,self.oldData.length do 														-- remove any objects left in the stock.
-		local obj = self.oldData[i]
-		if obj.displayObject ~= nil then  													-- if it hasn't been used up.
-			obj.displayObject:removeSelf() 													-- remove it from everything.
-			self.usageCount = self.usageCount - 1 											-- reduce the count, so it matches the number of live objects
+	for line = 1,#self.oldData do 															-- remove any objects left in the stock.
+		for cNum = 1,self.oldData[line].length do 
+			local obj = self.oldData[line][cNum]
+			if obj.displayObject ~= nil then  												-- if it hasn't been used up.
+				obj.displayObject:removeSelf() 												-- remove it from everything.
+				self.usageCount = self.usageCount - 1 										-- reduce the count, so it matches the number of live objects
+			end
 		end
 	end
 	self.oldData = nil 																		-- clear references to old objects.
@@ -277,13 +287,16 @@ end
 --//	@return [display Object]	Corona Display Object representing the character.
 
 function BitmapString:_useOrCreateCharacterObject(characterCode)
-	for i = 1,self.oldData.length do 														-- check through the stock list.
-		if self.oldData[i].code == characterCode then 										-- found a matching one.
-			local obj = self.oldData[i].displayObject 										-- keep a reference to the stock object
-			self.oldData[i].code = -1 														-- set the character code to an illegal one, won't match again.
-			self.oldData[i].displayObject = nil 											-- clear the reference to the stock object
-			return obj 																		-- return the reused object.
-		end
+	for l = 1,#self.oldData do 
+		for i = 1,self.oldData[l].length do
+			local obj = self.oldData[l][i]
+			if obj.code == characterCode then 												-- found a matching one.
+				local displayObject = obj.displayObject
+		 		obj.code = -1 																-- set the character code to an illegal one, won't match again.
+				obj.displayObject = nil 													-- clear the reference to the stock object
+	 			return displayObject 														-- return the reused object.
+	 		end
+	 	end
 	end
 	self.usageCount = self.usageCount + 1 													-- create a new one, so bump the usage counter we check with.
 	local newObject = self.font:getCharacter(characterCode) 								-- we need a new one.
@@ -326,7 +339,16 @@ end
 function BitmapString:repositionAndScale()
 	self.isValid = true 																	-- it will be valid at this point.
 	self.minx,self.miny,self.maxx,self.maxy = 0,0,0,0 										-- initialise the tracked drawing rectangle
-	self:paintandFormatLine(self.charData,0,0) 												-- repaint that line.
+	local fullWidth = 0 																	-- get the longest horizontal width
+	for i = 1,#self.lineData do 
+		fullWidth = math.max(fullWidth,self.lineData[i].pixelWidth * self.xScale)
+	end
+	for i = 1,#self.lineData do  															-- work through each line
+		self:paintandFormatLine(self.lineData[i], 											-- character data
+								(fullWidth - self.lineData[i].pixelWidth*self.xScale)/2, 	-- centre it by allowing space.
+								(i - 1) * self.verticalSpacing * 							-- vertical positioning
+											self.font:getCharacterHeight(32,self.fontSize,self.yScale))
+	end
 	self:postProcessAnchorFix()																-- adjust positioning for given anchor.
 end
 
@@ -403,10 +425,12 @@ function BitmapString:postProcessAnchorFix()
 	local xOffset = -self.minx-(self.maxx-self.minx) * self.anchorX 						-- we want it to be centred around the anchor point, we cannot use anchorChildren
 	local yOffset = -self.miny-(self.maxy-self.miny) * self.anchorY 						-- because of the animated modifications, so we calculate it
 
-	for i = 1,self.charData.length do 														-- and move the objects appropriately.
-		local obj = self.charData[i].displayObject
-		obj.x = obj.x + xOffset
-		obj.y = obj.y + yOffset
+	for l = 1,#self.lineData do
+		for i = 1,self.lineData[l].length do 												-- and move the objects appropriately.
+			local obj = self.lineData[l][i].displayObject
+			obj.x = obj.x + xOffset
+			obj.y = obj.y + yOffset
+		end
 	end
 end
 
@@ -505,6 +529,16 @@ end
 
 function BitmapString:setSpacing(spacing)
 	self.spacingAdjust = spacing or 0
+	self:reformat()
+	return self
+end
+
+--//	Allows you to adjust the spacing between letters vertically
+--//	@spacing [number]	Pixels to insert between letters (or remove, can be negative) - scaled by y Scaling.
+--//	@return [BitmapString]	allows chaining.
+
+function BitmapString:setVerticalSpacing(spacing)
+	self.verticalSpacing = spacing or 1
 	self:reformat()
 	return self
 end
@@ -887,11 +921,11 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
--- calculate line length on construction.
 -- character position based on line pixel length, not character position.
--- generate table of lines (\r or \n - both, code 10 and 13) and display them.
--- align properly.
+
 -- word tracking
+
 -- line tracking
+
 -- tinting
 

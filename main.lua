@@ -12,15 +12,17 @@ display.setStatusBar(display.HiddenStatusBar)
 
 fm = require("system.fontmanager")																-- get an instance of the font manager.
 
-local str = fm.BitmapString:new("testfont") 													-- create a string OOP method.
 
-local msg = "Another demo\n curve"
+local msg = "Another line\rwith\ra curve."
 
-display.newText(msg,160,40,native.systemFont,24)
+display.newText(msg,160,460,native.systemFont,24)												-- display text so we can see extended characters.
 
-str:moveTo(160,240):setScale(2,2):setFontSize(48) 												-- centre it, double the scale, size 48.
+local str = fm.BitmapString:new("font2") 													-- create a string OOP method.
+str:moveTo(160,240):setScale(2,2):setFontSize(50) 												-- centre it, double the scale, size 48.
 str:setText(msg)																				-- set the text
+str:setAnchor(0.5,0)
 str:setModifier("iscale")																		-- shape with a curve
+str:setVerticalSpacing(0.6)
 str:animate(4)																					-- animate it - if you comment this out it will curve but not animate
 
 str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !  - YAY !!!!
@@ -28,7 +30,7 @@ str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do 
 str2:setAnchor(0,0):setScale(-1,1):setDirection(270)											-- and setAnchor() for example, rather than accessing members directly.
 
 local str3 = fm.BitmapString:new("demofont",30):												-- a third string, created using the constructor.
-								moveTo(160,400):setText("Another one"):setScale(2,2)
+								moveTo(160,400):setText("Wobbly text"):setScale(2,2)
 
 -- str3:setModifier(fm.Modifiers.WobbleModifier:new(2))											-- modifier examples.
 -- str3:setModifier(SimpleCurveModifier:new(0,180,4,2))
@@ -62,17 +64,18 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 -- str4:remove()
 -- for _,n in pairs(str4) do print(_,n) end
 
-
-local t = 8000 																					-- run over 8 seconds.
+-- str:setModifier(pulser)
+local t = 4000 																					-- run over 8 seconds.
 
 --
 --	Animate using the usual Corona methods.
 --
 --	Remove the comments, the screen clears at the end.
 --
-transition.to(str:getView(),{ time = t,rotation = 0, y = 100, xScale = 0.35,yScale = 0.35,
+
+transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 0.5, yScale = 1, rotation = 360,
 	onComplete = function()  
-		-- fm.FontManager:clearText() 
+		--fm.FontManager:clearText() 
 	end })
 
 transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 0.4,yScale = 0.4 })
