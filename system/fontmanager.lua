@@ -138,7 +138,7 @@ end
 --//	@return [number]			Code of character which does actually exist in the font.
 
 function BitmapFont:mapCharacterToFont(characterCode)
-	if self.characterData[characterCode] == nil then characterCode = '?' end 				-- map unknown chaaracters onto question marks.
+	if self.characterData[characterCode] == nil then characterCode = 63 end 				-- map unknown chaaracters onto question marks.
 	return characterCode
 end
 
@@ -882,6 +882,8 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
 -- if direction not 0 or 180 then forbid newlines (replace them)
+-- generate table of lines (\r or \n - both, code 10 and 13) and display them.
+-- align properly.
 -- word tracking
 -- line tracking
 

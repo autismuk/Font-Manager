@@ -16,7 +16,7 @@ local str = fm.BitmapString:new("testfont") 													-- create a string OOP 
 
 
 str:moveTo(160,240):setScale(2,2):setFontSize(48) 												-- centre it, double the scale, size 48.
-str:setText("Another demo curve")																-- set the text
+str:setText("Another demo\n curve")																-- set the text
 str:setModifier("iscale")																		-- shape with a curve
 str:animate(4)																					-- animate it - if you comment this out it will curve but not animate
 
