@@ -48,7 +48,7 @@
 <hr><h1>BitmapString</h1>
 <p><h3>Extends Base</h3></p>
 <p>It uses a view group object for basic positioning. Scaling and rotating, it depends. If you create a string, you can scale it and rotate it with transitions, just as you do with any object. But if you want a string with animated effects, you cannot use transitions as well. The reason for this is if you 'animate' xScale,yScale with transition.to its scaling effects on the object will be reset by the animation - basically they argue about who does the scaling. The xOffset,yOffset is additional to the actual position, rotation probably won't work either (not sure ?)</p>
-<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_addEventListener"/>addEventListener</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_isAnimated"/>isAnimated</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_remove"/>remove</a>,<a href="#BitmapString_removeEventListener"/>removeEventListener</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a></p><hr><a name="BitmapString_(constructor)"></a>
+<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_addEventListener"/>addEventListener</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_isAnimated"/>isAnimated</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_paintandFormatLine"/>paintandFormatLine</a>,<a href="#BitmapString_postProcessAnchorFix"/>postProcessAnchorFix</a>,<a href="#BitmapString_remove"/>remove</a>,<a href="#BitmapString_removeEventListener"/>removeEventListener</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a></p><hr><a name="BitmapString_(constructor)"></a>
 <h2>(constructor)(font,fontSize)</h2>
 <table>
 <tr><td>font</td><td>String/Reference</td><td>Font to use to create string</td></tr>
@@ -92,6 +92,18 @@
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Move the view group - i.e. the font</p>
+<a name="BitmapString_paintandFormatLine"></a>
+<h2>paintandFormatLine(lineData,nextX,nextY,spacing)</h2>
+<table>
+<tr><td>lineData</td><td>table</td><td>table consisting of array of { code, displayObject } with a length property</td></tr>
+<tr><td>nextX</td><td>number</td><td>where we start drawing from x</td></tr>
+<tr><td>nextY</td><td>number</td><td>where we start drawing from y</td></tr>
+<tr><td>spacing</td><td>number</td><td>extra spacing to format the text correctly.</td></tr>
+</table>
+<p>Paint and format the given line.</p>
+<a name="BitmapString_postProcessAnchorFix"></a>
+<h2>postProcessAnchorFix()</h2>
+<p>Fix up the positioning to allow for the drawing rectangle (pre-modifier) and the anchors.</p>
 <a name="BitmapString_reformat"></a>
 <a name="BitmapString_remove"></a>
 <h2>remove()</h2>

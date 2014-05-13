@@ -205,7 +205,7 @@ end
 
 function BitmapString:remove()
 	self:_destroy() 																		-- delete the string, free all resources etc.
-	FontManager:removeStringReference(self)
+	FontManager:removeStringReference(self) 												-- tell FontManager to forget about it.
 end
 
 
@@ -351,10 +351,13 @@ function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing)
 			if self.fontAnimated then 														-- if animated then advance that position by time.
 				cPos = math.round(cPos + elapsed / 100 * self.animationSpeedScalar) % 100 
 			end
+
+			local infoTable = { elapsed = elapsed, index = i, length = lineData.length } 	-- construct current information table
+
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
-				self.modifier:modify(modifier,cPos,elapsed,i,lineData.length)
+				self.modifier:modify(modifier,cPos,infoTable)
 			else 																			-- otherwise, call it as a function.
-				self.modifier(modifier,cPos,elapsed,i,lineData.length)
+				self.modifier(modifier,cPos,infoTable)
 			end
 			if math.abs(modifier.xScale) < 0.001 then modifier.xScale = 0.001 end 			-- very low value scaling does not work, zero causes an error
 			if math.abs(modifier.yScale) < 0.001 then modifier.yScale = 0.001 end
@@ -697,11 +700,9 @@ function WobbleModifier:initialise(violence) self.violence = violence or 1 end
 --// %	Make the font wobble by changing values just a little bit
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
---//	@elapsed [number] ms elapsed since creation of bitmap string
---//	@index [number] character number
---//	@length [number] string length
+--//	@info [table] Information about the character/string/line
 
-function WobbleModifier:modify(modifier,cPos,elapsed,index,length)
+function WobbleModifier:modify(modifier,cPos,info)
 	modifier.xOffset = math.random(-self.violence,self.violence) 							-- adjust all these values by the random level of 'violence'
 	modifier.yOffset = math.random(-self.violence,self.violence)
 	modifier.xScale = math.random(-self.violence,self.violence) / 10 + 1
@@ -728,11 +729,9 @@ end
 --// %	Make the modifications needed to change the vertical position
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
---//	@elapsed [number] ms elapsed since creation of bitmap string
---//	@index [number] character number
---//	@length [number] string length
+--//	@info [table] Information about the character/string/line
 
-function SimpleCurveModifier:modify(modifier,cPos,elapsed,index,length)
+function SimpleCurveModifier:modify(modifier,cPos,info)
 	modifier.yOffset = FontManager:curve(self.curveDesc,cPos) * 50 * self.scale 			
 end
 
@@ -743,11 +742,9 @@ local SimpleInverseCurveModifier = SimpleCurveModifier:new()
 --// %	Make the modifications needed to change the vertical position
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
---//	@elapsed [number] ms elapsed since creation of bitmap string
---//	@index [number] character number
---//	@length [number] string length
+--//	@info [table] Information about the character/string/line
 
-function SimpleInverseCurveModifier:modify(modifier,cPos,elapsed,index,length)
+function SimpleInverseCurveModifier:modify(modifier,cPos,info)
 	modifier.yOffset = - FontManager:curve(self.curveDesc,cPos) * 50 * self.scale 			
 end
 
@@ -758,11 +755,9 @@ local SimpleCurveScaleModifier = SimpleCurveModifier:new()						 			-- curvepos 
 --// %	Make the modifications needed to change the vertical scale
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
---//	@elapsed [number] ms elapsed since creation of bitmap string
---//	@index [number] character number
---//	@length [number] string length
+--//	@info [table] Information about the character/string/line
 
-function SimpleCurveScaleModifier:modify(modifier,cPos,elapsed,index,length)
+function SimpleCurveScaleModifier:modify(modifier,cPos,info)
 	modifier.yScale = FontManager:curve(self.curveDesc,cPos)*self.scale+1 					-- so we just override the bit that applies it.
 end
 
@@ -773,12 +768,10 @@ local SimpleInverseCurveScaleModifier = SimpleCurveScaleModifier:new()
 --// %	Make the modifications needed to change the vertical scale
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
---//	@elapsed [number] ms elapsed since creation of bitmap string
---//	@index [number] character number
---//	@length [number] string length
+--//	@info [table] Information about the character/string/line
 
-function SimpleInverseCurveScaleModifier:modify(modifier,cPos,elapsed,index,length)
-	modifier.yScale = 1 - FontManager:curve(self.curveDesc,cPos)*self.scale*2/3					-- so we just override the bit that applies it.
+function SimpleInverseCurveScaleModifier:modify(modifier,cPos,info)
+	modifier.yScale = 1 - FontManager:curve(self.curveDesc,cPos)*self.scale*2/3				-- so we just override the bit that applies it.
 end
 
 --// 	Modifier which turns alternate characters 15 degrees in different directions
@@ -788,12 +781,10 @@ local JaggedModifier = Modifier:new()														-- jagged alternates left and
 --// %	Make the modifications needed to look jagged
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
---//	@elapsed [number] ms elapsed since creation of bitmap string
---//	@index [number] character number
---//	@length [number] string length
+--//	@info [table] Information about the character/string/line
 
-function JaggedModifier:modify(modifier,cPos,elapsed,index,length)
-	modifier.rotation = ((index % 2 * 2) - 1) * 15 											-- generates -15 and +15 rotation alternately on index.
+function JaggedModifier:modify(modifier,cPos,info)
+	modifier.rotation = ((info.index % 2 * 2) - 1) * 15 									-- generates -15 and +15 rotation alternately on index.
 end
 
 --//	Modifier which zooms characters from 0->1 but the base positions don't change.
@@ -810,12 +801,10 @@ end
 --// %	Make the modifications to cause the zoom
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
---//	@elapsed [number] ms elapsed since creation of bitmap string
---//	@index [number] character number
---//	@length [number] string length
+--//	@info [table] Information about the character/string/line
 
-function ZoomOutModifier:modify(modifier,cPos,elapsed,index,length)
-	local scale = math.min(1,elapsed / self.zoomTime)
+function ZoomOutModifier:modify(modifier,cPos,info)
+	local scale = math.min(1,info.elapsed / self.zoomTime)
 	modifier.xScale,modifier.yScale = scale,scale
 end
 
@@ -826,12 +815,10 @@ local ZoomInModifier = ZoomOutModifier:new() 												-- Zoom in, as zoom out
 --// %	Make the modifications to cause the zoom.
 --//	@modifier [Modifier Table]	Structure to modify to change effects
 --//	@cPos [number]  Position in effect
---//	@elapsed [number] ms elapsed since creation of bitmap string
---//	@index [number] character number
---//	@length [number] string length
+--//	@info [table] Information about the character/string/line
 
-function ZoomInModifier:modify(modifier,cPos,elapsed,index,length)
-	local scale = math.min(1,elapsed / self.zoomTime)
+function ZoomInModifier:modify(modifier,cPos,info)
+	local scale = math.min(1,info.elapsed / self.zoomTime)
 	modifier.xScale,modifier.yScale = 1-scale,1-scale
 end
 

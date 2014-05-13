@@ -36,12 +36,12 @@ str3:animate() 																					-- make this one animate.
 --
 --	A sample function type modifier, okay , so I chose 360 because it saves me scaling the rotation :)
 --
-function pulser(modifier, cPos, elapsed, index, length)
-	local w = math.floor(elapsed/360) % length + 1 												-- every 360ms change character, creates a number 1 .. length
-	if index == w then  																		-- are we scaling this character
-		local newScale = 1 + (elapsed % 360) / 360 												-- calculate the scale zoom - make it 2- rather than 1+, it goes backwards
+function pulser(modifier, cPos, info)
+	local w = math.floor(info.elapsed/360) % info.length + 1 									-- every 360ms change character, creates a number 1 .. length
+	if info.index == w then  																	-- are we scaling this character
+		local newScale = 1 + (info.elapsed % 360) / 360 										-- calculate the scale zoom - make it 2- rather than 1+, it goes backwards
 		modifier.xScale,modifier.yScale = newScale,newScale 									-- scale it up
-		-- modifier.rotation = elapsed % 360 													-- this looks ridiculous, but it's interesting
+		-- modifier.rotation = info.elapsed % 360 												-- this looks ridiculous, but it's interesting
 	end
 end
 
@@ -78,7 +78,3 @@ transition.to(str3:getView(), { time = t,rotation = 360 })
 
 transition.to(str4:getView(), { time = t, xScale = 2,yScale = 2})
 
--- TODO: Non horizontal directions not multiline.
--- TODO: Multi line characters.
--- TODO: Process out positioning
--- TODO: Odd characters.
