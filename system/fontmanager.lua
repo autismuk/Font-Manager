@@ -377,8 +377,10 @@ function BitmapString:repositionAndScale()
 		fullWidth = math.max(fullWidth,self.lineData[i].pixelWidth * self.xScale)
 	end
 	for i = 1,#self.lineData do  															-- work through each line
+		local centre = (fullWidth - self.lineData[i].pixelWidth*self.xScale)/2 				-- how much to centre it
+		if self.direction == 180 then centre = -centre end 									-- handle centreing when rendering text backwards
 		self:paintandFormatLine(self.lineData[i], 											-- character data
-								(fullWidth - self.lineData[i].pixelWidth*self.xScale)/2, 	-- centre it by allowing space.
+								centre, 													-- centre it by allowing space.
 								(i - 1) * self.verticalSpacing * 							-- vertical positioning
 											self.font:getCharacterHeight(32,self.fontSize,self.yScale),
 								self.spacing,
@@ -975,6 +977,7 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
+-- printing font backwards bug
 -- word tracking (adapt pulse)
 -- line tracking (adapt pulse)
 -- tinting (?)

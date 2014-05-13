@@ -18,10 +18,10 @@ local msg = "Another line\rwith\ra curve" .. string.char(0xC3,0xBE,0x2A) 						-
 local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
 str:moveTo(160,240):setScale(2,2):setFontSize(50) 												-- centre it, double the scale, size 48.
 str:setText(msg)																				-- set the text
+--str:setDirection(180)
 str:setAnchor(0.5,0)
 str:setModifier("iscale")																		-- shape with a curve
-str:setVerticalSpacing(0.5)
-str:animate(4)																					-- animate it - if you comment this out it will curve but not animate
+str:setVerticalSpacing(0.5):animate(4)															-- animate it - if you comment this out it will curve but not animate
 
 str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !  - YAY !!!!
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
