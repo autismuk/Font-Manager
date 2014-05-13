@@ -138,7 +138,7 @@ end
 --//	@return [number]			Code of character which does actually exist in the font.
 
 function BitmapFont:mapCharacterToFont(characterCode)
-	if self.characterData[characterCode] == nil then characterCode = 63 end 				-- map unknown chaaracters onto question marks.
+	if self.characterData[characterCode] == nil then characterCode = 63 end 				-- map unknown characters onto question mark (Code 63).
 	return characterCode
 end
 
@@ -237,16 +237,22 @@ end
 function BitmapString:setText(text) 														-- set the text, adjust display objects to suit, reusing where possible.
 	if text == self.text then return self end 												-- if no changes, then return immediately.
 	self.text = text 																		-- save the text
+
 	self.oldData = self.charData 															-- save the old character record.
 	self.charData = { length = 0 } 															-- create a new empty character record.
 
 	for i = 1,#text do 																		-- work through every character.
 		local code = text:sub(i,i):byte(1)													-- convert to ascii code
-		code = self.font:mapCharacterToFont(code) 											-- map to an available font character.
-		local charRecord = { code = code }													-- save the character code
-		charRecord.displayObject = self:_useOrCreateCharacterObject(code) 					-- create and store display objects
-		self.charData.length = self.charData.length + 1
-		self.charData[self.charData.length] = charRecord 									-- add to the list of characters we have.
+		-- TODO: Process extended characters.
+		if code == 10 or code == 13 then  													-- is it 13 or 10 (\n, \r)
+			-- TODO: New line if horizontal.
+		else 																				-- all other characters
+			code = self.font:mapCharacterToFont(code) 										-- map to an available font character.
+			local charRecord = { code = code }												-- save the character code
+			charRecord.displayObject = self:_useOrCreateCharacterObject(code) 				-- create and store display objects
+			self.charData.length = self.charData.length + 1
+			self.charData[self.charData.length] = charRecord 								-- add to the list of characters we have.
+		end
 	end
 
 	for i = 1,self.oldData.length do 														-- remove any objects left in the stock.
@@ -881,9 +887,11 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
--- if direction not 0 or 180 then forbid newlines (replace them)
+-- calculate line length on construction.
+-- character position based on line pixel length, not character position.
 -- generate table of lines (\r or \n - both, code 10 and 13) and display them.
 -- align properly.
 -- word tracking
 -- line tracking
+-- tinting
 
