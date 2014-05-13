@@ -226,7 +226,9 @@ function BitmapString:_destroy()
 	self.usageCount = nil self.length = nil self.xScale = nil self.yScale = nil 			-- it is done this way so we can nil out the object to check everything
 	self.text = nil self.anchorX = nil self.anchorY = nil  									-- is cleared up - none of these are references.
 	self.fontAnimated = nil self.createTime = nil self.isValid = nil self.direction = nil
+	self.lineData = nil self.verticalSpacing = nil
 end
+
 
 --//	Set the text. It uses the current text as a basis for display objects for the font, reusing them when possible, then frees any that are left over
 --//	If there isn't a character to reuse, it creates one.
@@ -241,9 +243,11 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 	self.oldData = self.lineData 															-- save the old line record.
 	self.lineData = { { length = 0, pixelWidth = 0 }} 										-- create a line data record with one empty entry (e.g. the first line)
 	local currentLine = 1 																	-- current line being read in.
+	local stringPtr = 1 																	-- position in string.
+	while stringPtr <= #text do 															-- work through every character.
+		local code
+		code,stringPtr = self:extractCharacter(text,stringPtr) 								-- get the next character
 
-	for i = 1,#text do 																		-- work through every character.
-		local code = text:sub(i,i):byte(1)													-- convert to ascii code
 		-- TODO: Process extended characters.
 		if code == 10 or code == 13 then  													-- is it 13 or 10 (\n, \r)
 			if self.direction == 0 or self.direction == 180 then 							-- no multilines on vertical characters.
@@ -303,6 +307,23 @@ function BitmapString:_useOrCreateCharacterObject(characterCode)
 	self.viewGroup:insert(newObject) 														-- put it in the view group
 	return newObject
 end
+
+--//%	Extract a single unicode character from the string
+--//	@string 	[string] 				string to extract character from
+--//	@stringPtr 	[number]				position in string
+--//	@return 	[number,number]			unicode value of character, position of next character in string
+
+function BitmapString:extractCharacterUnicode(string,stringPtr)
+	local code = string:sub(stringPtr,stringPtr):byte(1) 									-- get the next character code
+	stringPtr = stringPtr + 1 																-- advance the position
+	return code,stringPtr 																	-- return both.
+end
+
+--		BitmapString:extractCharacter is set up to be the same as BitmapString:extractCharacterUnicode
+--		which is the default, unicode decoding (as Lua has a standard 8 bit string construct)
+
+BitmapString.extractCharacter = BitmapString.extractCharacterUnicode
+
 
 --//	Add an event listener to the view. This is removed automatically on clear.
 --//	@eventName 	[string]	name of event e.g. tap, touch
@@ -926,6 +947,7 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
 
+-- setencoding code (and default)
 -- foreign characters.
 -- word tracking
 -- line tracking

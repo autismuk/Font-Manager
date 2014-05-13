@@ -11,11 +11,9 @@
 display.setStatusBar(display.HiddenStatusBar)
 
 fm = require("system.fontmanager")																-- get an instance of the font manager.
+-- fm:setEncoding("utf8") 																			-- set expected encoding to UTF-8 (default is Unicode character set.)
 
-
-local msg = "Another line\rwith\ra curve."
-
-display.newText(msg,160,460,native.systemFont,24)												-- display text so we can see extended characters.
+local msg = "Another line\rwith\ra curve" .. string.char(0xC3,0xBE) 							-- this is A~ 3/4 in Unicode, and a circle with a vertical line in UTF-8.
 
 local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
 str:moveTo(160,240):setScale(2,2):setFontSize(50) 												-- centre it, double the scale, size 48.
@@ -29,7 +27,7 @@ str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do 
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
 str2:setAnchor(0,0):setScale(-1,1):setDirection(270)											-- and setAnchor() for example, rather than accessing members directly.
 
-local str3 = fm.BitmapString:new("font2",28):												-- a third string, created using the constructor.
+local str3 = fm.BitmapString:new("font2",28):													-- a third string, created using the constructor.
 								moveTo(160,400):setText("Wobbly text"):setScale(2,2)
 
 -- str3:setModifier(fm.Modifiers.WobbleModifier:new(2))											-- modifier examples.
@@ -65,7 +63,7 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 -- for _,n in pairs(str4) do print(_,n) end
 
 -- str:setModifier(pulser)
-local t = 700 																					-- run over 8 seconds.
+local t = 8000 																					-- run over 8 seconds.
 
 --
 --	Animate using the usual Corona methods.
