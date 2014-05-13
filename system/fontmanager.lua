@@ -314,9 +314,21 @@ end
 --//	@return 	[number,number]			unicode value of character, position of next character in string
 
 function BitmapString:extractCharacterUnicode(string,stringPtr)
-	local code = string:sub(stringPtr,stringPtr):byte(1) 									-- get the next character code
-	stringPtr = stringPtr + 1 																-- advance the position
-	return code,stringPtr 																	-- return both.
+	return string:sub(stringPtr,stringPtr):byte(1),stringPtr+1 								-- get the next character code
+end
+
+--//%	Extract a single UTF-8 character from the string
+--//	@string 	[string] 				string to extract character from
+--//	@stringPtr 	[number]				position in string
+--//	@return 	[number,number]			unicode value of character, position of next character in string
+
+function BitmapString:extractCharacterUTF8(string,stringPtr)
+	local code = string:sub(stringPtr,stringPtr):byte(1) 									-- get first byte
+	if code < 0x80 then return code,stringPtr+1 end 										-- 00-7F return that value
+	assert(math.floor(code / 0x20) == 0x06,"UTF-8 more than 2 bytes not supported yet") 	-- only support 0000-07FF at present.
+	local code2 = string:sub(stringPtr+1,stringPtr+1):byte(1) 								-- get the second byte.
+	assert(math.floor(code2 / 0x40) == 0x02,"Malformed UTF-8 character")					-- has to be 10xx xxxx
+	return (code % 0x20) * 0x40 + (code2 % 0x40),stringPtr+2
 end
 
 --		BitmapString:extractCharacter is set up to be the same as BitmapString:extractCharacterUnicode
@@ -607,6 +619,23 @@ function FontManager:initialise()
 	self.modifierDirectory = {} 															-- no known modifiers
 end
 
+--//	Set the string encoding used to convert strings to bitmap sequences
+--//	@enc [string] 		encoding, either (currently) unicode (default), utf8 or utf-8
+--//	@return [FontManager] chaining
+
+function FontManager:setEncoding(enc)
+	enc = (enc or "unicode"):lower()
+	if enc == "unicode" then
+		BitmapString.extractCharacter = BitmapString.extractCharacterUnicode
+	elseif enc == "utf8" or enc == "utf-8" then 
+		BitmapString.extractCharacter = BitmapString.extractCharacterUTF8
+	else
+		error("Unknown font encoding " .. enc)
+	end
+	return self
+end
+
+print(FontManager.setEncoding)
 
 --//	Erase all text - clear screen effectively. All new text strings are registered with the font mananger.
 
@@ -946,31 +975,6 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
-
--- setencoding code (and default)
--- foreign characters.
--- word tracking
--- line tracking
--- tinting
-
---[[
-function CodeFromUTF8 (UTF8)
-    local Byte0 = string.byte(UTF8,1);
-    if (math.floor(Byte0 / 0x80) == 0) then return Byte0; end;
-
-    local Byte1 = string.byte(UTF8,2) % 0x40;
-    if (math.floor(Byte0 / 0x20) == 0x06) then
-      return (Byte0 % 0x20)*0x40 + Byte1;
-    end;
-
-    local Byte2 = string.byte(UTF8,3) % 0x40;
-    if (math.floor(Byte0 / 0x10) == 0x0E) then
-      return (Byte0 % 0x10)*0x1000 + Byte1*0x40 + Byte2;
-    end;
-
-    local Byte3 = string.byte(UTF8,4) % 0x40;
-    if (math.floor(Byte0 / 0x08) == 0x1E) then
-      return (Byte0 % 0x08)*0x40000 + Byte1*0x1000 + Byte2*0x40 + Byte3;
-    end;
-  end;
---]]
+-- word tracking (adapt pulse)
+-- line tracking (adapt pulse)
+-- tinting (?)

@@ -11,9 +11,9 @@
 display.setStatusBar(display.HiddenStatusBar)
 
 fm = require("system.fontmanager")																-- get an instance of the font manager.
--- fm:setEncoding("utf8") 																			-- set expected encoding to UTF-8 (default is Unicode character set.)
+fm.FontManager:setEncoding("utf8") 																-- set expected encoding to UTF-8 (default is Unicode character set.)
 
-local msg = "Another line\rwith\ra curve" .. string.char(0xC3,0xBE) 							-- this is A~ 3/4 in Unicode, and a circle with a vertical line in UTF-8.
+local msg = "Another line\rwith\ra curve" .. string.char(0xC3,0xBE,0x2A) 						-- this is A~ 3/4 in Unicode, and a circle with a vertical line in UTF-8.
 
 local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
 str:moveTo(160,240):setScale(2,2):setFontSize(50) 												-- centre it, double the scale, size 48.
@@ -71,7 +71,7 @@ local t = 8000 																					-- run over 8 seconds.
 --	Remove the comments, the screen clears at the end.
 --
 
-transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 0.5, yScale = 1, rotation = 360,
+transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 0.5, yScale = 1, rotation = 360*0,
 	onComplete = function()  
 		-- fm.FontManager:clearText() 
 	end })

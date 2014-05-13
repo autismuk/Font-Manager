@@ -77,6 +77,12 @@ You can add an event listener to the view, but there is a method particular to t
 
 which will call target.<event> and when you call the clearText() method it will automatically remove it for you.
 
+You can set the font encoding with
+
+	fm.FontManager:setEncoding("utf8")
+
+currently unicode, utf-8 and utf8 are supported. UTF-8 format is only supported as a 2 byte length. If anyone wants this extended please let me know.
+	
 Note: fm, assumes you've done something like fm = require("fontmanager")
 
 Paul Robson.
