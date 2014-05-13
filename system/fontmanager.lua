@@ -347,7 +347,9 @@ function BitmapString:repositionAndScale()
 		self:paintandFormatLine(self.lineData[i], 											-- character data
 								(fullWidth - self.lineData[i].pixelWidth*self.xScale)/2, 	-- centre it by allowing space.
 								(i - 1) * self.verticalSpacing * 							-- vertical positioning
-											self.font:getCharacterHeight(32,self.fontSize,self.yScale))
+											self.font:getCharacterHeight(32,self.fontSize,self.yScale),
+								self.spacing,
+								fullWidth)
 	end
 	self:postProcessAnchorFix()																-- adjust positioning for given anchor.
 end
@@ -357,8 +359,9 @@ end
 --//	@nextX 		[number]		where we start drawing from x
 --//	@nextY 		[number]		where we start drawing from y
 --//	@spacing 	[number]		extra spacing to format the text correctly.
+--//	@fullWidth 	[number]		full pixel width of string box
 
-function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing)
+function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth)
 	if lineData.length == 0 then return end 												-- if length is zero, we don't have to do anything.
 	spacing = spacing or 0 																	-- spacing is zero if not provided
 	local height = self.font:getCharacterHeight(32,self.fontSize,self.yScale) 				-- all characters are the same height, or in the same box.
@@ -375,7 +378,8 @@ function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing)
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0 }	-- default modifier
 
 		if self.modifier ~= nil then 														-- modifier provided
-			local cPos = math.round(100 * (i - 1) / (lineData.length - 1)) 					-- position in string 0->100
+			local cPos = (nextX + width / 2 - fullWidth) / fullWidth * 100 					-- position across string box, percent (0 to 100)
+
 			if self.fontAnimated then 														-- if animated then advance that position by time.
 				cPos = math.round(cPos + elapsed / 100 * self.animationSpeedScalar) % 100 
 			end
@@ -921,11 +925,9 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
--- character position based on line pixel length, not character position.
 
+-- foreign characters.
 -- word tracking
-
 -- line tracking
-
 -- tinting
 

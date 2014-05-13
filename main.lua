@@ -65,7 +65,7 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 -- for _,n in pairs(str4) do print(_,n) end
 
 -- str:setModifier(pulser)
-local t = 4000 																					-- run over 8 seconds.
+local t = 700 																					-- run over 8 seconds.
 
 --
 --	Animate using the usual Corona methods.
@@ -75,7 +75,7 @@ local t = 4000 																					-- run over 8 seconds.
 
 transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 0.5, yScale = 1, rotation = 360,
 	onComplete = function()  
-		--fm.FontManager:clearText() 
+		-- fm.FontManager:clearText() 
 	end })
 
 transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 0.4,yScale = 0.4 })
