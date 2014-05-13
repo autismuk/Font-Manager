@@ -226,7 +226,7 @@
 <a name="Modifier"></a>
 <hr><h1>Modifier</h1>
 <p><h3>Extends Base</h3></p>
-<p>Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul> <li>modifier structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li> <li>cPos the character position, from 0-100 - how far along the string this is. This does not correlate to string character position, as this is changed to animate the display. </li> <li>elapsed Number of ms elapsed since the text object was created (see how pulser in main.lua uses this)</li> <li>index Current character being checked (see how JaggedModifier uses this)</li> <li>length  Total length of string.</li></ul></p>
+<p>Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul> <li>modifier structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li> <li>cPos the character position, from 0-100 - how far along the string this is. This does not correlate to string character position, as this is changed to animate the display. </li> <li>info table containing information for the modifier : elapsed - elapsed time in ms, index, position in this line, length length of this line.</li></ul></p>
 <p>Methods : </p><hr><a name="SimpleCurveModifier"></a>
 <hr><h1>SimpleCurveModifier</h1>
 <p><h3>Extends Modifier</h3></p>

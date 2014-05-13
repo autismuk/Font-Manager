@@ -41,10 +41,10 @@ and to animate this curve is actually easier :
 There are stock animations (run main.lua in the Corona simulator !) and you can also make your own up, and customise the standard ones. The pulse effect 
 (see main.lua) is done by this code.
 
-	function pulser(modifier, cPos, elapsed, index, length)
-		local w = math.floor(elapsed/360) % length + 1 												-- every 360ms change character, creates a number 1 .. length
+	function pulser(modifier, cPos, info)
+		local w = math.floor(info.elapsed/360) % info.length + 1 									-- every 360ms change character, creates a number 1 .. length
 		if index == w then  																		-- are we scaling this character
-			local newScale = 1 + (elapsed % 360) / 360 												-- calculate the scale zoom
+			local newScale = 1 + (info.elapsed % 360) / 360 										-- calculate the scale zoom
 			modifier.xScale,modifier.yScale = newScale,newScale 									-- scale it up
 		end
 	end
