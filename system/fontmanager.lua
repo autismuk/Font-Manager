@@ -67,8 +67,7 @@ function BitmapFont:loadFont(fontName)
 			charInfo.frame = optionsEntry 													-- and store a reference to the sprite rectangle in the image sheet
 
 			assert(self.characterData[charID] == nil,"Duplicate character code, contact author")
-			self.characterData[charID*1] = charInfo
-
+			self.characterData[charID*1] = charInfo 										-- store the full font information in the characterData table.
 			spriteCount = spriteCount + 1 													-- bump the number of sprites
 		end
 	end
@@ -255,6 +254,7 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 			code = self.font:mapCharacterToFont(code) 										-- map to an available font character.
 			local charRecord = { code = code }												-- save the character code
 			charRecord.displayObject = self:_useOrCreateCharacterObject(code) 				-- create and store display objects
+			charRecord.lineNumber = currentLine 											-- save the line number
 			local currentRecord = self.lineData[currentLine] 								-- this is the record where it goes.
 			currentRecord.length = currentRecord.length + 1 								-- increment the length of the current record
 			currentRecord.pixelWidth = currentRecord.pixelWidth + 							-- keep track of the scale neutral pixel width
@@ -931,3 +931,24 @@ return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Mod
 -- line tracking
 -- tinting
 
+--[[
+function CodeFromUTF8 (UTF8)
+    local Byte0 = string.byte(UTF8,1);
+    if (math.floor(Byte0 / 0x80) == 0) then return Byte0; end;
+
+    local Byte1 = string.byte(UTF8,2) % 0x40;
+    if (math.floor(Byte0 / 0x20) == 0x06) then
+      return (Byte0 % 0x20)*0x40 + Byte1;
+    end;
+
+    local Byte2 = string.byte(UTF8,3) % 0x40;
+    if (math.floor(Byte0 / 0x10) == 0x0E) then
+      return (Byte0 % 0x10)*0x1000 + Byte1*0x40 + Byte2;
+    end;
+
+    local Byte3 = string.byte(UTF8,4) % 0x40;
+    if (math.floor(Byte0 / 0x08) == 0x1E) then
+      return (Byte0 % 0x08)*0x40000 + Byte1*0x1000 + Byte2*0x40 + Byte3;
+    end;
+  end;
+--]]
