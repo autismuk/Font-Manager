@@ -186,6 +186,7 @@ function BitmapString:initialise(font,fontSize)
 	self.fontSize = fontSize or 32 															-- Save reference to the font size.
 	self.text = "" 																			-- text as string.
 	self.lineData = {}																		-- character lines array.
+	self.wordCount = 0 																		-- number of words.
 	self.direction = 0 																		-- text direction, in degrees (right angles only)
 	self.xScale, self.yScale = 1,1 															-- text standard scale.
 	self.spacingAdjust = 0 																	-- spacing adjustment.
@@ -244,11 +245,18 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 	self.lineData = { { length = 0, pixelWidth = 0 }} 										-- create a line data record with one empty entry (e.g. the first line)
 	local currentLine = 1 																	-- current line being read in.
 	local stringPtr = 1 																	-- position in string.
+	self.wordCount = 0 																		-- zero the word count
+	self.inWord = false 																	-- currently not in a word, first word will shift to 1.
 	while stringPtr <= #text do 															-- work through every character.
 		local code
 		code,stringPtr = self:extractCharacter(text,stringPtr) 								-- get the next character
 
-		-- TODO: Process extended characters.
+		local newInWord = (code > 32)														-- true if 'word' character
+		if newInWord ~= self.inWord then 													-- has the state changed.
+			self.inWord = newInWord 														-- save the new state.
+			if self.inWord then self.wordCount = self.wordCount + 1 end 					-- if now in a word, bump the word count.
+		end
+
 		if code == 10 or code == 13 then  													-- is it 13 or 10 (\n, \r)
 			if self.direction == 0 or self.direction == 180 then 							-- no multilines on vertical characters.
 				currentLine = currentLine + 1 												-- next line.
@@ -259,6 +267,7 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 			local charRecord = { code = code }												-- save the character code
 			charRecord.displayObject = self:_useOrCreateCharacterObject(code) 				-- create and store display objects
 			charRecord.lineNumber = currentLine 											-- save the line number this character is on.
+			charRecord.wordNumber = self.wordCount 											-- save the word number this character is in.
 			local currentRecord = self.lineData[currentLine] 								-- this is the record where it goes.
 			currentRecord.length = currentRecord.length + 1 								-- increment the length of the current record
 			currentRecord.pixelWidth = currentRecord.pixelWidth + 							-- keep track of the scale neutral pixel width
@@ -423,7 +432,8 @@ function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth,
 			end
 
 			local infoTable = { elapsed = elapsed, index = i, length = lineData.length,  	-- construct current information table
-								lineIndex = lineData[i].lineNumber, lineCount = lineCount }
+								lineIndex = lineData[i].lineNumber, lineCount = lineCount,
+								wordIndex = lineData[i].wordNumber, wordCount = self.wordCount }
 
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
 				self.modifier:modify(modifier,cPos,infoTable)

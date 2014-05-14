@@ -60,7 +60,22 @@ function linePulser(modifier, cPos, info)
 	end
 end
 
+--
+--	Identical but pulses words, so uses wordIndex and wordCount instead
+--	tests wordCount because this could be zero, causing divide by zero.
+--
+function wordPulser(modifier, cPos, info)
+	if info.wordCount == 0 then return end 
+	local w = math.floor(info.elapsed/360) % info.wordCount + 1 
+	if info.wordIndex == w then  														
+		local newScale = 1 + (info.elapsed % 360) / 360 		
+		modifier.xScale,modifier.yScale = newScale,newScale 	
+		-- modifier.rotation = info.elapsed % 360 	
+	end
+end
+
 str:setModifier(linePulser)
+str:setModifier(wordPulser)
 
 local str4 = display.newBitmapText("pulse",160,240,"retrofont",80) 								-- create a new string
 str4:setModifier(pulser):animate() 																-- make it use the above modifier, and animate it.
@@ -78,7 +93,7 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 -- for _,n in pairs(str4) do print("str4",_,n) end
 
 -- str:setModifier(pulser)
-local t = 2000 																					-- run over 8 seconds.
+local t = 1000 																					-- run over 8 seconds.
 
 --
 --	Animate using the usual Corona methods.
