@@ -990,6 +990,5 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
--- check viewgroup empty on remove()
--- word tracking (adapt pulse)
+
 -- tinting (?)
