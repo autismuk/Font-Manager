@@ -24,6 +24,8 @@ str:setModifier("iscale")																		-- shape with a curve
 str:setVerticalSpacing(0.5):animate(4)															-- animate it - if you comment this out it will curve but not animate
  																								-- the number is a speed scalar.
 
+str:setTintColor(1,1,0) 																		-- apply a tint to it.
+
 str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !  - YAY !!!!
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
 str2:setAnchor(0,0):setScale(-1,1):setDirection(270)											-- and setAnchor() for example, rather than accessing members directly.
@@ -47,11 +49,12 @@ function pulser(modifier, cPos, info)
 		local newScale = 1 + (info.elapsed % 360) / 360 										-- calculate the scale zoom - make it 2- rather than 1+, it goes backwards
 		modifier.xScale,modifier.yScale = newScale,newScale 									-- scale it up
 		-- modifier.rotation = info.elapsed % 360 												-- this looks ridiculous, but it's interesting
+		modifier.tint.red = 0 																	-- so, we set the tinting for that one as well.
 	end
 end
 
 --
---	Identical but pulses lines, so uses lineIndex and lineCount instead
+--	Identical but pulses lines, so uses lineIndex and lineCount instead 
 --
 function linePulser(modifier, cPos, info)
 	local w = math.floor(info.elapsed/360) % info.lineCount + 1 
@@ -59,6 +62,7 @@ function linePulser(modifier, cPos, info)
 		local newScale = 1 + (info.elapsed % 360) / 360 		
 		modifier.xScale,modifier.yScale = newScale,newScale 	
 		-- modifier.rotation = info.elapsed % 360 	
+		modifier.tint.red = 0
 	end
 end
 
@@ -74,10 +78,11 @@ function wordPulser(modifier, cPos, info)
 		local newScale = 1 + (info.elapsed % 360) / 360 		
 		modifier.xScale,modifier.yScale = newScale,newScale 	
 		-- modifier.rotation = info.elapsed % 360 	
+		modifier.tint.red = 0
 	end
 end
 
--- str:setModifier(linePulser) 																	-- pick something to run.
+-- str:setModifier(linePulser) 																	-- pick something to run, comment both out, it's a curve/scale
 str:setModifier(wordPulser)
 
 local str4 = display.newBitmapText("pulse",160,240,"retrofont",80) 								-- create a new string using Corona method.

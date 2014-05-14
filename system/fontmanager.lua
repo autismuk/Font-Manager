@@ -199,6 +199,7 @@ function BitmapString:initialise(font,fontSize)
 	self.animationSpeedScalar = 1 															-- animation speed adjustment.
 	self.eventListeners = {} 																-- map of event listener name -> handler.
 	self.verticalSpacing = 1 																-- vertical spacing scalar
+	self:setTintColor() 																	-- set the default tinting colour.
 	FontManager:addStringReference(self) 													-- tell the font manager about the new string.
 end
 
@@ -423,6 +424,8 @@ function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth,
 		end 				
 
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0 }	-- default modifier
+		modifier.tint = { red = self.tinting.red, blue = self.tinting.blue, 				-- use the default tinting.
+															green = self.tinting.green }
 
 		if self.modifier ~= nil then 														-- modifier provided
 			local cPos = (nextX + width / 2 - fullWidth) / fullWidth * 100 					-- position across string box, percent (0 to 100)
@@ -452,6 +455,10 @@ function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth,
 									 			 modifier.xScale,modifier.yScale,
 									 			 modifier.xOffset,modifier.yOffset,
 									 			 modifier.rotation)
+
+		lineData[i].displayObject:setFillColor(modifier.tint.red,							-- apply the tint to it.
+													modifier.tint.green,modifier.tint.blue) 			
+
 		if self.direction == 0 then 														-- advance to next position using character width, updating the bounding box
 			nextX = nextX + width + (self.spacingAdjust+spacing) * math.abs(self.xScale) 			
 			self.maxx = math.max(self.maxx,nextX)
@@ -617,6 +624,17 @@ function BitmapString:setModifier(funcOrTable)
 	end
 	self.modifier = funcOrTable
 	self:reformat()
+	return self
+end
+
+--//	Apply an overall tint to the string. This can be overridden or modified using the tint table of the modifier
+--//	which itself has three fields - red, green and blue
+--//	@r 	[number] 		Red component 0-1
+--//	@g 	[number] 		Green component 0-1
+--//	@b 	[number] 		Blue component 0-1
+--//	@return [BitmapString] self
+function BitmapString:setTintColor(r,g,b)
+	self.tinting = { red = r or 1 , green = g or 1, blue = b or 1 }
 	return self
 end
 
@@ -991,4 +1009,4 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
 
--- tinting (?)
+-- tinting at the inline-character level.

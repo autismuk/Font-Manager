@@ -48,7 +48,7 @@
 <hr><h1>BitmapString</h1>
 <p><h3>Extends Base</h3></p>
 <p>It uses a view group object for basic positioning. Scaling and rotating, it depends. If you create a string, you can scale it and rotate it with transitions, just as you do with any object. But if you want a string with animated effects, you cannot use transitions as well. The reason for this is if you 'animate' xScale,yScale with transition.to its scaling effects on the object will be reset by the animation - basically they argue about who does the scaling. The xOffset,yOffset is additional to the actual position, rotation probably won't work either (not sure ?)</p>
-<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_addEventListener"/>addEventListener</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_isAnimated"/>isAnimated</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_paintandFormatLine"/>paintandFormatLine</a>,<a href="#BitmapString_postProcessAnchorFix"/>postProcessAnchorFix</a>,<a href="#BitmapString_remove"/>remove</a>,<a href="#BitmapString_removeEventListener"/>removeEventListener</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a></p><hr><a name="BitmapString_(constructor)"></a>
+<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_addEventListener"/>addEventListener</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_isAnimated"/>isAnimated</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_paintandFormatLine"/>paintandFormatLine</a>,<a href="#BitmapString_postProcessAnchorFix"/>postProcessAnchorFix</a>,<a href="#BitmapString_remove"/>remove</a>,<a href="#BitmapString_removeEventListener"/>removeEventListener</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setTintColor"/>setTintColor</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a></p><hr><a name="BitmapString_(constructor)"></a>
 <h2>(constructor)(font,fontSize)</h2>
 <table>
 <tr><td>font</td><td>String/Reference</td><td>Font to use to create string</td></tr>
@@ -178,6 +178,15 @@
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Set the text. It uses the current text as a basis for display objects for the font, reusing them when possible, then frees any that are left over If there isn't a character to reuse, it creates one.</p>
+<a name="BitmapString_setTintColor"></a>
+<h2>setTintColor(r,g,b)</h2>
+<table>
+<tr><td>r</td><td>number</td><td>Red component 0-1</td></tr>
+<tr><td>g</td><td>number</td><td>Green component 0-1</td></tr>
+<tr><td>b</td><td>number</td><td>Blue component 0-1</td></tr>
+<tr><td>return</td><td>BitmapString</td><td>self</td></tr>
+</table>
+<p>Apply an overall tint to the string. This can be overridden or modified using the tint table of the modifier which itself has three fields - red, green and blue</p>
 <a name="BitmapString_setVerticalSpacing"></a>
 <h2>setVerticalSpacing(spacing)</h2>
 <table>
