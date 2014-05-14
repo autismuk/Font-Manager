@@ -59,7 +59,12 @@ But you can get rid of them individually, effectively.
 
 	str4:setText("")
 
-will vanish it, though it is still there, and to kill them all :
+will vanish it, though it is still there, you can kill it as an object with :
+
+
+	str4:remove()
+	
+and to kill them all :
 
 	fm.FontManager:clearText()
 
