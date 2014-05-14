@@ -48,9 +48,23 @@ function pulser(modifier, cPos, info)
 	end
 end
 
+--
+--	Identical but pulses lines, so uses lineIndex and lineCount instead
+--
+function linePulser(modifier, cPos, info)
+	local w = math.floor(info.elapsed/360) % info.lineCount + 1 
+	if info.lineIndex == w then  														
+		local newScale = 1 + (info.elapsed % 360) / 360 		
+		modifier.xScale,modifier.yScale = newScale,newScale 	
+	end
+end
+
+str:setModifier(linePulser)
+
 local str4 = display.newBitmapText("pulse",160,240,"retrofont",80) 								-- create a new string
 str4:setModifier(pulser):animate() 																-- make it use the above modifier, and animate it.
 -- str4:setDirection(180)
+-- str4:setText("Hello\nWorld !")
 
 local demoTarget = {}
 function demoTarget.tap(event) print("tap",event) end
@@ -71,7 +85,7 @@ local t = 8000 																					-- run over 8 seconds.
 --	Remove the comments, the screen clears at the end.
 --
 
-transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 0.5, yScale = 1, rotation = 360*0,
+transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 0.5, yScale = 1, rotation = 360*2,
 	onComplete = function()  
 		-- fm.FontManager:clearText() 
 	end })

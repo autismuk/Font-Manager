@@ -258,7 +258,7 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 			code = self.font:mapCharacterToFont(code) 										-- map to an available font character.
 			local charRecord = { code = code }												-- save the character code
 			charRecord.displayObject = self:_useOrCreateCharacterObject(code) 				-- create and store display objects
-			charRecord.lineNumber = currentLine 											-- save the line number
+			charRecord.lineNumber = currentLine 											-- save the line number this character is on.
 			local currentRecord = self.lineData[currentLine] 								-- this is the record where it goes.
 			currentRecord.length = currentRecord.length + 1 								-- increment the length of the current record
 			currentRecord.pixelWidth = currentRecord.pixelWidth + 							-- keep track of the scale neutral pixel width
@@ -384,7 +384,8 @@ function BitmapString:repositionAndScale()
 								(i - 1) * self.verticalSpacing * 							-- vertical positioning
 											self.font:getCharacterHeight(32,self.fontSize,self.yScale),
 								self.spacing,
-								fullWidth)
+								fullWidth,
+								#self.lineData)
 	end
 	self:postProcessAnchorFix()																-- adjust positioning for given anchor.
 end
@@ -395,8 +396,9 @@ end
 --//	@nextY 		[number]		where we start drawing from y
 --//	@spacing 	[number]		extra spacing to format the text correctly.
 --//	@fullWidth 	[number]		full pixel width of string box
+--//	@lineCount  [number] 		total number of lines 
 
-function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth)
+function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth,lineCount)
 	if lineData.length == 0 then return end 												-- if length is zero, we don't have to do anything.
 	spacing = spacing or 0 																	-- spacing is zero if not provided
 	local height = self.font:getCharacterHeight(32,self.fontSize,self.yScale) 				-- all characters are the same height, or in the same box.
@@ -419,7 +421,8 @@ function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth)
 				cPos = math.round(cPos + elapsed / 100 * self.animationSpeedScalar) % 100 
 			end
 
-			local infoTable = { elapsed = elapsed, index = i, length = lineData.length } 	-- construct current information table
+			local infoTable = { elapsed = elapsed, index = i, length = lineData.length,  	-- construct current information table
+								lineIndex = lineData[i].lineNumber, lineCount = lineCount }
 
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
 				self.modifier:modify(modifier,cPos,infoTable)
@@ -776,8 +779,9 @@ FontManager.new = function() error("FontManager is a singleton instance") end 		
 --// 								tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li>
 --//			<li>cPos 			the character position, from 0-100 - how far along the string this is. This does not correlate to string character
 --// 								position, as this is changed to animate the display. </li>
---// 			<li>info 			table containing information for the modifier : elapsed - elapsed time in ms, index, position in this line, length
---//								length of this line.</li></ul>
+--// 			<li>info 			table containing information for the modifier : elapsed - elapsed time in ms, index - position in this line, 
+--// 								length - length of this linem lineCount, lineIndex - line number of this character, lineCount - total number of lines
+--//								</li></ul>
 --
 --- ************************************************************************************************************************************************************************
 
@@ -977,7 +981,5 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
--- printing font backwards bug
 -- word tracking (adapt pulse)
--- line tracking (adapt pulse)
 -- tinting (?)

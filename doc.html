@@ -71,6 +71,7 @@
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Turns animation on, with an optional speed scalar. This causes the 'cPos' in modifiers to change with time allowing the various animation effects</p>
+<a name="BitmapString_extractCharacterUTF8"></a>
 <a name="BitmapString_extractCharacterUnicode"></a>
 <a name="BitmapString_getView"></a>
 <h2>getView()</h2>
@@ -94,13 +95,14 @@
 </table>
 <p>Move the view group - i.e. the font</p>
 <a name="BitmapString_paintandFormatLine"></a>
-<h2>paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth)</h2>
+<h2>paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth,lineCount)</h2>
 <table>
 <tr><td>lineData</td><td>table</td><td>table consisting of array of { code, displayObject } with a length property</td></tr>
 <tr><td>nextX</td><td>number</td><td>where we start drawing from x</td></tr>
 <tr><td>nextY</td><td>number</td><td>where we start drawing from y</td></tr>
 <tr><td>spacing</td><td>number</td><td>extra spacing to format the text correctly.</td></tr>
 <tr><td>fullWidth</td><td>number</td><td>full pixel width of string box</td></tr>
+<tr><td>lineCount</td><td>number</td><td>total number of lines</td></tr>
 </table>
 <p>Paint and format the given line.</p>
 <a name="BitmapString_postProcessAnchorFix"></a>
@@ -187,7 +189,7 @@
 <hr><h1>FontManager</h1>
 <p><h3>Extends Base</h3></p>
 <p>The fontmananger class controls, animates and updates all the fonts on the screen. It also tracks what fonts are used, and keeps a library of standard effects. It is a singleton.</p>
-<p>Methods : <a href="#FontManager_(constructor)"/>(constructor)</a>,<a href="#FontManager_clearText"/>clearText</a>,<a href="#FontManager_curve"/>curve</a>,<a href="#FontManager_getFont"/>getFont</a>,<a href="#FontManager_getModifier"/>getModifier</a>,<a href="#FontManager_setAnimationRate"/>setAnimationRate</a></p><hr><a name="FontManager_(constructor)"></a>
+<p>Methods : <a href="#FontManager_(constructor)"/>(constructor)</a>,<a href="#FontManager_clearText"/>clearText</a>,<a href="#FontManager_curve"/>curve</a>,<a href="#FontManager_getFont"/>getFont</a>,<a href="#FontManager_getModifier"/>getModifier</a>,<a href="#FontManager_setAnimationRate"/>setAnimationRate</a>,<a href="#FontManager_setEncoding"/>setEncoding</a></p><hr><a name="FontManager_(constructor)"></a>
 <h2>(constructor)()</h2>
 <p>Constructor - note this is the prototype and the instance.</p>
 <a name="FontManager__startEnterFrame"></a>
@@ -227,6 +229,13 @@
 <tr><td>frequency</td><td>number</td><td>updates per second of the animation rate, defaults to 15 updates per second.</td></tr>
 </table>
 <p>Set the animation rate - how many updates are a done a second. If this is > fps it will be fps.</p>
+<a name="FontManager_setEncoding"></a>
+<h2>setEncoding(enc)</h2>
+<table>
+<tr><td>enc</td><td>string</td><td>encoding, either (currently) unicode (default), utf8 or utf-8</td></tr>
+<tr><td>return</td><td>FontManager</td><td>chaining</td></tr>
+</table>
+<p>Set the string encoding used to convert strings to bitmap sequences</p>
 <a name="JaggedModifier"></a>
 <hr><h1>JaggedModifier</h1>
 <p><h3>Extends Modifier</h3></p>
@@ -235,7 +244,7 @@
 <a name="Modifier"></a>
 <hr><h1>Modifier</h1>
 <p><h3>Extends Base</h3></p>
-<p>Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul> <li>modifier structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li> <li>cPos the character position, from 0-100 - how far along the string this is. This does not correlate to string character position, as this is changed to animate the display. </li> <li>info table containing information for the modifier : elapsed - elapsed time in ms, index, position in this line, length length of this line.</li></ul></p>
+<p>Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul> <li>modifier structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li> <li>cPos the character position, from 0-100 - how far along the string this is. This does not correlate to string character position, as this is changed to animate the display. </li> <li>info table containing information for the modifier : elapsed - elapsed time in ms, index - position in this line, length - length of this linem lineCount, lineIndex - line number of this character, lineCount - total number of lines </li></ul></p>
 <p>Methods : </p><hr><a name="SimpleCurveModifier"></a>
 <hr><h1>SimpleCurveModifier</h1>
 <p><h3>Extends Modifier</h3></p>
