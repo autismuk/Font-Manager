@@ -56,6 +56,7 @@ function linePulser(modifier, cPos, info)
 	if info.lineIndex == w then  														
 		local newScale = 1 + (info.elapsed % 360) / 360 		
 		modifier.xScale,modifier.yScale = newScale,newScale 	
+		-- modifier.rotation = info.elapsed % 360 	
 	end
 end
 
@@ -74,10 +75,10 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 
 
 -- str4:remove()
--- for _,n in pairs(str4) do print(_,n) end
+-- for _,n in pairs(str4) do print("str4",_,n) end
 
 -- str:setModifier(pulser)
-local t = 8000 																					-- run over 8 seconds.
+local t = 2000 																					-- run over 8 seconds.
 
 --
 --	Animate using the usual Corona methods.
@@ -88,6 +89,7 @@ local t = 8000 																					-- run over 8 seconds.
 transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 0.5, yScale = 1, rotation = 360*2,
 	onComplete = function()  
 		-- fm.FontManager:clearText() 
+		-- str:setText("I like chips\nin\nGravy.\n")
 	end })
 
 transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 0.4,yScale = 0.4 })

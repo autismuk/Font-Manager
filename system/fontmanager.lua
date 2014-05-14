@@ -280,6 +280,7 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 	self:reformat() 																		-- reformat the string.
 	if self.text == "" then 																-- if clearing, check everything is clear.
 		assert(self.usageCount == 0,"usage count wrong, some objects have leaked")
+		assert(self.viewGroup.numChildren == 0,"viewgroup not empty")
 	end
 	return self 																			-- permit chaining.
 end
@@ -640,8 +641,6 @@ function FontManager:setEncoding(enc)
 	return self
 end
 
-print(FontManager.setEncoding)
-
 --//	Erase all text - clear screen effectively. All new text strings are registered with the font mananger.
 
 function FontManager:clearText()
@@ -981,5 +980,6 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
+-- check viewgroup empty on remove()
 -- word tracking (adapt pulse)
 -- tinting (?)
