@@ -203,6 +203,9 @@ function BitmapString:initialise(font,fontSize)
 	FontManager:addStringReference(self) 													-- tell the font manager about the new string.
 end
 
+BitmapString.startTintDef = "{" 															-- start and end markers for font tinting.
+BitmapString.endTintDef = "}"
+
 --//		Remove the current string from the screen and remove the reference from the list.
 
 function BitmapString:remove()
@@ -248,7 +251,16 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 	local stringPtr = 1 																	-- position in string.
 	self.wordCount = 0 																		-- zero the word count
 	self.inWord = false 																	-- currently not in a word, first word will shift to 1.
+	local currentTinting = nil 																-- start with the default tinting, which is marked by nil pointer.
+	local regExTint = "^%"..BitmapString.startTintDef.."([A-Za-z0-9%.%,]*)%"..BitmapString.endTintDef
+
+
 	while stringPtr <= #text do 															-- work through every character.
+		while text:sub(stringPtr):match(regExTint) ~= nil do 								-- look for tinting code.
+			local s = text:sub(stringPtr):match(regExTint) 									-- extract it
+			stringPtr = stringPtr + #s + 2 													-- skip over it and the start and end brackets.
+			currentTinting = self:evaluateTint(s)											-- set the current tint to whatever it evaluates to.
+		end
 		local code
 		code,stringPtr = self:extractCharacter(text,stringPtr) 								-- get the next character
 
@@ -269,6 +281,7 @@ function BitmapString:setText(text) 														-- set the text, adjust displa
 			charRecord.displayObject = self:_useOrCreateCharacterObject(code) 				-- create and store display objects
 			charRecord.lineNumber = currentLine 											-- save the line number this character is on.
 			charRecord.wordNumber = self.wordCount 											-- save the word number this character is in.
+			charRecord.tinting = currentTinting 											-- save the current tinting.
 			local currentRecord = self.lineData[currentLine] 								-- this is the record where it goes.
 			currentRecord.length = currentRecord.length + 1 								-- increment the length of the current record
 			currentRecord.pixelWidth = currentRecord.pixelWidth + 							-- keep track of the scale neutral pixel width
@@ -347,7 +360,34 @@ end
 
 BitmapString.extractCharacter = BitmapString.extractCharacterUnicode
 
+--//	Convert a textual colour definition to a tint array
+--//	@descr 	[string]	description - can be text, n,n,n or ""
+--//	@return [table]		tint table containing red,green,blue members or nil.
 
+function BitmapString:evaluateTint(descr)
+	if descr == "" then return nil end 														-- empty goes back to the standard tint.
+	descr = descr:lower() 																	-- decapitalise
+	if BitmapString.standardColours[descr] ~= nil then return  								-- named colour returns that colour.
+		BitmapString.standardColours[descr] 
+	end
+	local r,g,b = descr:match("^([0-9%.]+)%,([0-9%.]+)%,([0-9%.]+)$")						-- rip out r,g,b bits
+	assert(b ~= nil,"Bad tint colour " .. descr) 											-- check it is valid
+	return { red = r, green = g, blue = b }
+end 
+
+BitmapString.standardColours = { 															-- known tinting colours.
+	black = 	{ red = 0, green = 0, blue = 0 },
+	red = 		{ red = 1, green = 0, blue = 0 },
+	green = 	{ red = 0, green = 1, blue = 0 },
+	yellow = 	{ red = 1, green = 1, blue = 0 },
+	blue= 		{ red = 0, green = 0, blue = 1 },
+	magenta = 	{ red = 1, green = 0, blue = 1 },
+	cyan = 		{ red = 0, green = 1, blue = 1 },
+	white = 	{ red = 1, green = 1, blue = 1 },
+	grey = 		{ red = 0.5, green = 0.5, blue = 0.5 },
+	orange = 	{ red = 1, green = 140/255, blue = 0 },
+	brown = 	{ red = 139/255, green = 69/255, blue = 19/255 }
+}
 --//	Add an event listener to the view. This is removed automatically on clear.
 --//	@eventName 	[string]	name of event e.g. tap, touch
 --//	@handler 	[table]		event listener
@@ -401,7 +441,7 @@ function BitmapString:repositionAndScale()
 	self:postProcessAnchorFix()																-- adjust positioning for given anchor.
 end
 
---//	Paint and format the given line.
+--//%	Paint and format the given line.
 --//	@lineData	[table]			table consisting of array of { code, displayObject } with a length property
 --//	@nextX 		[number]		where we start drawing from x
 --//	@nextY 		[number]		where we start drawing from y
@@ -424,8 +464,13 @@ function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth,
 		end 				
 
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0 }	-- default modifier
-		modifier.tint = { red = self.tinting.red, blue = self.tinting.blue, 				-- use the default tinting.
-															green = self.tinting.green }
+
+		if lineData[i].tinting ~= nil then  												-- if character has its own tint.
+			modifier.tint= { red = lineData[i].tinting.red, blue = lineData[i].tinting.blue,-- use the character tinting which can be modified.
+																		green = lineData[i].tinting.green }
+		else 																				-- otherwise use whatever is set in setTintColor()
+			modifier.tint = { red = self.tinting.red, blue = self.tinting.blue, green = self.tinting.green }
+		end 
 
 		if self.modifier ~= nil then 														-- modifier provided
 			local cPos = (nextX + width / 2 - fullWidth) / fullWidth * 100 					-- position across string box, percent (0 to 100)
@@ -479,7 +524,7 @@ function BitmapString:paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth,
 	end
 end
 
---//	Fix up the positioning to allow for the drawing rectangle (pre-modifier) and the anchors.
+--//%	Fix up the positioning to allow for the drawing rectangle (pre-modifier) and the anchors.
 
 function BitmapString:postProcessAnchorFix()
 	local xOffset = -self.minx-(self.maxx-self.minx) * self.anchorX 						-- we want it to be centred around the anchor point, we cannot use anchorChildren
@@ -499,7 +544,7 @@ end
 
 function BitmapString:getView() return self.viewGroup end 								
 
---//	Check to see if the string is animated or not. (e.g. has animate() been called)
+--//%	Check to see if the string is animated or not. (e.g. has animate() been called)
 --//	@return [boolean] true if string is animated
 
 function BitmapString:isAnimated() return self.fontAnimated end
@@ -795,6 +840,15 @@ function FontManager:getModifier(name)
 	return self.modifierDirectory[name]			
 end
 
+--//	Set the bounding characters for tint definitions (defaults to { and })
+--//	@cStart [string]		start character
+--//	@cEnd 	[string]		end character.
+
+function FontManager:setTintBrackets(cStart,cEnd) 
+	BitmapString.startTintDef = cStart or "{"
+	BitmapString.endTintDef = cStart or "}"
+end
+
 FontManager:initialise() 																	-- initialise the font manager so it's a standalone object
 FontManager.new = function() error("FontManager is a singleton instance") end 				-- and clear the new method so you can't instantitate a copy.
 
@@ -1008,5 +1062,7 @@ display.hiddenBitmapStringPrototype = BitmapString 												-- we make sure t
 
 return { BitmapString = BitmapString, FontManager = FontManager, Modifiers = Modifiers } 		-- hand it back to the caller so it can use it.
 
+-- setTintBrackets()
+-- tinting for predefined, numerical and off.
 
--- tinting at the inline-character level.
+-- multiline text justification (?)

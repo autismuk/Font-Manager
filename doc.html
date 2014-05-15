@@ -48,7 +48,7 @@
 <hr><h1>BitmapString</h1>
 <p><h3>Extends Base</h3></p>
 <p>It uses a view group object for basic positioning. Scaling and rotating, it depends. If you create a string, you can scale it and rotate it with transitions, just as you do with any object. But if you want a string with animated effects, you cannot use transitions as well. The reason for this is if you 'animate' xScale,yScale with transition.to its scaling effects on the object will be reset by the animation - basically they argue about who does the scaling. The xOffset,yOffset is additional to the actual position, rotation probably won't work either (not sure ?)</p>
-<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_addEventListener"/>addEventListener</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_isAnimated"/>isAnimated</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_paintandFormatLine"/>paintandFormatLine</a>,<a href="#BitmapString_postProcessAnchorFix"/>postProcessAnchorFix</a>,<a href="#BitmapString_remove"/>remove</a>,<a href="#BitmapString_removeEventListener"/>removeEventListener</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setTintColor"/>setTintColor</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a></p><hr><a name="BitmapString_(constructor)"></a>
+<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_addEventListener"/>addEventListener</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_evaluateTint"/>evaluateTint</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_remove"/>remove</a>,<a href="#BitmapString_removeEventListener"/>removeEventListener</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setTintColor"/>setTintColor</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a></p><hr><a name="BitmapString_(constructor)"></a>
 <h2>(constructor)(font,fontSize)</h2>
 <table>
 <tr><td>font</td><td>String/Reference</td><td>Font to use to create string</td></tr>
@@ -71,6 +71,13 @@
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Turns animation on, with an optional speed scalar. This causes the 'cPos' in modifiers to change with time allowing the various animation effects</p>
+<a name="BitmapString_evaluateTint"></a>
+<h2>evaluateTint(descr)</h2>
+<table>
+<tr><td>descr</td><td>string</td><td>description - can be text, n,n,n or ""</td></tr>
+<tr><td>return</td><td>table</td><td>tint table containing red,green,blue members or nil.</td></tr>
+</table>
+<p>Convert a textual colour definition to a tint array</p>
 <a name="BitmapString_extractCharacterUTF8"></a>
 <a name="BitmapString_extractCharacterUnicode"></a>
 <a name="BitmapString_getView"></a>
@@ -80,11 +87,6 @@
 </table>
 <p>Return the view group if you want to animate it using transition.to</p>
 <a name="BitmapString_isAnimated"></a>
-<h2>isAnimated()</h2>
-<table>
-<tr><td>return</td><td>boolean</td><td>true if string is animated</td></tr>
-</table>
-<p>Check to see if the string is animated or not. (e.g. has animate() been called)</p>
 <a name="BitmapString_isInvalid"></a>
 <a name="BitmapString_moveTo"></a>
 <h2>moveTo(x,y)</h2>
@@ -95,19 +97,7 @@
 </table>
 <p>Move the view group - i.e. the font</p>
 <a name="BitmapString_paintandFormatLine"></a>
-<h2>paintandFormatLine(lineData,nextX,nextY,spacing,fullWidth,lineCount)</h2>
-<table>
-<tr><td>lineData</td><td>table</td><td>table consisting of array of { code, displayObject } with a length property</td></tr>
-<tr><td>nextX</td><td>number</td><td>where we start drawing from x</td></tr>
-<tr><td>nextY</td><td>number</td><td>where we start drawing from y</td></tr>
-<tr><td>spacing</td><td>number</td><td>extra spacing to format the text correctly.</td></tr>
-<tr><td>fullWidth</td><td>number</td><td>full pixel width of string box</td></tr>
-<tr><td>lineCount</td><td>number</td><td>total number of lines</td></tr>
-</table>
-<p>Paint and format the given line.</p>
 <a name="BitmapString_postProcessAnchorFix"></a>
-<h2>postProcessAnchorFix()</h2>
-<p>Fix up the positioning to allow for the drawing rectangle (pre-modifier) and the anchors.</p>
 <a name="BitmapString_reformat"></a>
 <a name="BitmapString_remove"></a>
 <h2>remove()</h2>
@@ -198,7 +188,7 @@
 <hr><h1>FontManager</h1>
 <p><h3>Extends Base</h3></p>
 <p>The fontmananger class controls, animates and updates all the fonts on the screen. It also tracks what fonts are used, and keeps a library of standard effects. It is a singleton.</p>
-<p>Methods : <a href="#FontManager_(constructor)"/>(constructor)</a>,<a href="#FontManager_clearText"/>clearText</a>,<a href="#FontManager_curve"/>curve</a>,<a href="#FontManager_getFont"/>getFont</a>,<a href="#FontManager_getModifier"/>getModifier</a>,<a href="#FontManager_setAnimationRate"/>setAnimationRate</a>,<a href="#FontManager_setEncoding"/>setEncoding</a></p><hr><a name="FontManager_(constructor)"></a>
+<p>Methods : <a href="#FontManager_(constructor)"/>(constructor)</a>,<a href="#FontManager_clearText"/>clearText</a>,<a href="#FontManager_curve"/>curve</a>,<a href="#FontManager_getFont"/>getFont</a>,<a href="#FontManager_getModifier"/>getModifier</a>,<a href="#FontManager_setAnimationRate"/>setAnimationRate</a>,<a href="#FontManager_setEncoding"/>setEncoding</a>,<a href="#FontManager_setTintBrackets"/>setTintBrackets</a></p><hr><a name="FontManager_(constructor)"></a>
 <h2>(constructor)()</h2>
 <p>Constructor - note this is the prototype and the instance.</p>
 <a name="FontManager__startEnterFrame"></a>
@@ -245,6 +235,13 @@
 <tr><td>return</td><td>FontManager</td><td>chaining</td></tr>
 </table>
 <p>Set the string encoding used to convert strings to bitmap sequences</p>
+<a name="FontManager_setTintBrackets"></a>
+<h2>setTintBrackets(cStart,cEnd)</h2>
+<table>
+<tr><td>cStart</td><td>string</td><td>start character</td></tr>
+<tr><td>cEnd</td><td>string</td><td>end character.</td></tr>
+</table>
+<p>Set the bounding characters for tint definitions (defaults to { and })</p>
 <a name="JaggedModifier"></a>
 <hr><h1>JaggedModifier</h1>
 <p><h3>Extends Modifier</h3></p>

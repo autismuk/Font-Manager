@@ -61,7 +61,6 @@ But you can get rid of them individually, effectively.
 
 will vanish it, though it is still there, you can kill it as an object with :
 
-
 	str4:remove()
 	
 and to kill them all :
@@ -87,7 +86,14 @@ You can set the font encoding with
 	fm.FontManager:setEncoding("utf8")
 
 currently unicode, utf-8 and utf8 are supported. UTF-8 format is only supported as a 2 byte length. If anyone wants this extended please let me know.
-	
+
+Colour tinting can be done using setTintColor() - colours everything, can be in-string and also can be modified.  Colour tinting looks like :
+
+	"Hello{blue}blue {1,0,1}purple {}world"	
+
+The character pair used to detect tinting instructions can be set using fm.FontManager:setTintBrackets("(",")") for example - defaults to {}  - colours are
+black,red,green,yellow,blue,magenta,cyan,white,grey,orange,brown
+
 Note: fm, assumes you've done something like fm = require("fontmanager")
 
 Paul Robson.

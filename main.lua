@@ -13,7 +13,12 @@ display.setStatusBar(display.HiddenStatusBar)
 fm = require("system.fontmanager")																-- get an instance of the font manager.
 fm.FontManager:setEncoding("utf8") 																-- set expected encoding to UTF-8 (default is Unicode character set.)
 
-local msg = "Another line\rwith\ra curve" .. string.char(0xC3,0xBE,0x2A) 						-- this is A~ 3/4 in Unicode, and a circle with a vertical line in UTF-8.
+local bgr = display.newRect( 0,0,320,480) 														-- blue background
+bgr:setFillColor(0,0,1)
+bgr.anchorX,bgr.anchorY = 0,0
+
+local msg = "An{brown}other {1,0,1}line\rwit{}h\ra curve" .. string.char(0xC3,0xBE,0x2A) 		-- this is A~ 3/4 in Unicode, and a circle with a vertical line in UTF-8.
+																								-- the curly brackets set tinting colours.
 
 local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
 str:moveTo(160,240):setScale(2,2):setFontSize(50) 												-- centre it, double the scale, size 48.
@@ -100,7 +105,7 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 -- str4:remove() 																				-- remove kills it. str4 will be an empty object.
 -- for _,n in pairs(str4) do print("str4",_,n) end
 
-local t = 8000 																					-- run over 8 seconds.
+local t = 800 																					-- run over 8 seconds.
 
 --
 --	Animate using the usual Corona methods.
@@ -108,7 +113,7 @@ local t = 8000 																					-- run over 8 seconds.
 --	Remove the comment, the screen clears at the end, this is a 'tidy everything up' routine.
 --
 
-transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 0.5, yScale = 1, rotation = 360*2,
+transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 1, yScale = 1, rotation = 360*2,
 	onComplete = function()  
 		-- fm.FontManager:clearText() 
 	end })
