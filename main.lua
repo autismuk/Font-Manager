@@ -102,17 +102,20 @@ function demoTarget.tap(event) print("tap",event) end
 str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you tap it.
 -- str4:removeEventListener("tap")
 
--- str4:remove() 																				-- remove kills it. str4 will be an empty object.
+--str4:remove() 																					-- remove kills it. str4 will be an empty object.
+--str4:remove()
+
 -- for _,n in pairs(str4) do print("str4",_,n) end
 
 local t = 800 																					-- run over 8 seconds.
+
+-- str:getView().isVisible = false str2:getView().isVisible = false str3:getView().isVisible = false str4:getView().isVisible = false
 
 --
 --	Animate using the usual Corona methods.
 --
 --	Remove the comment, the screen clears at the end, this is a 'tidy everything up' routine.
 --
-
 transition.to(str:getView(),{ time = t,rotation = 0, y = 0, xScale = 1, yScale = 1, rotation = 360*2,
 	onComplete = function()  
 		-- fm.FontManager:clearText() 
@@ -122,5 +125,14 @@ transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 
 
 transition.to(str3:getView(), { time = t,rotation = 360 })
 
-transition.to(str4:getView(), { time = t, xScale = 2,yScale = 2})
+-- transition.to(str4:getView(), { time = t, xScale = 2,yScale = 2})
 
+
+--[[
+local composer = require( "composer" )
+composer.loadScene("demoscene")
+print(_G.scene,_G.scene.view,_G.sceneText,getmetatable(_G.sceneText:getView()),_G.sceneText:getView().numChildren,_G.sceneText:getView().isVisible,_G.owner.isVisible,_G.owner.numChildren)
+--composer.gotoScene("demoscene")
+composer.removeScene("demoscene")
+print(_G.scene,_G.scene.view,_G.sceneText,getmetatable(_G.sceneText:getView()),_G.sceneText:getView().numChildren,_G.sceneText:getView().isVisible,_G.owner.isVisible,_G.owner.numChildren)
+--]]
