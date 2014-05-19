@@ -88,7 +88,7 @@ function wordPulser(modifier, cPos, info)
 end
 
 -- str:setModifier(linePulser) 																	-- pick something to run, comment both out, it's a curve/scale
-str:setModifier(wordPulser)
+-- str:setModifier(wordPulser)
 
 local str4 = display.newBitmapText("pulse",160,240,"retrofont",80) 								-- create a new string using Corona method.
 str4:setModifier(pulser):animate() 																-- make it use the above modifier, and animate it.
@@ -102,12 +102,12 @@ function demoTarget.tap(event) print("tap",event) end
 str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you tap it.
 -- str4:removeEventListener("tap")
 
---str4:remove() 																					-- remove kills it. str4 will be an empty object.
---str4:remove()
+--str4:remove() 																				-- remove kills it. str4 will be an empty object.
+--str4:remove() 																				-- multiple removes() aere fine
 
 -- for _,n in pairs(str4) do print("str4",_,n) end
 
-local t = 800 																					-- run over 8 seconds.
+local t = 8000 																					-- run over 8 seconds.
 
 -- str:getView().isVisible = false str2:getView().isVisible = false str3:getView().isVisible = false str4:getView().isVisible = false
 
@@ -125,7 +125,7 @@ transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 
 
 transition.to(str3:getView(), { time = t,rotation = 360 })
 
--- transition.to(str4:getView(), { time = t, xScale = 2,yScale = 2})
+transition.to(str4:getView(), { time = t, xScale = 2,yScale = 2})
 
 
 --[[
