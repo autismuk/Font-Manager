@@ -296,6 +296,9 @@ function CharacterSource:get()
 	return unicode 
 end
 
+--//%	Are there any more characters to get from the source
+--//	@return [boolean] true if there are.
+
 function CharacterSource:isMore() 
 	return self.index <= #self.source
 end
@@ -354,6 +357,7 @@ end
 --//	Destructor.
 
 function BitmapString:destroy()
+	if self.characterList == nil then return end											-- already been done.
 	self:setText("") 																		-- removes the bitmaps and tidies up.
 	if BitmapString.isDebug then self.debuggingRectangle:removeSelf() end 					-- remove the debugging rectangle if it is in use.
 	assert(self.numChildren == 0,"View group not cleaned up correctly")
@@ -361,9 +365,14 @@ function BitmapString:destroy()
 	self.debuggingRectangle = nil self.text = nil self.fontName = nil
 	self.lineCount = nil self.wordCount = nil self.fontSize = nil self.isHorizontal = nil
 	self.lineLength = nil self.horizontalSpacingPixels = nil self.verticalSpacingScalar = nil
-	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapCharacter)",k,v) end end
+	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapCh)",k,v) end end -- dump any remaining refs.
 end
 
+--// 	RemoveSelf method, synonym for destroy. Cleans up.
+
+function BitmapString:removeSelf()
+	self:destroy()
+end
 
 --//	Set the text of the string to the new text. If it changes, it recreates the entire string,using the previous text items where possible.
 --//	lines, words, characters are counted, then it is formatted around (0,0) and multi line text is justified.
@@ -590,16 +599,59 @@ end
 --//	@g 	[number] 		Green component 0-1
 --//	@b 	[number] 		Blue component 0-1
 --//	@return [BitmapString] self
+
 function BitmapString:setTintColor(r,g,b)
 	self.tinting = { red = r or 1 , green = g or 1, blue = b or 1 }
 	return self
 end
 
+--- ************************************************************************************************************************************************************************
+--
+--		This adds a display.newBitmapText method which is fairly close to that provided by Corona for newText, as close as I can get. 
+--		
+--		However this still uses BitmapString methods, so you cannot assign to x,y,anchorX,anchorY,xScale,yScale etc. At present anyway.
+--
+--		Bear in mind that what is returned by this is not a Corona DisplayObject and cannot be used like one.  To access the viewGroup use the getView()
+--		method. Clear up using the strings remove() method , not using removeSelf() or relying on it being removed if it is part of a group.
+--
+--- ************************************************************************************************************************************************************************
+
+function display.newBitmapText(...)
+	local options = arg 																		-- equivalent to 'options' in documentation
+	if #arg > 1 then 																			-- legacy syntax [parentgroup],text,x,y,font,fontSize if more than one argument
+		local paramOffset = 1 																	-- where to start getting parameters from
+		options = {} 																			-- create an equivalent 'options'
+		if type(arg[1]) == "table" then 														-- argument 1 is table, this must be a parentGroup
+			options.parent = arg[1] 															-- insert it as parent option.
+			paramOffset = 2 																	-- and start from argument 2.
+		end
+		assert(#arg == paramOffset+4,															-- check parameter count is correct
+						"Parameters to display.newBitmapText([parentGroup,],text,x,y,font,fontsize)")
+		options.text = arg[paramOffset] 														-- copy parameters into table.
+		options.x = arg[paramOffset+1]
+		options.y = arg[paramOffset+2]
+		options.font = arg[paramOffset+3]
+		options.fontSize = arg[paramOffset+4]
+	end
+	assert(options.text ~= nil,"newBitmapText:bad 'text' parameter")							-- some simple validation.
+	assert(options.font ~= nil and type(options.font) == "string","newBitmapText:bad 'font' parameter")
+	assert(options.fontSize ~= nil and type(options.fontSize) == "number","newBitmapText:bad 'fontSize' parameter")
+	if options.width ~= nil or options.height ~= nil then print("newBitmapText does not support multiline text") end
+
+	local bitmapString = display.hiddenBitmapStringPrototype:new(options.font,options.fontSize)	-- create a bitmap string object
+	bitmapString:setText(options.text) 															-- set the text
+	if options.x ~= nil then bitmapString:moveTo(options.x,options.y or 0) end 					-- if a position is provided, move it there.
+	if options.parent ~= nil then options.parent:insert(bitmapString:getView()) end 			-- insert into parent
+	return bitmapString
+end
+
+display.hiddenBitmapStringPrototype = BitmapString 												-- the hidden prototype ooh err....
+
 return { BitmapString = BitmapString }
 
 -- setModifier / re-render
 -- animation code.
--- auto remove?
+-- auto remove? (no, probably not !)
 
 -- UTF-8 implementation
 -- setting text justification, use constants.
