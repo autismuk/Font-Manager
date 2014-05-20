@@ -167,6 +167,7 @@ function BitmapCharacter:initialise(fontName,unicodeCharacter)
 	self.basePhysicalHeight = info.fontHeight 												-- save the physical height of the bitmap.
 	self.actualHeight = info.fontHeight 													-- initially same size as the physical height.
 	self.image.anchorX, self.image.anchorY = 0.5,0.5 										-- anchor at the middle of the display image.
+	self.tinting = nil 																		-- current default tinting.
 	if self.isDebug then 																	-- if you want it, create the debug rectangle.
 		self.debuggingRectangle = display.newRect(0,0,1,1)									-- moving it will update its location correctly.
 		self.debuggingRectangle:setStrokeColor(0,0.4,0) 									-- make it green, one width and transparent
@@ -184,7 +185,7 @@ function BitmapCharacter:destroy()
 	if self.image ~= nil then 
 		self.image:removeSelf() self.image = nil self.info = nil self.boundingBox = nil 	-- clean up by hand, to make sure :)
 		self.xDefault = nil self.yDefault = nil self.actualHeight = nil self.basePhysicalHeight = nil
-		self.character = nil
+		self.character = nil self.tinting = nil
 		if self.debuggingRectangle ~= nil then  											-- remove debugging rectangle if exists.
 			self.debuggingRectangle:removeSelf()
 			self.debuggingRectangle = nil
@@ -222,6 +223,14 @@ function BitmapCharacter:moveTo(x,y,newHeight)
 	end
 end
 
+--//%	Move the bitmap font by an offset
+--//	@x  	[number]	x offset
+--//	@y  	[number]	y offset
+
+function BitmapCharacter:moveBy(x,y) 
+	self:moveTo(self.xDefault + x,self.yDefault + y)
+end
+
 --//%	Set the tint of the bitmap character, no parameter clears it.
 --//	@tint [table] 		tint with red,green,blue components.
 
@@ -232,6 +241,40 @@ function BitmapCharacter:setTint(tint)
 		self.image:setFillColor( tint.red,tint.green,tint.blue )
 	end
 end
+
+--- ************************************************************************************************************************************************************************
+--//%										Modifier Store singleton - keeps an internal list of all standard modifiers
+--- ************************************************************************************************************************************************************************
+
+local ModifierStore = Base:new()
+
+--//%	Initialise the store
+
+function ModifierStore:initialise()
+	self.storeItems = {} 																	-- hash of store items
+end
+
+--//%	Register a named modifier
+--//	@name 		[string]			modifier name
+--//	@modifier 	[function/table]	modifier instance or function
+
+function ModifierStore:register(name,modifier)
+	name = name:lower()
+	assert(self.storeItems[name] == nil,"Duplicate modifier name "..name)
+	self.storeItems[name] = modifier
+end
+
+--//%	Retrieve a named modifier
+--//	@name 		[string]			modifier name
+--//	@return 	[function/Table]	modifier instance or function requested
+
+function ModifierStore:get(name)
+	name = name:lower()
+	assert(self.storeItems[name] ~= nil,"Modifier unknown "..name)
+	return self.storeItems[name]
+end
+
+ModifierStore:initialise()																	-- make prototype an instance.
 
 --- ************************************************************************************************************************************************************************
 --//	This is a collection of Bitmap Characters that may be available for re-use, when changing the text on a Bitmap String. For some reason I called it a Bucket class
@@ -339,11 +382,12 @@ function BitmapString:initialise(fontName,fontSize)
 	self.fontName = fontName self.fontSize = fontSize or 64 								-- save the font name and the font size.
 	assert(self.fontName ~= nil,"No default font name for Bitmap String")					-- check a font was provided.
 	self.characterList = {} 																-- list of characters.
-	self.text = "" 																			-- text string is currently empty
+	self.currText = "" 																		-- text string is currently empty
 	self.isHorizontal = true																-- is horizontal text.
 	self.justification = "C"																-- and multi-line is centred.
 	self.verticalSpacingScalar = 1 															-- vertical spacing scalar
 	self.horizontalSpacingPixels = 0 														-- horizontal gap extra.
+	self.internalXAnchor,self.internalYAnchor = 0.5,0.5 									-- internal anchor (initial) values.
 	if BitmapString.isDebug then 
 		self.debuggingRectangle = display.newRect(0,0,1,1)									-- moving it will update its location correctly.
 		self.debuggingRectangle:setStrokeColor(0.4,0.4,0) 									-- make it green, one width and transparent
@@ -362,9 +406,10 @@ function BitmapString:destroy()
 	if BitmapString.isDebug then self.debuggingRectangle:removeSelf() end 					-- remove the debugging rectangle if it is in use.
 	assert(self.numChildren == 0,"View group not cleaned up correctly")
 	self.boundingBox = nil self.justification = nil self.characterList = nil 				-- clean up
-	self.debuggingRectangle = nil self.text = nil self.fontName = nil
+	self.debuggingRectangle = nil self.currText = nil self.fontName = nil
 	self.lineCount = nil self.wordCount = nil self.fontSize = nil self.isHorizontal = nil
 	self.lineLength = nil self.horizontalSpacingPixels = nil self.verticalSpacingScalar = nil
+	self.internalXAnchor = nil self.internalYAnchor = nil
 	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapCh)",k,v) end end -- dump any remaining refs.
 end
 
@@ -374,16 +419,30 @@ function BitmapString:removeSelf()
 	self:destroy()
 end
 
+--//	Show is a way of getting round the problems of using members rather than methods when their setting has side-effects.
+--//	The method copies the anchorX, anchorY and text values in, then sets and reformats the text appropriately.
+--//	@return [BitmapString] 	self for chaining.
+
+function BitmapString:show()
+	self.internalXAnchor,self.internalYAnchor = self.anchorX or 0.5,self.anchorY or 0.5 	-- get anchor X, anchor Y
+	self.currText = self.text .. "!" 														-- this means the change check will fail :)
+	self:setText(self.text)																	-- set the text
+	return self
+end
+
 --//	Set the text of the string to the new text. If it changes, it recreates the entire string,using the previous text items where possible.
---//	lines, words, characters are counted, then it is formatted around (0,0) and multi line text is justified.
+--//	lines, words, characters are counted, then it is formatted around (0,0) and multi line text is justified. If text member is defined
+--//	it uses that as the default, failing that it uses ""
 --//	@newText [string]		Replacement text
 --//	@return  [BitmapString]	Chain
 
 function BitmapString:setText(newText)
-	if newText == self.text then return self end 											-- if unchanged, do absolutely nothing.
+	newText = newText or self.text															-- default is self.text member
+	newText = newText or "" 																-- and if that's not defined, then nil.
+	if newText == self.currText then return self end 											-- if unchanged, do absolutely nothing.
 	local bucket = BitmapCharacterBucket:new(self.characterList) 							-- create a bucket out of the old character list.
 	self.characterList = {} 																-- clear the character list.
-	self.text = newText 																	-- update the text saved.
+	self.currText = newText 																	-- update the text saved.
 	local source = CharacterSource:new(newText) 											-- create a character source for it.
 	local xCharacter = 1 local yCharacter = 1 												-- these are the indexes of the character.
 	self.wordCount = 1 																		-- number of words
@@ -444,14 +503,31 @@ function BitmapString:reformatText()
 	end
 	self.boundingBox.width = self.boundingBox.x2 - self.boundingBox.x1 						-- set width and height.
 	self.boundingBox.height = self.boundingBox.y2 - self.boundingBox.y1
+	if self.justification ~= "L" then 														-- if not left justified
+		self:justifyText(self.justification == "R")											-- right or centre justify it
+	end
+	self:anchorMove() 																		-- move the text to allow for the anchors.
+end
+
+--//% 	Handle the string repositioning for anchoring.
+
+function BitmapString:anchorMove()
+	if self.internalXAnchor ~= 0 or self.internalYAnchor ~= 0 then 							-- not anchored at 0,0 (e.g. top left)
+		local xOffset = -(self.internalXAnchor * self.boundingBox.width) 					-- calculate x,y offsets
+		local yOffset = -(self.internalYAnchor * self.boundingBox.height)
+		for index,char in ipairs(self.characterList) do 									-- move all bitmaps by that.
+			char.bitmapChar:moveBy(xOffset,yOffset)
+		end
+		self.boundingBox.x1 = self.boundingBox.x1 + xOffset 								-- adjust the bounding box for the anchoring.
+		self.boundingBox.x2 = self.boundingBox.x2 + xOffset
+		self.boundingBox.y1 = self.boundingBox.y1 + yOffset
+		self.boundingBox.y2 = self.boundingBox.y2 + yOffset
+	end
 	if BitmapString.isDebug then 															-- if debugging, update the debugging rectangle.
 		local r = self.debuggingRectangle
 		r.x,r.y = self.boundingBox.x1,self.boundingBox.y1
 		r.width,r.height = self.boundingBox.width,self.boundingBox.height
 		r:toFront()
-	end
-	if self.justification ~= "L" then 														-- if not left justified
-		self:justifyText(self.justification == "R")											-- right or centre justify it
 	end
 end
 
@@ -522,7 +598,7 @@ end
 --//	@return [BitmapString]	allows chaining.
 
 function BitmapString:setFont(font,fontSize)
-	local originalText = self.text 															-- preserve the original text
+	local originalText = self.currText 														-- preserve the original text
 	self:setText("") 																		-- set the text to empty, which clears up the displayObjects etc.
 	self.fontName = font or self.fontName													-- update font and font size
 	self.fontSize = fontSize or self.fontSize
@@ -530,13 +606,20 @@ function BitmapString:setFont(font,fontSize)
 	return self
 end
 
---//	Set the anchor position - same as Corona except it is done with a method not by assigning member variables.
+--//	Set the anchor position - same as Corona except it is done with a method not by assigning member variables. If you omit the parameters
+--//	then it will use anchorX, anchorY as defaults.
+
 --//	@anchorX 	[number]			X anchor position 0->1
 --//	@anchorY 	[number]			Y anchor position 0->1
 --//	@return [BitmapString]	allows chaining.
 
 function BitmapString:setAnchor(anchorX,anchorY)
-	-- TODO
+	anchorX = anchorX or self.anchorX anchorY = anchorY or self.anchorY 					-- use the anchorX, anchorY values if they are there.
+	if anchorX ~= self.internalXAnchor or anchorY ~= self.internalYAnchor then 				-- different from the internal one.
+		self.anchorX,self.anchorY = anchorX,anchorY 										-- update the visible ones.
+		self.internalXAnchor = anchorX self.internalYAnchor = anchorY 						-- update
+		self:reformatText() 																-- and reformat.
+	end
 	return self
 end
 
@@ -594,14 +677,18 @@ function BitmapString:setModifier(funcOrTable)
 end
 
 --//	Apply an overall tint to the string. This can be overridden or modified using the tint table of the modifier
---//	which itself has three fields - red, green and blue
+--//	which itself has three fields - red, green and blue. If nothing provided, clears the default tint.
 --//	@r 	[number] 		Red component 0-1
 --//	@g 	[number] 		Green component 0-1
 --//	@b 	[number] 		Blue component 0-1
 --//	@return [BitmapString] self
 
 function BitmapString:setTintColor(r,g,b)
-	self.tinting = { red = r or 1 , green = g or 1, blue = b or 1 }
+	if r == nil and g == nil and b == nil then 												-- no parameters  																	
+		self.tinting = nil 																	-- clear tint
+	else
+		self.tinting = { red = r or 1 , green = g or 1, blue = b or 1 } 					-- otherwise create a tint.
+	end
 	return self
 end
 
@@ -647,13 +734,213 @@ end
 
 display.hiddenBitmapStringPrototype = BitmapString 												-- the hidden prototype ooh err....
 
-return { BitmapString = BitmapString }
+--- ************************************************************************************************************************************************************************
+--																	Curve class with one static method.
+--- ************************************************************************************************************************************************************************
 
--- setModifier / re-render
+local Curve = Base:new() 
+
+--//	Helper function which calculates curves according to the definition - basically can take a segment of a trigonometrical curve and apply it to 
+--//	whatever you want, it can be repeated over a range, so you could say apply the sin curve from 0-180 5 times and get 5 'humps'
+--
+--//	@curveDefinition 	[Modifier Descriptor]	Table containing startAngle,endAngle,curveCount,formula
+--//	@position 			[number]				Position in curve 0 to 100
+--//	@return 			[number]				Value of curve (normally between 0 and 1)
+
+function Curve:curve(curveDefinition,position)
+	curveDefinition.startAngle = curveDefinition.startAngle or 0 							-- where in the curve the font is, so by default it is 0-90
+	curveDefinition.endAngle = curveDefinition.endAngle or 180
+	curveDefinition.curveCount = curveDefinition.curveCount or 1 							-- number of iterations of that curve over the whole range.
+	curveDefinition.formula = curveDefinition.formula or "sin" 								-- use sin by default.
+	position = (math.round(position) * curveDefinition.curveCount) % 100 					-- allow for the repetition of curves.
+	local angle = curveDefinition.startAngle + 												-- work out how far through the angle it is.
+								(curveDefinition.endAngle - curveDefinition.startAngle) * position / 100
+	angle = math.rad(angle) 																-- convert to radians
+	local formula = curveDefinition.formula:lower() 										-- get formula in lower case.
+	local result
+	if formula == "sin" 	then result = math.sin(angle) 									-- calculate the result
+	elseif formula == "cos"	then result = math.cos(angle)
+	elseif formula == "tan" then result = math.tan(angle)
+	else error("Unknown formula "..formula) 												-- add extra formulae here
+	end
+	return result 																			-- this will be 0-1 (usually)
+end
+
+--- ************************************************************************************************************************************************************************
+--
+--//		Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul>
+--//
+--//			<li>modifier 		structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can
+--// 								tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li>
+--//			<li>cPos 			the character position, from 0-100 - how far along the string this is. This does not correlate to string character
+--// 								position, as this is changed to animate the display. </li>
+--// 			<li>info 			table containing information for the modifier : elapsed - elapsed time in ms, index - position in this line, 
+--// 								length - length of this linem lineCount, lineIndex - line number of this character, lineCount - total number of lines
+--//								</li></ul>
+--
+--- ************************************************************************************************************************************************************************
+
+local Modifier = Base:new() 																-- establish a base class. Probably isn't necessary :)
+
+--//	Class which wobbles the characters randomly
+
+local WobbleModifier = Modifier:new()					 									-- Wobble Modifier makes it,err.... wobble ?
+
+--//	Constructor, sets the violence of the wobble.
+--//	@violence [number]	degree of wobbliness, defaults to 1.
+
+function WobbleModifier:initialise(violence) self.violence = violence or 1 end 
+
+--// %	Make the font wobble by changing values just a little bit
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@info [table] Information about the character/string/line
+
+function WobbleModifier:modify(modifier,cPos,info)
+	modifier.xOffset = math.random(-self.violence,self.violence) 							-- adjust all these values by the random level of 'violence'
+	modifier.yOffset = math.random(-self.violence,self.violence)
+	modifier.xScale = math.random(-self.violence,self.violence) / 10 + 1
+	modifier.yScale = math.random(-self.violence,self.violence) / 10 + 1
+	modifier.rotation = math.random(-self.violence,self.violence) * 5
+end
+
+--//	Modifier which changes the vertical position on a curve
+
+local SimpleCurveModifier = Modifier:new()													-- curvepos curves the text positionally vertically
+
+--// 	Initialise the curve modifier
+--//	@start [number] 	start angle of cuve
+--//	@enda [number]		end angle of curve
+--//	@scale [number]     degree to which it affects the bitmapstring
+--//	@count [number]		number of segments to map onto the text
+
+function SimpleCurveModifier:initialise(start,enda,scale,count)
+	self.curveDesc = { startAngle = start or 0, endAngle = enda or 180, 					-- by default, sine curve from 0 - 180 degrees replicated once.
+															curveCount = count or 1 }
+	self.scale = scale or 1
+end
+
+--// %	Make the modifications needed to change the vertical position
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@info [table] Information about the character/string/line
+
+function SimpleCurveModifier:modify(modifier,cPos,info)
+	modifier.yOffset = Curve:curve(self.curveDesc,cPos) * 50 * self.scale 			
+end
+
+--//	Extend simple Curve scale Modifier so it is inverted.
+
+local SimpleInverseCurveModifier = SimpleCurveModifier:new()
+
+--// %	Make the modifications needed to change the vertical position
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@info [table] Information about the character/string/line
+
+function SimpleInverseCurveModifier:modify(modifier,cPos,info)
+	modifier.yOffset = - Curve:curve(self.curveDesc,cPos) * 50 * self.scale 			
+end
+
+--//	Modifier which changes the vertical scale on a curve
+
+local SimpleCurveScaleModifier = SimpleCurveModifier:new()						 			-- curvepos scales the text vertically rather than the position.
+
+--// %	Make the modifications needed to change the vertical scale
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@info [table] Information about the character/string/line
+
+function SimpleCurveScaleModifier:modify(modifier,cPos,info)
+	modifier.yScale = Curve:curve(self.curveDesc,cPos)*self.scale+1 					-- so we just override the bit that applies it.
+end
+
+--//	Scale but shaped the other way.
+
+local SimpleInverseCurveScaleModifier = SimpleCurveScaleModifier:new()
+
+--// %	Make the modifications needed to change the vertical scale
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@info [table] Information about the character/string/line
+
+function SimpleInverseCurveScaleModifier:modify(modifier,cPos,info)
+	modifier.yScale = 1 - Curve:curve(self.curveDesc,cPos)*self.scale*2/3				-- so we just override the bit that applies it.
+end
+
+--// 	Modifier which turns alternate characters 15 degrees in different directions
+
+local JaggedModifier = Modifier:new()														-- jagged alternates left and right rotation.
+
+--// %	Make the modifications needed to look jagged
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@info [table] Information about the character/string/line
+
+function JaggedModifier:modify(modifier,cPos,info)
+	modifier.rotation = ((info.index % 2 * 2) - 1) * 15 									-- generates -15 and +15 rotation alternately on index.
+end
+
+--//	Modifier which zooms characters from 0->1 but the base positions don't change.
+
+local ZoomOutModifier = Modifier:new() 														-- Zoom out from nothing to standard
+
+--//	Initialise the zoom
+--//	@zoomTime [number] how long the zoom takes, defaults to three seconds.
+																							-- this scales letters back spaced - if you want a classic zoom
+function ZoomOutModifier:initialise(zoomTime)												-- use transition.to to scale it :)
+	self.zoomTime = zoomTime or 3000 				
+end
+
+--// %	Make the modifications to cause the zoom
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@info [table] Information about the character/string/line
+
+function ZoomOutModifier:modify(modifier,cPos,info)
+	local scale = math.min(1,info.elapsed / self.zoomTime)
+	modifier.xScale,modifier.yScale = scale,scale
+end
+
+--//	Modifier which zooms characters from 1->0 but the base positions don't change.
+
+local ZoomInModifier = ZoomOutModifier:new() 												-- Zoom in, as zoom out but the other way round
+
+--// %	Make the modifications to cause the zoom.
+--//	@modifier [Modifier Table]	Structure to modify to change effects
+--//	@cPos [number]  Position in effect
+--//	@info [table] Information about the character/string/line
+
+function ZoomInModifier:modify(modifier,cPos,info)
+	local scale = math.min(1,info.elapsed / self.zoomTime)
+	modifier.xScale,modifier.yScale = 1-scale,1-scale
+end
+
+ModifierStore:register("wobble",WobbleModifier:new())										-- tell the system about them.
+ModifierStore:register("curve",SimpleCurveModifier:new())
+ModifierStore:register("icurve",SimpleInverseCurveModifier:new())
+ModifierStore:register("scale",SimpleCurveScaleModifier:new())
+ModifierStore:register("iscale",SimpleInverseCurveScaleModifier:new())
+ModifierStore:register("jagged",JaggedModifier:new())
+ModifierStore:register("zoomout",ZoomOutModifier:new())
+ModifierStore:register("zoomin",ZoomInModifier:new())
+
+local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so we can provide the Modifiers.
+					SimpleCurveModifier = SimpleCurveModifier,
+					SimpleInverseCurveModifier = SimpleCurveModifier,
+					SimpleCurveScaleModifier = SimpleCurveScaleModifier,
+					SimpleInverseCurveScaleModifier = SimpleInverseCurveScaleModifier,
+					JaggedModifier = JaggedModifier,
+					ZoomOutModifier = ZoomOutModifier,
+					ZoomInModifier = ZoomInModifier }
+
+return { BitmapString = BitmapString, Modifiers = Modifiers }
+
+-- setModifier / re-render, add to reformat() can be called seperately (e.g. animation)
 -- animation code.
 -- auto remove? (no, probably not !)
 
 -- UTF-8 implementation
 -- setting text justification, use constants.
--- anchors, positioning, text setting via members.
 -- tinting - overall, coded, modifiers.
+-- member ?
