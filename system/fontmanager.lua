@@ -383,6 +383,7 @@ BitmapString.animationFrequency = 15 														-- animation update frequency
 
 function BitmapString:new(...)
 	local newObject = display.newGroup() 													-- create new group
+	newObject.__oldRemoveSelf = newObject.removeSelf 										-- create an __oldRemoveSelf method which is the removeSelf()
 	for name,object in pairs(BitmapString) do  												-- go through bitmap string looking for methods etc.
 		if type(object) == "function" and name ~= "new" then 								-- if it's a function, other than new.
 			newObject[name] = object  														-- decorate the new Object
@@ -434,8 +435,10 @@ function BitmapString:destroy()
 	self.internalXAnchor = nil self.internalYAnchor = nil self.tinting = nil 
 	self.modifier = nil self.lineLengthChars = nil self.isAnimated = nil 
 	self.creationTime = nil self.animationRate = nil
-	self.animationNext = nil
+	self.animationNext = nil self.animationFrequency = nil
 	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapSt)",k,v) end end -- dump any remaining refs.
+	self:__oldRemoveSelf() 																	-- finally, call the old removeSelf() method for the display group
+	-- for k,v in pairs(mt) do print(k,v) end
 end
 
 --// 	RemoveSelf method, synonym for destroy. Cleans up.
@@ -1065,7 +1068,9 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- the above isn't a typo. It's so that old FontManager calls still work :)
 
+
 -- UTF-8 implementation
 -- setting text justification, use constants.
 -- coded tinting (inline code)
 -- 180 and 270 setDirection()
+-- problem with removal of animated string.
