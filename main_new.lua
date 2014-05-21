@@ -22,6 +22,7 @@ bms:setFont("font2")
 bms:setVerticalSpacing(1.2)
 bms:setSpacing(-4)
 bms:setModifier("curve"):animate(4)
+--bms:setJustification(bms.Justify.RIGHT)
 
 -- bms.anchorX,bms.anchorY = 0.5,0.5 bms.text = "Yo !" bms:show()
 
@@ -32,7 +33,7 @@ display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 bms2 = display.newBitmapText("Hello World !",0,350,"retrofont",55)
 bms2:setAnchor(0,0.5)
 -- bms2:setTintColor(1,1,0)
-bms2:setModifier("wobble")
+bms2:setModifier("wobble"):animate()
 
 --bms:addEventListener( "tap", function(e) print("tapped") end)
 
@@ -46,9 +47,9 @@ bms2:setModifier("wobble")
 
 -- fm.FontManager:setAnimationFrequency(3)
 
-bms2:setModifier(function(modifier,cPos,infoTable)
-	if infoTable.charIndex % 3 == 0 then modifier.alpha = 0.4 end
-end)
+-- bms2:setModifier(function(modifier,cPos,infoTable)
+--	if infoTable.charIndex % 3 == 0 then modifier.alpha = 0.4 end
+-- end)
 
 --[[
 bms:setModifier(function(modifier,cPos,infoTable)

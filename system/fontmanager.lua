@@ -380,6 +380,8 @@ local BitmapString = Base:new() 															-- exists purely for the document
 BitmapString.isDebug = true 																-- provides visual debug support for the string.
 BitmapString.animationFrequency = 15 														-- animation update frequency, Hz.
 
+BitmapString.Justify = { LEFT = 0, CENTER = 1, CENTRE = 1, RIGHT = 2} 						-- Justification comments.
+
 --//% We have a replacement constructor, which decorates a Corona Group with the BitmapString's methods.
 
 function BitmapString:new(...)
@@ -390,6 +392,7 @@ function BitmapString:new(...)
 			newObject[name] = object  														-- decorate the new Object
 		end
 	end
+	newObject.Justify = BitmapString.Justify 												-- expose justify constants
 	newObject:initialise(...) 																-- now call the constructor.
 	return newObject
 end
@@ -400,7 +403,7 @@ function BitmapString:initialise(fontName,fontSize)
 	self.characterList = {} 																-- list of characters.
 	self.currText = "" 																		-- text string is currently empty
 	self.isHorizontal = true																-- is horizontal text.
-	self.justification = "C"																-- and multi-line is centred.
+	self.justification = BitmapString.Justify.CENTER										-- and multi-line is centred.
 	self.verticalSpacingScalar = 1 															-- vertical spacing scalar
 	self.horizontalSpacingPixels = 0 														-- horizontal gap extra.
 	self.internalXAnchor,self.internalYAnchor = 0.5,0.5 									-- internal anchor (initial) values.
@@ -544,8 +547,8 @@ function BitmapString:reformatText()
 	end
 	self.boundingBox.width = self.boundingBox.x2 - self.boundingBox.x1 						-- set width and height.
 	self.boundingBox.height = self.boundingBox.y2 - self.boundingBox.y1
-	if self.justification ~= "L" then 														-- if not left justified
-		self:justifyText(self.justification == "R")											-- right or centre justify it
+	if self.justification ~= BitmapString.Justify.LEFT then 								-- if not left justified
+		self:justifyText(self.justification == BitmapString.Justify.RIGHT)					-- right or centre justify it
 	end
 	self:anchorMove() 																		-- move the text to allow for the anchors.
 	self:applyModifiers() 																	-- apply all the modifiers as appropriate.
@@ -718,6 +721,20 @@ function BitmapString:setAnimationRate(frequency)
 	BitmapString.animationFrequency = frequency or 15
 	print(BitmapString.animationFrequency)
 end
+
+--//	Set multi-line justification.
+--//	@justification [number]	BitmapString.Justify.LEFT/CENTER/RIGHT
+--//	@return [BitmapString]	allows chaining.
+
+function BitmapString:setJustification(justification)
+	justification = justification or BitmapString.Justify.CENTER 							-- default is centre.
+	if justification ~= self.justification then 											-- has it changed ?
+		self.justification = justification 													-- update
+		self:reformatText() 																-- reformat
+	end
+	return self
+end
+
 --//	Move the view group - i.e. the font
 --//	@x 		[number]		Horizontal position
 --//	@y 		[number]		Vertictal position
@@ -1084,8 +1101,9 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 
 -- UTF-8 implementation
--- subclass BitmapString works ? No it doesn't :)
--- setting text justification, use constants.
 -- coded tinting (inline code) - depends on Richard9's ideas ?
 -- 180 and 270 setDirection()
+
+
+-- subclass BitmapString works ? No it doesn't :)
 -- problem with removal of animated string.

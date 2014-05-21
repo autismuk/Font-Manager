@@ -107,7 +107,7 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 
 -- for _,n in pairs(str4) do print("str4",_,n) end
 
-local t = 8000 																					-- run over 8 seconds.
+local t = 800 																					-- run over 8 seconds.
 
 -- str:getView().isVisible = false str2:getView().isVisible = false str3:getView().isVisible = false str4:getView().isVisible = false
 
@@ -137,8 +137,11 @@ composer.removeScene("demoscene")
 print(_G.scene,_G.scene.view,_G.sceneText,getmetatable(_G.sceneText:getView()),_G.sceneText:getView().numChildren,_G.sceneText:getView().isVisible,_G.owner.isVisible,_G.owner.numChildren)
 --]]
 
--- changes made 
+-- changes made (that have retrospective effect - there are improvements as well !)
 
 -- a) setScale() no longer functions. Adjust font size to suit, or scale overall.
 -- b) setDirection() only (currently) supports 0 and 90 directions. (possibly add 270,180)
--- c) there is no FontManager object.
+-- c) there is no FontManager object, really, though setEncoding() and setAnimationRate() still work.
+-- d) curve and scale have been switched so they are the right way round. Previously they were 'visual' opposites.
+-- e) FontManager:Clear() does not exist
+-- f) You cannot directly subclass BitMapString, because it is now a mixin.
