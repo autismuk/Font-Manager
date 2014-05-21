@@ -403,7 +403,8 @@ function BitmapString:initialise(fontName,fontSize)
 	self.internalXAnchor,self.internalYAnchor = 0.5,0.5 									-- internal anchor (initial) values.
 	self.tinting = nil 																		-- current standard tinting, if any.
 	self.modifier = nil 																	-- no modifier.
-	self.animated = nil 																	-- animation rate, nil if not animated.
+	self.isAnimated = false 																-- not animated
+	self.animationRate = 1 																	-- animation rate is 1
 	self.creationTime = system.getTimer() 													-- remember the start time.
 	if BitmapString.isDebug then 
 		self.debuggingRectangle = display.newRect(0,0,1,1)									-- moving it will update its location correctly.
@@ -419,6 +420,7 @@ end
 
 function BitmapString:destroy()
 	if self.characterList == nil then return end											-- already been done.
+	self:stop() 																			-- stop any animations.
 	self:setText("") 																		-- removes the bitmaps and tidies up.
 	if BitmapString.isDebug then self.debuggingRectangle:removeSelf() end 					-- remove the debugging rectangle if it is in use.
 	assert(self.numChildren == 0,"View group not cleaned up correctly")
@@ -427,8 +429,8 @@ function BitmapString:destroy()
 	self.lineCount = nil self.wordCount = nil self.fontSize = nil self.isHorizontal = nil
 	self.lineLength = nil self.horizontalSpacingPixels = nil self.verticalSpacingScalar = nil
 	self.internalXAnchor = nil self.internalYAnchor = nil self.tinting = nil 
-	self.modifier = nil self.lineLengthChars = nil self.animated = nil 
-	self.creationTime = nil
+	self.modifier = nil self.lineLengthChars = nil self.isAnimated = nil 
+	self.creationTime = nil self.animationRate = nil
 	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapSt)",k,v) end end -- dump any remaining refs.
 end
 
@@ -558,13 +560,19 @@ end
 function BitmapString:applyModifiers()
 	local currentTint = self.tinting or { red = 1, green = 1, blue = 1 } 					-- get current overall tinting or the stock one
 	local elapsed = 0  																		-- elapsed time zero if not animated
-	if self.animated ~= nil then 															-- if animated, then calculat elapsed time.
+	if self.isAnimated ~= nil then 															-- if animated, then calculat elapsed time.
 		elapsed = system.getTimer() - elapsed
 	end
+
 
 	for _,char in ipairs(self.characterList) do  											-- work through the character list
 
 		local bitmapChar = char.bitmapChar 													-- point to the bitmap character
+
+		local lineSize = self.lineLengthChars[char.lineNumber] or 0 						-- number of characters in this line.
+		local adjustment = 0 																-- allow for left and right half character in positioning.
+		adjustment = self.boundingBox.width / lineSize / 2
+		-- adjustment = 0
 
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0, 	-- the pre-modifier modifier.
 											tint = { red = currentTint.red, green = currentTint.green, blue = currentTint.blue } }
@@ -573,7 +581,7 @@ function BitmapString:applyModifiers()
 
 			local infoTable = { elapsed = elapsed, 											-- elapsed time in milliseconds.
 								index = char.charNumber, 									-- index of character number in current line
-								length = self.lineLengthChars[char.lineNumber] or 0,		-- length of current line.
+								length = lineSize,											-- length of current line.
 								lineIndex = char.lineNumber, 								-- current line number
 								lineCount = self.lineCount, 								-- number of lines.
 								wordIndex = char.wordNumber, 								-- word number
@@ -582,8 +590,12 @@ function BitmapString:applyModifiers()
 			infoTable.charIndex = infoTable.index infoTable.charCount = infoTable.length 	-- modify for consistency , old ones still work of course.
 
 			local x = (bitmapChar.boundingBox.x1 + bitmapChar.boundingBox.x2) / 2 			-- position of character midpoint  
-			local cPos = (x - self.boundingBox.x1) / self.boundingBox.width * 100 			-- convert to percentage of position.
-			-- print(x,cPos,infoTable.index,infoTable.length,infoTable.wordIndex,infoTable.wordCount,infoTable.lineIndex,infoTable.lineCount)
+			local cPos = (x - (self.boundingBox.x1 + adjustment)) / 						-- convert to percentage of position.
+									(self.boundingBox.width-adjustment*2) * 100 
+			cPos = math.max(math.min(cPos,100),0)											-- force into range
+			cPos = math.round(cPos + elapsed / 100 * self.animationRate) % 100 				-- adjust for animation
+
+			-- print(math.round(cPos),infoTable.index,infoTable.length,infoTable.wordIndex,infoTable.wordCount,infoTable.lineIndex,infoTable.lineCount)
 
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
 				self.modifier:modify(modifier,cPos,infoTable)
@@ -595,6 +607,7 @@ function BitmapString:applyModifiers()
 		end
 
 		-- TODO: If there is a tint inline setting then put that in and update current Tint.
+
 		bitmapChar:setTintColor(modifier.tint) 												-- apply the tint part of the modifier.
 		if self.modifier ~= nil then 
 			bitmapChar:modify(modifier) 													-- and modify the other bits.
@@ -641,15 +654,36 @@ end
 
 function BitmapString:getView() return self end 								
 
-
 --//	Turns animation on, with an optional speed scalar. This causes the 'cPos' in modifiers to change with time
 --//	allowing the various animation effects
 --//	@speedScalar [number]	Speed Scalar, defaults to 1. 3 is three times as fast.
 --//	@return [BitmapString]	allows chaining.
 
 function BitmapString:animate(speedScalar)
-	-- TODO
+	if not self.isAnimated then 															-- Add runtime enter frame if not already animating	
+		Runtime:addEventListener("enterFrame",self)
+	end
+	self.isAnimated = true 																	-- turn it on
+	self.animationRate = speedScalar or 1 													-- set the speed
 	return self
+end
+
+--//	Turn animation off.
+--//	@return [BitmapString]	allows chaining.
+
+function BitmapString:stop()
+	if self.isAnimated then 																-- remove event listener if animating 
+		Runtime:removeEventListener("enterFrame", self)
+	end
+	self.isAnimated = false 																-- turn it off
+	return self
+end
+
+--//%	Enter Frame event handler
+
+function BitmapString:enterFrame(event)
+	assert(self.isAnimated,"Event listener on but not animated ?")							-- it should be animating !
+	self:applyModifiers() 																	-- reapply the modifiers.
 end
 
 --//	Move the view group - i.e. the font
@@ -904,7 +938,7 @@ end
 --//	@info [table] Information about the character/string/line
 
 function SimpleCurveModifier:modify(modifier,cPos,info)
-	modifier.yOffset = Curve:curve(self.curveDesc,cPos) * 50 * self.scale 			
+	modifier.yOffset = - Curve:curve(self.curveDesc,cPos) * 50 * self.scale 			
 end
 
 --//	Extend simple Curve scale Modifier so it is inverted.
@@ -917,7 +951,7 @@ local SimpleInverseCurveModifier = SimpleCurveModifier:new()
 --//	@info [table] Information about the character/string/line
 
 function SimpleInverseCurveModifier:modify(modifier,cPos,info)
-	modifier.yOffset = - Curve:curve(self.curveDesc,cPos) * 50 * self.scale 			
+	modifier.yOffset = Curve:curve(self.curveDesc,cPos) * 50 * self.scale 			
 end
 
 --//	Modifier which changes the vertical scale on a curve
@@ -1014,10 +1048,9 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 
 return { BitmapString = BitmapString, Modifiers = Modifiers }
 
+-- animation rate.
 -- animation code.
--- auto remove? (no, probably not !)
 -- UTF-8 implementation
 -- setting text justification, use constants.
--- tinting - overall, coded, modifiers.
--- member ?
+-- coded tinting.
 -- 180 and 270 setDirection()
