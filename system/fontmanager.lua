@@ -232,7 +232,7 @@ function BitmapCharacter:moveBy(x,y)
 end
 
 --//% 	Apply a modifier. 
---//	@modifier [table] 		Modifier containing xScale, yScale, xOffset, yOffset,rotation options.
+--//	@modifier [table] 		Modifier containing xScale, yScale, xOffset, yOffset,rotation,alpha options.
 
 function BitmapCharacter:modify(modifier)
 	self:moveTo(self.xDefault,self.yDefault) 												-- move to current position which is correct
@@ -241,6 +241,7 @@ function BitmapCharacter:modify(modifier)
 	self.image.xScale = self.image.xScale * (modifier.xScale or 1) 							-- scale scalar
 	self.image.yScale = self.image.yScale * (modifier.yScale or 1)
 	self.image.rotation = modifier.rotation or 0 											-- set rotation.
+	self.image.alpha = modifier.alpha or 1 													-- set alpha
 end
 
 
@@ -484,6 +485,7 @@ function BitmapString:setText(newText)
 	local wordNumber = 0 																	-- current word number
 	local inWord = false 																	-- word tracking state.
 	self.lineLengthChars = {} 																-- line length in characters of each line.
+	local characterCount = 1 																-- current character number
 
 	while source:isMore() do 																-- is there more to get ?
 		local unicode = source:get() 														-- yes, get the next character.
@@ -499,6 +501,8 @@ function BitmapString:setText(newText)
 			self.lineLengthChars[yCharacter] = xCharacter 									-- update the line length entry.
 			local newRect = { charNumber = xCharacter, lineNumber = yCharacter }			-- start with the character number.
 			newRect.wordNumber = wordNumber 												-- save the word number
+			newRect.totalCharacterNumber = characterCount 									-- save the character count (overall)
+			characterCount = characterCount+1
 			newRect.bitmapChar = bucket:getInstance(unicode) 								-- is there one in the bucket we can use.
 			if newRect.bitmapChar == nil then 												-- no so create a new one
 				newRect.bitmapChar = BitmapCharacter:new(self.fontName,unicode) 			-- of the correct font and character.
@@ -523,6 +527,7 @@ function BitmapString:setText(newText)
 	for i = 1,#self.characterList do 														-- tell everyone the word count and line count
 		self.characterList[i].wordCount = wordCount
 		self.characterList[i].lineCount = lineCount 
+		self.characterList[i].totalCharacterCount = characterCount - 1 						-- count of characters in total.
 	end
 	bucket:destroy() 																		-- empty what is left in the bucket
 	self:reformatText() 																	-- reformat the text left justified and recalculate the bounding box.
@@ -588,18 +593,21 @@ function BitmapString:applyModifiers()
 		-- adjustment = 0
 
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0, 	-- the pre-modifier modifier.
-											tint = { red = currentTint.red, green = currentTint.green, blue = currentTint.blue } }
+							alpha = 1,tint = { red = currentTint.red, green = currentTint.green, blue = currentTint.blue } }
 
 		if self.modifier ~= nil then 
 
 			local infoTable = { elapsed = elapsed, 											-- elapsed time in milliseconds.
 								index = char.charNumber, 									-- index of character number in current line
-								length = lineSize,											-- length of current line.
+								length = lineSize,											-- length of current line
+								totalIndex = char.totalCharacterNumber, 					-- overall character number
+								totalCount = char.totalCharacterCount, 						-- overall character count
 								lineIndex = char.lineNumber, 								-- current line number
 								lineCount = self.lineCount, 								-- number of lines.
 								wordIndex = char.wordNumber, 								-- word number
 								wordCount = self.wordCount 									-- count of lines.
 			}
+
 			infoTable.charIndex = infoTable.index infoTable.charCount = infoTable.length 	-- modify for consistency , old ones still work of course.
 
 			local x = (bitmapChar.boundingBox.x1 + bitmapChar.boundingBox.x2) / 2 			-- position of character midpoint  
@@ -1076,7 +1084,8 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 
 -- UTF-8 implementation
+-- subclass BitmapString works ? No it doesn't :)
 -- setting text justification, use constants.
--- coded tinting (inline code)
+-- coded tinting (inline code) - depends on Richard9's ideas ?
 -- 180 and 270 setDirection()
 -- problem with removal of animated string.

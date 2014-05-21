@@ -30,7 +30,8 @@ display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 
 
 bms2 = display.newBitmapText("Hello World !",0,350,"retrofont",55)
-bms2:setAnchor(0,0.5):setTintColor(1,1,0)
+bms2:setAnchor(0,0.5)
+-- bms2:setTintColor(1,1,0)
 bms2:setModifier("wobble")
 
 --bms:addEventListener( "tap", function(e) print("tapped") end)
@@ -45,9 +46,21 @@ bms2:setModifier("wobble")
 
 -- fm.FontManager:setAnimationFrequency(3)
 
--- bms2:setModifier(function(modifier,cPos,infoTable)
--- 	if infoTable.charIndex % 3 == 0 then modifier.tint.red = 0 end
--- end)
+bms2:setModifier(function(modifier,cPos,infoTable)
+	if infoTable.charIndex % 3 == 0 then modifier.alpha = 0.4 end
+end)
+
+--[[
+bms:setModifier(function(modifier,cPos,infoTable)
+	local pos = math.floor(infoTable.elapsed / 2)
+	modifier.alpha = 0
+	if infoTable.totalIndex < math.floor(pos/100) then
+		modifier.alpha = 1
+	elseif infoTable.totalIndex == math.floor(pos/100) then
+		modifier.alpha = pos % 100 / 100
+	end
+end)
+--]]
 
 -- bms:removeSelf()
 -- bms2:removeSelf()
