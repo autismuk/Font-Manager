@@ -371,14 +371,34 @@ function CharacterSource:getRaw()
 end 
 
 --- ************************************************************************************************************************************************************************
---		Bitmap String class.
+--//%											UTF-8 Encoder. UTF-8 is only encoded to the two byte level.
+--- ************************************************************************************************************************************************************************
+
+local UTF8Source = CharacterSource:new()
+
+--//%	Get raw character, uses superclass's routine.
+--//	@return [number]	unicode character
+
+function UTF8Source:getRaw()
+	local ch = CharacterSource.getRaw(self) 												-- get the next character from the source.
+	if ch < 0x80 then return ch end 														-- single character UTF-8
+	local c2 = CharacterSource.getRaw(self) 												-- get the next character.
+	assert(math.floor(ch / 0x20) == 0x06,"UTF-8 more than 2 bytes not supported yet") 		-- only support 0000-07FF at present.
+	assert(math.floor(c2 / 0x40) == 0x02,"Malformed UTF-8 character")						-- has to be 10xx xxxx
+	return (ch % 0x20) * 0x40 + (c2 % 0x40) 												-- return the combined result.
+end
+
+--- ************************************************************************************************************************************************************************
+--																		Bitmap String class.
 --
+--	Basically a collection of bitmaps with positioning information that can be modified.
 --- ************************************************************************************************************************************************************************
 
 local BitmapString = Base:new() 															-- exists purely for the documentation.
 
 BitmapString.isDebug = false 																-- provides visual debug support for the string.
 BitmapString.animationFrequency = 15 														-- animation update frequency, Hz. (static)
+BitmapString.sourceClass = CharacterSource 													-- source for characters
 
 BitmapString.Justify = { LEFT = 0, CENTER = 1, CENTRE = 1, RIGHT = 2} 						-- Justification comments.
 
@@ -477,11 +497,11 @@ end
 function BitmapString:setText(newText)
 	newText = newText or self.text															-- default is self.text member
 	newText = newText or "" 																-- and if that's not defined, then nil.
-	if newText == self.currText then return self end 											-- if unchanged, do absolutely nothing.
+	if newText == self.currText then return self end 										-- if unchanged, do absolutely nothing.
 	local bucket = BitmapCharacterBucket:new(self.characterList) 							-- create a bucket out of the old character list.
 	self.characterList = {} 																-- clear the character list.
-	self.currText = newText 																	-- update the text saved.
-	local source = CharacterSource:new(newText) 											-- create a character source for it.
+	self.currText = newText 																-- update the text saved.
+	local source = BitmapString.sourceClass:new(newText) 									-- create a character source for it.
 	local xCharacter = 1 local yCharacter = 1 												-- these are the indexes of the character.
 	self.wordCount = 1 																		-- number of words
 	self.lineCount = 1 																		-- number of lines.
@@ -637,6 +657,20 @@ function BitmapString:applyModifiers()
 		if self.modifier ~= nil then 
 			bitmapChar:modify(modifier) 													-- and modify the other bits.
 		end
+	end
+end
+
+--//	Set the string encoding to use. Supports unicode and utf-8
+--//	@encoding [string] 			unicode, utf-8 or utf8 - nil is unicode
+
+function BitmapString:setEncoding(encoding)
+	encoding = (encoding or "unicode"):lower() 												-- default is unicode, make l/c
+	if encoding == "" or encoding == "unicode" then 
+		BitmapString.sourceClass = CharacterSource 
+	elseif encoding == "utf8" or encoding == "utf-8" then 
+		BitmapString.sourceClass = UTF8Source
+	else
+		error("Unsupported encoding "..encoding)
 	end
 end
 
@@ -1100,8 +1134,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
-
--- UTF-8 implementation
 -- coded tinting (inline code) - depends on Richard9's ideas ?
 -- 180 and 270 setDirection()
 

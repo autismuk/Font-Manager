@@ -11,7 +11,7 @@
 display.setStatusBar(display.HiddenStatusBar)
 
 fm = require("system.fontmanager")																-- get an instance of the font manager.
--- fm.FontManager:setEncoding("utf8") 															-- set expected encoding to UTF-8 (default is Unicode character set.)
+fm.FontManager:setEncoding("utf8") 																-- set expected encoding to UTF-8 (default is Unicode character set.)
 
 local bgr = display.newRect( 0,0,320,480) 														-- blue background
 bgr:setFillColor(0,0,1)
