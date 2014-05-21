@@ -21,7 +21,7 @@ local msg = "An{brown}other {1,0,1}line\rwit{}h\ra curve" .. string.char(0xC3,0x
 																								-- the curly brackets set tinting colours.
 
 local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
-str:moveTo(160,240):setFontSize(50) 															-- centre it, double the scale, size 48.
+str:moveTo(160,240):setFontSize(90) 															-- centre it, double the scale, size 48.
 str:setText(msg)																				-- set the text
 --str:setDirection(180) 																		-- write it backwards (why did I do this ?)
 str:setAnchor(0.5,0) 																			-- anchor top centre,
@@ -35,7 +35,7 @@ str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do 
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
 str2:setAnchor(0,0):setDirection(90)												-- and setAnchor() for example, rather than accessing members directly.
 
-local str3 = fm.BitmapString:new("font2",28):													-- a third string, created using the constructor, showing chaining.
+local str3 = fm.BitmapString:new("font2",56):													-- a third string, created using the constructor, showing chaining.
 								moveTo(160,400):setText("Wobbly text")
 
 

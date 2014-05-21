@@ -377,6 +377,7 @@ end
 local BitmapString = Base:new() 															-- exists purely for the documentation.
 
 BitmapString.isDebug = true 																-- provides visual debug support for the string.
+BitmapString.animationFrequency = 15 														-- animation update frequency, Hz.
 
 --//% We have a replacement constructor, which decorates a Corona Group with the BitmapString's methods.
 
@@ -405,6 +406,8 @@ function BitmapString:initialise(fontName,fontSize)
 	self.modifier = nil 																	-- no modifier.
 	self.isAnimated = false 																-- not animated
 	self.animationRate = 1 																	-- animation rate is 1
+	self.animationFrequency = 15 															-- animation updates per second.
+	self.animationNext = 0 																	-- time of next animation event.
 	self.creationTime = system.getTimer() 													-- remember the start time.
 	if BitmapString.isDebug then 
 		self.debuggingRectangle = display.newRect(0,0,1,1)									-- moving it will update its location correctly.
@@ -431,6 +434,7 @@ function BitmapString:destroy()
 	self.internalXAnchor = nil self.internalYAnchor = nil self.tinting = nil 
 	self.modifier = nil self.lineLengthChars = nil self.isAnimated = nil 
 	self.creationTime = nil self.animationRate = nil
+	self.animationNext = nil
 	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapSt)",k,v) end end -- dump any remaining refs.
 end
 
@@ -683,9 +687,20 @@ end
 
 function BitmapString:enterFrame(event)
 	assert(self.isAnimated,"Event listener on but not animated ?")							-- it should be animating !
-	self:applyModifiers() 																	-- reapply the modifiers.
+	local time = system.getTimer()															-- get system time 
+	if time > self.animationNext then 														-- is it time to animate ?
+		self.animationNext = time + 1000 / BitmapString.animationFrequency					-- next time we animate is.
+		self:applyModifiers() 																-- reapply the modifiers.
+	end
 end
 
+--//	Set the animation rate - how many updates are a done a second. If this is > fps it will be fps.
+--//	@frequency [number]		updates per second of the animation rate, defaults to 15 updates per second.
+
+function BitmapString:setAnimationRate(frequency)
+	BitmapString.animationFrequency = frequency or 15
+	print(BitmapString.animationFrequency)
+end
 --//	Move the view group - i.e. the font
 --//	@x 		[number]		Horizontal position
 --//	@y 		[number]		Vertictal position
@@ -1046,11 +1061,11 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 					ZoomOutModifier = ZoomOutModifier,
 					ZoomInModifier = ZoomInModifier }
 
-return { BitmapString = BitmapString, Modifiers = Modifiers }
+return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = BitmapString }
 
--- animation rate.
--- animation code.
+-- the above isn't a typo. It's so that old FontManager calls still work :)
+
 -- UTF-8 implementation
 -- setting text justification, use constants.
--- coded tinting.
+-- coded tinting (inline code)
 -- 180 and 270 setDirection()
