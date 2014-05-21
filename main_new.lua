@@ -22,8 +22,6 @@ bms:setFont("font2")
 bms:setVerticalSpacing(1.2)
 bms:setSpacing(-4)
 bms:setModifier("curve"):animate(4)
--- bms:setText("Hi")
--- bms:setAnchor(0,0)
 
 -- bms.anchorX,bms.anchorY = 0.5,0.5 bms.text = "Yo !" bms:show()
 
@@ -32,12 +30,18 @@ display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 
 
 bms2 = display.newBitmapText("Hello World !",0,350,"retrofont",55)
-bms2:setAnchor(0,0.5)
+bms2:setAnchor(0,0.5):setTintColor(1,1,0)
 bms2:setModifier("wobble")
 
 --bms:addEventListener( "tap", function(e) print("tapped") end)
---bms:removeSelf()
---bms2:removeSelf()
+
+-- for i = 1,1000 do 
+--	local newString = "" for j = 1,math.random(5,15) do newString = newString .. string.char(math.random(32,127)) end
+--	if i % 2 == 0 then bms:setText(newString) else  bms2:setText(newString) end
+-- end
+
+-- bms:removeSelf()
+-- bms2:removeSelf(true)
 
 -- fm.FontManager:setAnimationFrequency(3)
 

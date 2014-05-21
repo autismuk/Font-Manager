@@ -245,13 +245,13 @@ end
 
 
 --//%	Set the tint of the bitmap character, no parameter clears it.
---//	@tint [table] 		tint with red,green,blue components.
+--//	@tint [table] 		tint with red,green,blue components, nil clears the tint
 
 function BitmapCharacter:setTintColor(tint)
-	if tint == nil then 
+	if tint == nil then  																	-- if nil, then reset it
 		self.image:setFillColor( 1,1,1 )
-	else
-		self.image:setFillColor( tint.red,tint.green,tint.blue )
+	else 																					-- otherwise tint it.
+		self.image:setFillColor( tint.red or 1,tint.green or 1,tint.blue or 1 )
 	end
 end
 
@@ -441,10 +441,16 @@ function BitmapString:destroy()
 	-- for k,v in pairs(mt) do print(k,v) end
 end
 
---// 	RemoveSelf method, synonym for destroy. Cleans up.
+--// 	RemoveSelf method, synonym for destroy. Cleans up. Additionally, supports a 'check' on the count of bitmap instances, if this is done
+--//	this checks that all strings have been formally deleted, and thus there should be no resource loss.
+--//	@checkCount [boolean] 	Instance count check
 
-function BitmapString:removeSelf()
+function BitmapString:removeSelf(checkCount)
 	self:destroy()
+	if checkCount then
+		print(BitmapCharacter.instanceCount)
+		assert(BitmapCharacter.instanceCount == 0,"Code error, contact author, cleanup fails.")
+	end
 end
 
 --//	Show is a way of getting round the problems of using members rather than methods when their setting has side-effects.
