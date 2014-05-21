@@ -149,7 +149,7 @@ BitmapFontContainer.new = nil 																-- very definitely :)
 
 local BitmapCharacter = Base:new()
 
-BitmapCharacter.isDebug = true 																-- when this is true the objects real rectangle is shown.
+BitmapCharacter.isDebug = false																-- when this is true the objects real rectangle is shown.
 BitmapCharacter.instanceCount = 0 															-- tracks number of create/deleted instances of the character
 
 --//%	The font and unicode character are set in the constructor. These are immutable for this object - if you want a different letter/font you need to create a new
@@ -377,8 +377,8 @@ end
 
 local BitmapString = Base:new() 															-- exists purely for the documentation.
 
-BitmapString.isDebug = true 																-- provides visual debug support for the string.
-BitmapString.animationFrequency = 15 														-- animation update frequency, Hz.
+BitmapString.isDebug = false 																-- provides visual debug support for the string.
+BitmapString.animationFrequency = 15 														-- animation update frequency, Hz. (static)
 
 BitmapString.Justify = { LEFT = 0, CENTER = 1, CENTRE = 1, RIGHT = 2} 						-- Justification comments.
 
@@ -598,6 +598,8 @@ function BitmapString:applyModifiers()
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0, 	-- the pre-modifier modifier.
 							alpha = 1,tint = { red = currentTint.red, green = currentTint.green, blue = currentTint.blue } }
 
+		-- TODO: If there is a tint inline setting then put that in the modifier.
+
 		if self.modifier ~= nil then 
 
 			local infoTable = { elapsed = elapsed, 											-- elapsed time in milliseconds.
@@ -630,7 +632,6 @@ function BitmapString:applyModifiers()
 			if math.abs(modifier.yScale) < 0.001 then modifier.yScale = 0.001 end
 		end
 
-		-- TODO: If there is a tint inline setting then put that in and update current Tint.
 
 		bitmapChar:setTintColor(modifier.tint) 												-- apply the tint part of the modifier.
 		if self.modifier ~= nil then 
@@ -1097,13 +1098,12 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 
 return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = BitmapString }
 
--- the above isn't a typo. It's so that old FontManager calls still work :)
+-- the above isn't a typo. It's so that old FontManager calls () still work :)
 
 
 -- UTF-8 implementation
 -- coded tinting (inline code) - depends on Richard9's ideas ?
 -- 180 and 270 setDirection()
-
 
 -- subclass BitmapString works ? No it doesn't :)
 -- problem with removal of animated string.
