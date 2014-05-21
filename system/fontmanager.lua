@@ -403,6 +403,8 @@ function BitmapString:initialise(fontName,fontSize)
 	self.internalXAnchor,self.internalYAnchor = 0.5,0.5 									-- internal anchor (initial) values.
 	self.tinting = nil 																		-- current standard tinting, if any.
 	self.modifier = nil 																	-- no modifier.
+	self.animated = nil 																	-- animation rate, nil if not animated.
+	self.creationTime = system.getTimer() 													-- remember the start time.
 	if BitmapString.isDebug then 
 		self.debuggingRectangle = display.newRect(0,0,1,1)									-- moving it will update its location correctly.
 		self.debuggingRectangle:setStrokeColor(0.4,0.4,0) 									-- make it green, one width and transparent
@@ -424,8 +426,10 @@ function BitmapString:destroy()
 	self.debuggingRectangle = nil self.currText = nil self.fontName = nil
 	self.lineCount = nil self.wordCount = nil self.fontSize = nil self.isHorizontal = nil
 	self.lineLength = nil self.horizontalSpacingPixels = nil self.verticalSpacingScalar = nil
-	self.internalXAnchor = nil self.internalYAnchor = nil self.tinting = nil self.modifier = nil
-	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapCh)",k,v) end end -- dump any remaining refs.
+	self.internalXAnchor = nil self.internalYAnchor = nil self.tinting = nil 
+	self.modifier = nil self.lineLengthChars = nil self.animated = nil 
+	self.creationTime = nil
+	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapSt)",k,v) end end -- dump any remaining refs.
 end
 
 --// 	RemoveSelf method, synonym for destroy. Cleans up.
@@ -553,10 +557,15 @@ end
 
 function BitmapString:applyModifiers()
 	local currentTint = self.tinting or { red = 1, green = 1, blue = 1 } 					-- get current overall tinting or the stock one
-	local elapsed = 0 
-	-- TODO: Calculate elapsed time if animated
+	local elapsed = 0  																		-- elapsed time zero if not animated
+	if self.animated ~= nil then 															-- if animated, then calculat elapsed time.
+		elapsed = system.getTimer() - elapsed
+	end
+
 	for _,char in ipairs(self.characterList) do  											-- work through the character list
+
 		local bitmapChar = char.bitmapChar 													-- point to the bitmap character
+
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0, 	-- the pre-modifier modifier.
 											tint = { red = currentTint.red, green = currentTint.green, blue = currentTint.blue } }
 
@@ -575,8 +584,6 @@ function BitmapString:applyModifiers()
 			local x = (bitmapChar.boundingBox.x1 + bitmapChar.boundingBox.x2) / 2 			-- position of character midpoint  
 			local cPos = (x - self.boundingBox.x1) / self.boundingBox.width * 100 			-- convert to percentage of position.
 			-- print(x,cPos,infoTable.index,infoTable.length,infoTable.wordIndex,infoTable.wordCount,infoTable.lineIndex,infoTable.lineCount)
-
-			-- TODO: Add/remove tint from modifier.
 
 			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
 				self.modifier:modify(modifier,cPos,infoTable)

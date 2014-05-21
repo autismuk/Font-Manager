@@ -32,7 +32,11 @@ display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 
 bms2 = display.newBitmapText("Hello World !",0,350,"retrofont",55)
 bms2:setAnchor(0,0.5)-- :setTintColor(0,1,1)
-bms2:setModifier("curve")
+-- bms2:setModifier("wobble")
+
+-- bms2:setModifier(function(modifier,cPos,infoTable)
+-- 	if infoTable.charIndex % 3 == 0 then modifier.tint.red = 0 end
+-- end)
 
 -- bms:removeSelf()
 -- bms2:removeSelf()
