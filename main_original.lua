@@ -11,7 +11,7 @@
 display.setStatusBar(display.HiddenStatusBar)
 
 fm = require("system.fontmanager")																-- get an instance of the font manager.
-fm.FontManager:setEncoding("utf8") 																-- set expected encoding to UTF-8 (default is Unicode character set.)
+-- fm.FontManager:setEncoding("utf8") 															-- set expected encoding to UTF-8 (default is Unicode character set.)
 
 local bgr = display.newRect( 0,0,320,480) 														-- blue background
 bgr:setFillColor(0,0,1)
@@ -21,7 +21,7 @@ local msg = "An{brown}other {1,0,1}line\rwit{}h\ra curve" .. string.char(0xC3,0x
 																								-- the curly brackets set tinting colours.
 
 local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
-str:moveTo(160,240):setScale(2,2):setFontSize(50) 												-- centre it, double the scale, size 48.
+str:moveTo(160,240):setFontSize(50) 															-- centre it, double the scale, size 48.
 str:setText(msg)																				-- set the text
 --str:setDirection(180) 																		-- write it backwards (why did I do this ?)
 str:setAnchor(0.5,0) 																			-- anchor top centre,
@@ -33,10 +33,10 @@ str:setTintColor(1,1,0) 																		-- apply a tint to it.
 
 str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !  - YAY !!!!
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
-str2:setAnchor(0,0):setScale(-1,1):setDirection(270)											-- and setAnchor() for example, rather than accessing members directly.
+str2:setAnchor(0,0):setDirection(90)												-- and setAnchor() for example, rather than accessing members directly.
 
 local str3 = fm.BitmapString:new("font2",28):													-- a third string, created using the constructor, showing chaining.
-								moveTo(160,400):setText("Wobbly text"):setScale(2,2) 			
+								moveTo(160,400):setText("Wobbly text")
 
 
 -- str3:setModifier(fm.Modifiers.WobbleModifier:new(2))											-- a more violent wobble with a new wobble modifier instance
@@ -136,3 +136,9 @@ print(_G.scene,_G.scene.view,_G.sceneText,getmetatable(_G.sceneText:getView()),_
 composer.removeScene("demoscene")
 print(_G.scene,_G.scene.view,_G.sceneText,getmetatable(_G.sceneText:getView()),_G.sceneText:getView().numChildren,_G.sceneText:getView().isVisible,_G.owner.isVisible,_G.owner.numChildren)
 --]]
+
+-- changes made 
+
+-- a) setScale() no longer functions. Adjust font size to suit, or scale overall.
+-- b) setDirection() only (currently) supports 0 and 90 directions. (possibly add 270,180)
+-- c) there is no FontManager object.

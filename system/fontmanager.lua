@@ -231,10 +231,23 @@ function BitmapCharacter:moveBy(x,y)
 	self:moveTo(self.xDefault + x,self.yDefault + y)
 end
 
+--//% 	Apply a modifier. 
+--//	@modifier [table] 		Modifier containing xScale, yScale, xOffset, yOffset,rotation options.
+
+function BitmapCharacter:modify(modifier)
+	self:moveTo(self.xDefault,self.yDefault) 												-- move to current position which is correct
+	self.image.x = self.image.x + (modifier.xOffset or 0) * self.image.xScale				-- movement offset
+	self.image.y = self.image.y + (modifier.yOffset or 0) * self.image.yScale 
+	self.image.xScale = self.image.xScale * (modifier.xScale or 1) 							-- scale scalar
+	self.image.yScale = self.image.yScale * (modifier.yScale or 1)
+	self.image.rotation = modifier.rotation or 0 											-- set rotation.
+end
+
+
 --//%	Set the tint of the bitmap character, no parameter clears it.
 --//	@tint [table] 		tint with red,green,blue components.
 
-function BitmapCharacter:setTint(tint)
+function BitmapCharacter:setTintColor(tint)
 	if tint == nil then 
 		self.image:setFillColor( 1,1,1 )
 	else
@@ -388,6 +401,8 @@ function BitmapString:initialise(fontName,fontSize)
 	self.verticalSpacingScalar = 1 															-- vertical spacing scalar
 	self.horizontalSpacingPixels = 0 														-- horizontal gap extra.
 	self.internalXAnchor,self.internalYAnchor = 0.5,0.5 									-- internal anchor (initial) values.
+	self.tinting = nil 																		-- current standard tinting, if any.
+	self.modifier = nil 																	-- no modifier.
 	if BitmapString.isDebug then 
 		self.debuggingRectangle = display.newRect(0,0,1,1)									-- moving it will update its location correctly.
 		self.debuggingRectangle:setStrokeColor(0.4,0.4,0) 									-- make it green, one width and transparent
@@ -409,7 +424,7 @@ function BitmapString:destroy()
 	self.debuggingRectangle = nil self.currText = nil self.fontName = nil
 	self.lineCount = nil self.wordCount = nil self.fontSize = nil self.isHorizontal = nil
 	self.lineLength = nil self.horizontalSpacingPixels = nil self.verticalSpacingScalar = nil
-	self.internalXAnchor = nil self.internalYAnchor = nil
+	self.internalXAnchor = nil self.internalYAnchor = nil self.tinting = nil self.modifier = nil
 	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapCh)",k,v) end end -- dump any remaining refs.
 end
 
@@ -449,6 +464,7 @@ function BitmapString:setText(newText)
 	self.lineCount = 1 																		-- number of lines.
 	local wordNumber = 0 																	-- current word number
 	local inWord = false 																	-- word tracking state.
+	self.lineLengthChars = {} 																-- line length in characters of each line.
 
 	while source:isMore() do 																-- is there more to get ?
 		local unicode = source:get() 														-- yes, get the next character.
@@ -461,6 +477,7 @@ function BitmapString:setText(newText)
 		end
 
 		if unicode ~= 13 then 	
+			self.lineLengthChars[yCharacter] = xCharacter 									-- update the line length entry.
 			local newRect = { charNumber = xCharacter, lineNumber = yCharacter }			-- start with the character number.
 			newRect.wordNumber = wordNumber 												-- save the word number
 			newRect.bitmapChar = bucket:getInstance(unicode) 								-- is there one in the bucket we can use.
@@ -507,6 +524,7 @@ function BitmapString:reformatText()
 		self:justifyText(self.justification == "R")											-- right or centre justify it
 	end
 	self:anchorMove() 																		-- move the text to allow for the anchors.
+	self:applyModifiers() 																	-- apply all the modifiers as appropriate.
 end
 
 --//% 	Handle the string repositioning for anchoring.
@@ -528,6 +546,52 @@ function BitmapString:anchorMove()
 		r.x,r.y = self.boundingBox.x1,self.boundingBox.y1
 		r.width,r.height = self.boundingBox.width,self.boundingBox.height
 		r:toFront()
+	end
+end
+
+--//% 	Apply modifiers to all the characters.
+
+function BitmapString:applyModifiers()
+	local currentTint = self.tinting or { red = 1, green = 1, blue = 1 } 					-- get current overall tinting or the stock one
+	local elapsed = 0 
+	-- TODO: Calculate elapsed time if animated
+	for _,char in ipairs(self.characterList) do  											-- work through the character list
+		local bitmapChar = char.bitmapChar 													-- point to the bitmap character
+		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0, 	-- the pre-modifier modifier.
+											tint = { red = currentTint.red, green = currentTint.green, blue = currentTint.blue } }
+
+		if self.modifier ~= nil then 
+
+			local infoTable = { elapsed = elapsed, 											-- elapsed time in milliseconds.
+								index = char.charNumber, 									-- index of character number in current line
+								length = self.lineLengthChars[char.lineNumber] or 0,		-- length of current line.
+								lineIndex = char.lineNumber, 								-- current line number
+								lineCount = self.lineCount, 								-- number of lines.
+								wordIndex = char.wordNumber, 								-- word number
+								wordCount = self.wordCount 									-- count of lines.
+			}
+			infoTable.charIndex = infoTable.index infoTable.charCount = infoTable.length 	-- modify for consistency , old ones still work of course.
+
+			local x = (bitmapChar.boundingBox.x1 + bitmapChar.boundingBox.x2) / 2 			-- position of character midpoint  
+			local cPos = (x - self.boundingBox.x1) / self.boundingBox.width * 100 			-- convert to percentage of position.
+			-- print(x,cPos,infoTable.index,infoTable.length,infoTable.wordIndex,infoTable.wordCount,infoTable.lineIndex,infoTable.lineCount)
+
+			-- TODO: Add/remove tint from modifier.
+
+			if type(self.modifier) == "table" then 											-- if it is a table, e.g. a class, call its modify method
+				self.modifier:modify(modifier,cPos,infoTable)
+			else 																			-- otherwise, call it as a function.
+				self.modifier(modifier,cPos,infoTable)
+			end
+			if math.abs(modifier.xScale) < 0.001 then modifier.xScale = 0.001 end 			-- very low value scaling does not work, zero causes an error
+			if math.abs(modifier.yScale) < 0.001 then modifier.yScale = 0.001 end
+		end
+
+		-- TODO: If there is a tint inline setting then put that in and update current Tint.
+		bitmapChar:setTintColor(modifier.tint) 												-- apply the tint part of the modifier.
+		if self.modifier ~= nil then 
+			bitmapChar:modify(modifier) 													-- and modify the other bits.
+		end
 	end
 end
 
@@ -669,10 +733,10 @@ end
 
 function BitmapString:setModifier(funcOrTable)
 	if type(funcOrTable) == "string" then 													-- get it from the directory if is a string
-		funcOrTable = FontManager:getModifier(funcOrTable)
+		funcOrTable = ModifierStore:get(funcOrTable)
 	end
-	self.modifier = funcOrTable
-	self:reformat()
+	self.modifier = funcOrTable 															-- set the modifier
+	self:reformatText() 																	-- reformat the text.
 	return self
 end
 
@@ -689,7 +753,14 @@ function BitmapString:setTintColor(r,g,b)
 	else
 		self.tinting = { red = r or 1 , green = g or 1, blue = b or 1 } 					-- otherwise create a tint.
 	end
+	self:reformatText()
 	return self
+end
+
+--//	SetScale is no longer supported.
+
+function BitmapString:setScale(xScale,yScale)
+	error("setScale() is no longer supported - use the scale of the object to produce different text size ratios, or adjust the font size")
 end
 
 --- ************************************************************************************************************************************************************************
@@ -936,11 +1007,10 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 
 return { BitmapString = BitmapString, Modifiers = Modifiers }
 
--- setModifier / re-render, add to reformat() can be called seperately (e.g. animation)
 -- animation code.
 -- auto remove? (no, probably not !)
-
 -- UTF-8 implementation
 -- setting text justification, use constants.
 -- tinting - overall, coded, modifiers.
 -- member ?
+-- 180 and 270 setDirection()
