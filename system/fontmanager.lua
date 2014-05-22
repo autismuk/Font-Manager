@@ -1253,7 +1253,7 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 					ZoomOutModifier = ZoomOutModifier,
 					ZoomInModifier = ZoomInModifier }
 
-return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = BitmapString }
+return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = BitmapString, Curve = Curve }
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 

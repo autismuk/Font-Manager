@@ -49,7 +49,7 @@
 <hr><h1>BitmapString</h1>
 <p><h3>Extends Base</h3></p>
 <p></p>
-<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_destroy"/>destroy</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_removeSelf"/>removeSelf</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setAnimationRate"/>setAnimationRate</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setEncoding"/>setEncoding</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setJustification"/>setJustification</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setTintBrackets"/>setTintBrackets</a>,<a href="#BitmapString_setTintColor"/>setTintColor</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a>,<a href="#BitmapString_show"/>show</a>,<a href="#BitmapString_stop"/>stop</a></p><hr><a name="BitmapString_(constructor)"></a>
+<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_clear"/>clear</a>,<a href="#BitmapString_destroy"/>destroy</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_removeSelf"/>removeSelf</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setAnimationRate"/>setAnimationRate</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setEncoding"/>setEncoding</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setJustification"/>setJustification</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setTintBrackets"/>setTintBrackets</a>,<a href="#BitmapString_setTintColor"/>setTintColor</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a>,<a href="#BitmapString_show"/>show</a>,<a href="#BitmapString_stop"/>stop</a></p><hr><a name="BitmapString_(constructor)"></a>
 <h2>(constructor)(fontName,fontSize)</h2>
 <table>
 <tr><td>fontName</td><td>string</td><td>Name of font, corresponds to .fnt file.</td></tr>
@@ -65,10 +65,14 @@
 </table>
 <p>Turns animation on, with an optional speed scalar. This causes the 'cPos' in modifiers to change with time allowing the various animation effects. Note that if you turn animation on it creates a reference which you have to remove if you want the automatic garbage collection for Storyboard and Composer.</p>
 <a name="BitmapString_applyModifiers"></a>
+<a name="BitmapString_clear"></a>
+<h2>clear()</h2>
+<p>Clear is no longer supported, because of the need to keep references.</p>
 <a name="BitmapString_destroy"></a>
 <h2>destroy()</h2>
 <p>Destructor. Stops animation, clears text, blanks table and finally removes itself (as it is a viewgroup mixin)</p>
 <a name="BitmapString_enterFrame"></a>
+<a name="BitmapString_evaluateTint"></a>
 <a name="BitmapString_getView"></a>
 <h2>getView()</h2>
 <table>

@@ -1,25 +1,28 @@
 Font-Manager
 ============
-
 Bitmap Font Manager for Corona / Lua - provides font management, bitmap string management, animation and special effects.
+
+This is v2. It has been completely re-engineered from v1, though it is pretty much the same (see end). It is a much more robust and coherent design than v1
+which suffered a bit from being the first serious lump of Corona code I have written.
 
 Allows the use of GlyphDesigner fonts - can be done either using an OOP style - e.g. BitmapString:new(), or using a display.newBitmapText() method which is 
 fairly close to display.newText (these strings are multiline)
 
 The main differences are that
 
-(i) assigning x,y,xScale,anchorY etc. won't work. The methods have similar functionality though, anchors, scales, positioning should work the same.
+(i) assigning text,anchorX,anchorY etc. won't work. The methods have similar functionality though, anchors, scales, positioning should work the same. You can use the
+show() method which will copy text, anchorX and anchorY into the objec.
 
-(ii) the value returned vis display.newBitmapText() ISN'T A DISPLAY OBJECT - it's a lua table. You can access its 'display object' using a getView()
-method.
+(ii) the display object is a display object (a group) but it is also a mixin (decorated with the bitmap functionality) so it cannot be directly used as a prototype. The
+best way to create a new prototype object is to create a bitmap string and decorate it.
 
 So for example, you can write code like:
 
 	local str4 = display.newBitmapText("Hello World !",160,240,"retrofont",40) 
 
-	transition.to(str4:getView(), { time = 1000, xScale = 2,yScale = 2})
+	transition.to(str4, { time = 1000, xScale = 2,yScale = 2})
 
-notice the str4:getView() ^^
+notice the str4:getView() has been removed. However, it does still work - it is a dummy now.
 
 You can also create strings like this.
 
@@ -27,7 +30,7 @@ You can also create strings like this.
 
 ... same thing. the display.newBitmapText() is actually a shorthand to this to help people who aren't OOP minded. Which is fine :)
 
-The strings have their own internal scales and direction and position, they also have modifiers so you can tweak the shape and size and rotation of individual
+The strings have their own internal direction and position, they also have modifiers so you can tweak the shape and size and rotation of individual
 characters, either statically, or they can be animated automatically.
 
 So to curve this string can be as simple as :
@@ -61,25 +64,15 @@ But you can get rid of them individually, effectively.
 
 will vanish it, though it is still there, you can kill it as an object with :
 
-	str4:remove()
+	str4:removeSelf()
 	
-and to kill them all :
-
-	fm.FontManager:clearText()
-
-will kill all the objects.
-
 You can chain things if you want and not bother with references
 
 	display.newBitmapText("Hello World !",160,240,"retrofont",40):setModifier("curve"):animate()
 
 will create it, set its modifier and run it until you clear the screen.
 
-You can add an event listener to the view, but there is a method particular to this object
-
-	str4:addEventListener("tap",target)
-
-which will call target.<event> and when you call the clearText() method it will automatically remove it for you.
+Event listeners now operate as they do on any other viewgroup, this class does not have its own addEventListener methods.
 
 You can set the font encoding with
 
@@ -94,6 +87,48 @@ Colour tinting can be done using setTintColor() - colours everything, can be in-
 The character pair used to detect tinting instructions can be set using fm.FontManager:setTintBrackets("(",")") for example - defaults to {}  - colours are
 black,red,green,yellow,blue,magenta,cyan,white,grey,orange,brown
 
+If you are relying on Composer or Storyboard to clean up your display objects, this will work but *only* if the animation is off. When the animation is on a reference
+to the object is maintained, so it will not garbage collect. You can use str4:stop() to stop animation or str4:removeSelf() to stop everything, and clean up the string.
+
 Note: fm, assumes you've done something like fm = require("fontmanager")
 
 Paul Robson.
+
+Changes from v1
+===============
+
+a) setScale() no longer functions. Adjust font size to suit, or scale overall.
+
+b) there is no FontManager object, really, though setEncoding(),setTintBrackets() and setAnimationRate() still work as there is a 'pretend' FontManager. These are now all
+methods of BitmapString, though all affect the global state of the fonts, so setAnimationRate() sets the rate for all the bitmap strings, not just one.
+
+c) curve and scale have been switched so they are the right way round. Previously they were 'visual' opposites.
+
+d) FontManager:Clear() does not exist. The primary reason for this is that it maintained a reference to the object. If there is sufficient demand I will add a tracking of
+creation on demand approach which will do the same thing.
+
+e) You cannot directly subclass BitMapString, because it is now a mixin.
+
+Your new method for a subclass should look something like
+
+local function SubclassBitmapString:new(font,fontSize) 
+	local newInstance = BitmapString:new(font,fontSize)
+	.. do class specific initialisation.
+
+	.. create mixin - you can do this with a for loop as well.
+	newInstance.someFunction = SubclassBitmapString.someFunction
+
+	return newInstance
+end
+
+f) Curve is now a static class in its own right rather than being a method of FontManage.
+
+New features from v1
+====================
+- it's now a real displayObject like any other.
+- Justification of multi-line text
+- more information options for modifiers.
+- debugging rectangles for seeing the 'box' for characters and strings.
+
+Paul Robson 22/5/14
+paul@robsons.org.uk
