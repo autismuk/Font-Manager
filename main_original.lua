@@ -33,7 +33,7 @@ str:setTintColor(1,1,0) 																		-- apply a tint to it.
 
 str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !  - YAY !!!!
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
-str2:setAnchor(0,0):setDirection(90)												-- and setAnchor() for example, rather than accessing members directly.
+str2:setAnchor(0,0):setDirection(90)															-- and setAnchor() for example, rather than accessing members directly.
 
 local str3 = fm.BitmapString:new("font2",56):													-- a third string, created using the constructor, showing chaining.
 								moveTo(160,400):setText("Wobbly text")

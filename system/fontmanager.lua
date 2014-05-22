@@ -1005,6 +1005,12 @@ function BitmapString:setScale(xScale,yScale)
 	error("setScale() is no longer supported - use the scale of the object to produce different text size ratios, or adjust the font size")
 end
 
+--//	Clear is no longer supported, because of the need to keep references.
+
+function BitmapString:clear()
+	error("clear() is no longer supported - make sure animation is stopped when relying on Corona to clean up.")
+end
+
 --- ************************************************************************************************************************************************************************
 --
 --		This adds a display.newBitmapText method which is fairly close to that provided by Corona for newText, as close as I can get. 
