@@ -269,6 +269,13 @@ end
 
 function BitmapCharacter:getBoundingBox()
 	return self.boundingBox
+end
+
+--//%	Get the character associated with this bitmap
+--//	@return [number]	Unicode value of character, or nil if it is not a unicode character.
+
+function BitmapCharacter:getCharacter()
+	return self.character
 end 
 
 --- ************************************************************************************************************************************************************************
@@ -329,7 +336,7 @@ end
 
 function BitmapCharacterBucket:getInstance(unicodeCharacter)
 	for index,bucketItem in pairs(self.collection) do 										-- work through the bucket
-		if bucketItem.character == unicodeCharacter then  									-- found a match ?
+		if bucketItem:getCharacter() == unicodeCharacter then  								-- found a match ?
 			local instance = bucketItem 													-- save the instance.
 			self.collection[index] = nil 													-- remove it from the list
 			return instance 																-- return the instance
@@ -375,6 +382,7 @@ function CharacterSource:get()
 		local cmd = ""
 		while unicode ~= self.endCode do  													-- keep going till } found.
 			unicode = self:getRaw() 														-- get next.
+			assert(unicode ~= nil,"Missing closing terminator in command")
 			if unicode ~= self.endCode then cmd = cmd .. string.char(unicode) end 			-- build a string up
 		end
 		unicode = cmd:lower() 																-- return a lower case string.
@@ -564,7 +572,8 @@ function BitmapString:setText(newText)
 		if type(unicode) == "string" then 													-- is it a string.
 			currentTint = self:evaluateTint(unicode)										-- evaluate as section specific tint
 
-		elseif unicode ~= 13 then 	
+		elseif unicode ~= 13 then 															-- it's a normal character
+
 			self.lineLengthChars[yCharacter] = xCharacter 									-- update the line length entry.
 			self.lineCount = math.max(self.lineCount,yCharacter) 							-- update number of lines.
 			local newRect = { charNumber = xCharacter, lineNumber = yCharacter }			-- start with the character number.
@@ -1253,11 +1262,11 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 					ZoomOutModifier = ZoomOutModifier,
 					ZoomInModifier = ZoomInModifier }
 
-return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = BitmapString, Curve = Curve }
+return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = BitmapString, Curve = Curve, BitmapFont = BitmapFont }
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
--- factory for objects ?
+-- factory for objects ? {@crab} loads <BitmapFont.imageDirectory>/crab.png
 
 -- Known issues
 -- ============

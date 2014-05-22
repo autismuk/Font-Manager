@@ -41,7 +41,7 @@ bms2:setSpacing(0)
 --bms:addEventListener( "tap", function(e) print("tapped") end)
 
 -- for i = 1,1000 do 
---	local newString = "" for j = 1,math.random(5,15) do newString = newString .. string.char(math.random(32,127)) end
+--	local newString = "" for j = 1,math.random(5,15) do newString = newString .. string.char(math.random(32,95)) end
 --	if i % 2 == 0 then bms:setText(newString) else  bms2:setText(newString) end
 -- end
 
@@ -68,5 +68,5 @@ end)
 -- bms:removeSelf()
 -- bms2:removeSelf(true)
 
-transition.to(bms,{ x = 160, y = 100, time = 1000,xScale = 0.7, yScale = 0.7,rotation = 360*3 })
+transition.to(bms,{ x = 160, y = 100, time = 1000,rotation = 360*3 })
 transition.to(bms2,{ yScale = 1.75, time = 1000 })

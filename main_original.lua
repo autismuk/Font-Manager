@@ -38,7 +38,6 @@ str2:setAnchor(0,0):setDirection(90)															-- and setAnchor() for exampl
 local str3 = fm.BitmapString:new("font2",56):													-- a third string, created using the constructor, showing chaining.
 								moveTo(160,400):setText("Wobbly text")
 
-
 -- str3:setModifier(fm.Modifiers.WobbleModifier:new(2))											-- a more violent wobble with a new wobble modifier instance
 -- str3:setModifier(SimpleCurveModifier:new(0,180,4,2)) 										-- simple curves and scales with a different part of the trigonometrical curve
 -- str3:setModifier(SimpleCurveScaleModifier:new(0,180,4,2))
@@ -107,7 +106,7 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 
 -- for _,n in pairs(str4) do print("str4",_,n) end
 
-local t = 800 																					-- run over 8 seconds.
+local t = 8000 																					-- run over 8 seconds.
 
 -- str:getView().isVisible = false str2:getView().isVisible = false str3:getView().isVisible = false str4:getView().isVisible = false
 
