@@ -193,7 +193,7 @@ function BitmapCharacter:destroy()
 		end
 	end
 	BitmapCharacter.instanceCount = BitmapCharacter.instanceCount - 1 						-- decrement the instance count.
-	for k,v in pairs(self) do print("(BitmapCharacter)",k,v) end 							-- check for leftovers.
+	for k,v in pairs(self) do print("(BitmapCh)",k,v) end 									-- check for leftovers.
 end
 
 
@@ -1256,6 +1256,8 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = BitmapString, Curve = Curve }
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
+
+-- factory for objects ?
 
 -- Known issues
 -- ============
