@@ -65,9 +65,8 @@ bms:setModifier(function(modifier,cPos,infoTable)
 	end
 end)
 --]]
-
 -- bms:removeSelf()
---bms2:removeSelf()
+-- bms2:removeSelf(true)
 
 transition.to(bms,{ x = 160, y = 100, time = 1000,xScale = 0.7, yScale = 0.7,rotation = 360*3 })
 transition.to(bms2,{ yScale = 1.75, time = 1000 })

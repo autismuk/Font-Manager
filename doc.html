@@ -1,93 +1,81 @@
 <!DOCTYPE html><html><head><style>body { background:#333; color:#0F0; font-family:Arial,Verdana;} a { color:#0AA } h1 { color:#FF0; } h2 { color:#0FF } table,tr,td { color: #CCC; padding:4px;border:1px solid white; border-collapse:collapse; }</style></head><body>
+<a name="BitmapCharacter"></a>
+<hr><h1>BitmapCharacter</h1>
+<p><h3>Extends Base</h3></p>
+<p>This class represents a single bitmapped character. It can be positioned and have its height and tint set as if it were any other image. However, it can be post modified, changing the position, scale and rotation of the character (the latter at the individual level). It is not for external use, so it does not use the normal Corona SDK positioning methods for simplicity.</p>
+<p>Methods : </p><hr><a name="BitmapCharacter_(constructor)"></a>
+<a name="BitmapCharacter_destroy"></a>
+<a name="BitmapCharacter_getBoundingBox"></a>
+<a name="BitmapCharacter_getImage"></a>
+<a name="BitmapCharacter_modify"></a>
+<a name="BitmapCharacter_moveBy"></a>
+<a name="BitmapCharacter_moveTo"></a>
+<a name="BitmapCharacter_setTintColor"></a>
+<a name="BitmapCharacterBucket"></a>
+<hr><h1>BitmapCharacterBucket</h1>
+<p><h3>Extends Base</h3></p>
+<p>This is a collection of Bitmap Characters that may be available for re-use, when changing the text on a Bitmap String. For some reason I called it a Bucket class This is tightly coupled to the BitmapString class which uses it.</p>
+<p>Methods : </p><hr><a name="BitmapCharacterBucket_(constructor)"></a>
+<a name="BitmapCharacterBucket_destroy"></a>
+<a name="BitmapCharacterBucket_getInstance"></a>
 <a name="BitmapFont"></a>
 <hr><h1>BitmapFont</h1>
 <p><h3>Extends Base</h3></p>
-<p>This class encapsulates a bitmap font, producing characters 'on demand'. (Note, no longer requires a .lua file)</p>
-<p>Methods : <a href="#BitmapFont_(constructor)"/>(constructor)</a>,<a href="#BitmapFont_getCharacter"/>getCharacter</a>,<a href="#BitmapFont_getCharacterHeight"/>getCharacterHeight</a>,<a href="#BitmapFont_getCharacterWidth"/>getCharacterWidth</a>,<a href="#BitmapFont_mapCharacterToFont"/>mapCharacterToFont</a></p><hr><a name="BitmapFont_(constructor)"></a>
+<p>This class encapsulates a bitmap font, producing characters 'on demand'. Has a factory method for producing character images from that font (using imageSheets) and sprites. Note that the loadFont() methods and the createImage() methods are closely coupled together if you subclass this for fonts from different sources.</p>
+<p>Methods : <a href="#BitmapFont_(constructor)"/>(constructor)</a></p><hr><a name="BitmapFont_(constructor)"></a>
 <h2>(constructor)(fontName)</h2>
 <table>
 <tr><td>fontName</td><td>string</td><td>name of font (case is sensitive, so I advise use of lower case only)</td></tr>
 </table>
-<p>The Bitmap Font constructor. This reads in the font data</p>
+<p>The Bitmap Font constructor. This reads in the font data from the .FNT file and calculates the font height.</p>
 <a name="BitmapFont_calculateFontHeight"></a>
-<a name="BitmapFont_getCharacter"></a>
-<h2>getCharacter(characterCode)</h2>
-<table>
-<tr><td>characterCode</td><td>number</td><td>character code of the character required</td></tr>
-<tr><td>return</td><td>displayObject</td><td>a display object representing the character.</td></tr>
-</table>
-<p>Get a display object with the given character in it, centred around the middle - roughly :)</p>
-<a name="BitmapFont_getCharacterHeight"></a>
-<h2>getCharacterHeight(characterCode,fontSize,yScale)</h2>
-<table>
-<tr><td>characterCode</td><td>number</td><td>Character code of character to measure. Not actually needed as all characters are a fixed height</td></tr>
-<tr><td>fontSize</td><td>number</td><td>Size of the font (horizontal pixels)</td></tr>
-<tr><td>yScale</td><td></td><td></td></tr>
-<tr><td>return</td><td>number</td><td>Vertical width in pixels.</td></tr>
-</table>
-<p>Get the character height, after scaling.</p>
-<a name="BitmapFont_getCharacterWidth"></a>
-<h2>getCharacterWidth(characterCode,fontSize,xScale)</h2>
-<table>
-<tr><td>characterCode</td><td>number</td><td>Character code of character to measure</td></tr>
-<tr><td>fontSize</td><td>number</td><td>Size of the font (horizontal pixels)</td></tr>
-<tr><td>xScale</td><td>number</td><td>Horizontal Scaling</td></tr>
-<tr><td>return</td><td>number</td><td>Horizontal width in pixels.</td></tr>
-</table>
-<p>Get the character width, after scaling.</p>
+<a name="BitmapFont_createImage"></a>
 <a name="BitmapFont_loadFont"></a>
-<a name="BitmapFont_mapCharacterToFont"></a>
-<h2>mapCharacterToFont(characterCode)</h2>
+<a name="BitmapFontContainer"></a>
+<hr><h1>BitmapFontContainer</h1>
+<p><h3>Extends Base</h3></p>
+<p>This singleton class manages an internal list of bitmap fonts, which must implement the BitmapFont method createImage() but otherwise does not care.</p>
+<p>Methods : <a href="#BitmapFontContainer_(constructor)"/>(constructor)</a>,<a href="#BitmapFontContainer_getFontInstance"/>getFontInstance</a></p><hr><a name="BitmapFontContainer_(constructor)"></a>
+<h2>(constructor)()</h2>
+<p>Initialise the font container</p>
+<a name="BitmapFontContainer_getFontInstance"></a>
+<h2>getFontInstance(fontName)</h2>
 <table>
-<tr><td>characterCode</td><td>number</td><td>Character code to map</td></tr>
-<tr><td>return</td><td>number</td><td>Code of character which does actually exist in the font.</td></tr>
+<tr><td>fontName</td><td>string</td><td>Font required. This *IS* case dependent because of Corona's casing requirements</td></tr>
+<tr><td>return</td><td>BitmapFont</td><td>Instance of bitmap font. Will cause assertion on errors (e.g. font physically not present)</td></tr>
 </table>
-<p>Map any character to a code - currently maps any unsupported character to ? but could be extended to (say) map a-acute and a-grave to a in French.</p>
-<a name="BitmapFont_moveScaleCharacter"></a>
+<p>Get an instance of a font creating it if necessary</p>
 <a name="BitmapString"></a>
 <hr><h1>BitmapString</h1>
 <p><h3>Extends Base</h3></p>
-<p>It uses a view group object for basic positioning. Scaling and rotating, it depends. If you create a string, you can scale it and rotate it with transitions, just as you do with any object. But if you want a string with animated effects, you cannot use transitions as well. The reason for this is if you 'animate' xScale,yScale with transition.to its scaling effects on the object will be reset by the animation - basically they argue about who does the scaling. The xOffset,yOffset is additional to the actual position, rotation probably won't work either (not sure ?)</p>
-<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_addEventListener"/>addEventListener</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_evaluateTint"/>evaluateTint</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_remove"/>remove</a>,<a href="#BitmapString_removeEventListener"/>removeEventListener</a>,<a href="#BitmapString_removeSelf"/>removeSelf</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setTintColor"/>setTintColor</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a></p><hr><a name="BitmapString_(constructor)"></a>
-<h2>(constructor)(font,fontSize)</h2>
+<p></p>
+<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_destroy"/>destroy</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_removeSelf"/>removeSelf</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setAnimationRate"/>setAnimationRate</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setEncoding"/>setEncoding</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setJustification"/>setJustification</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setTintBrackets"/>setTintBrackets</a>,<a href="#BitmapString_setTintColor"/>setTintColor</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a>,<a href="#BitmapString_show"/>show</a>,<a href="#BitmapString_stop"/>stop</a></p><hr><a name="BitmapString_(constructor)"></a>
+<h2>(constructor)(fontName,fontSize)</h2>
 <table>
-<tr><td>font</td><td>String/Reference</td><td>Font to use to create string</td></tr>
-<tr><td>fontSize</td><td>number</td><td>Height of font in pixels, default is 32 if ommitted.</td></tr>
+<tr><td>fontName</td><td>string</td><td>Name of font, corresponds to .fnt file.</td></tr>
+<tr><td>fontSize</td><td>number</td><td>Font size, default 64, refers to the pixel height.</td></tr>
 </table>
-<p>Constructor. Font can be a reference or a string (in this case the FontManager looks it up), font Size defaults to 32 pixels. Creates an empty Bitmap String.</p>
-<a name="BitmapString__destroy"></a>
-<a name="BitmapString__useOrCreateCharacterObject"></a>
-<a name="BitmapString_addEventListener"></a>
-<h2>addEventListener(eventName,handler)</h2>
-<table>
-<tr><td>eventName</td><td>string</td><td>name of event e.g. tap, touch</td></tr>
-<tr><td>handler</td><td>table</td><td>event listener</td></tr>
-</table>
-<p>Add an event listener to the view. This is removed automatically on clear.</p>
+<p>We have a replacement constructor, which decorates a Corona Group with the BitmapString's methods. Note that you cannot therefore subclass BitmapString as normal, because it is a mixin. Constructor initialisation. Sets the font name and size.</p>
+<a name="BitmapString_anchorMove"></a>
 <a name="BitmapString_animate"></a>
 <h2>animate(speedScalar)</h2>
 <table>
 <tr><td>speedScalar</td><td>number</td><td>Speed Scalar, defaults to 1. 3 is three times as fast.</td></tr>
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
-<p>Turns animation on, with an optional speed scalar. This causes the 'cPos' in modifiers to change with time allowing the various animation effects</p>
-<a name="BitmapString_evaluateTint"></a>
-<h2>evaluateTint(descr)</h2>
-<table>
-<tr><td>descr</td><td>string</td><td>description - can be text, n,n,n or ""</td></tr>
-<tr><td>return</td><td>table</td><td>tint table containing red,green,blue members or nil.</td></tr>
-</table>
-<p>Convert a textual colour definition to a tint array</p>
-<a name="BitmapString_extractCharacterUTF8"></a>
-<a name="BitmapString_extractCharacterUnicode"></a>
+<p>Turns animation on, with an optional speed scalar. This causes the 'cPos' in modifiers to change with time allowing the various animation effects. Note that if you turn animation on it creates a reference which you have to remove if you want the automatic garbage collection for Storyboard and Composer.</p>
+<a name="BitmapString_applyModifiers"></a>
+<a name="BitmapString_destroy"></a>
+<h2>destroy()</h2>
+<p>Destructor. Stops animation, clears text, blanks table and finally removes itself (as it is a viewgroup mixin)</p>
+<a name="BitmapString_enterFrame"></a>
 <a name="BitmapString_getView"></a>
 <h2>getView()</h2>
 <table>
-<tr><td>return</td><td>display Group</td><td>the strings display group</td></tr>
+<tr><td>return</td><td>self</td><td></td></tr>
 </table>
-<p>Return the view group if you want to animate it using transition.to</p>
-<a name="BitmapString_isAnimated"></a>
-<a name="BitmapString_isInvalid"></a>
+<p>Return the view group if you want to animate it using transition.to. The object now is the view group but this is left in for consistency. You can just remove getView() methods.</p>
+<a name="BitmapString_justifyText"></a>
 <a name="BitmapString_moveTo"></a>
 <h2>moveTo(x,y)</h2>
 <table>
@@ -95,23 +83,15 @@
 <tr><td>y</td><td>number</td><td>Vertictal position</td></tr>
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
-<p>Move the view group - i.e. the font</p>
-<a name="BitmapString_paintandFormatLine"></a>
-<a name="BitmapString_postProcessAnchorFix"></a>
-<a name="BitmapString_reformat"></a>
-<a name="BitmapString_remove"></a>
-<h2>remove()</h2>
-<p>Remove the current string from the screen and remove the reference from the list.</p>
-<a name="BitmapString_removeEventListener"></a>
-<h2>removeEventListener(eventName)</h2>
-<table>
-<tr><td>eventName</td><td>string</td><td>name of event e.g. tap</td></tr>
-</table>
-<p>Remove an event listener.</p>
+<p>Move the view group - i.e. the font. Included for consistency, you can just assign to x,y</p>
+<a name="BitmapString_reformatLine"></a>
+<a name="BitmapString_reformatText"></a>
 <a name="BitmapString_removeSelf"></a>
-<h2>removeSelf()</h2>
-<p>RemoveSelf does the same thing</p>
-<a name="BitmapString_repositionAndScale"></a>
+<h2>removeSelf(checkCount)</h2>
+<table>
+<tr><td>checkCount</td><td>boolean</td><td>Instance count check</td></tr>
+</table>
+<p>RemoveSelf method, synonym for destroy. Cleans up. Additionally, supports a 'check' on the count of bitmap instances, if this is done this checks that all strings have been formally deleted, and thus there should be no resource loss.</p>
 <a name="BitmapString_setAnchor"></a>
 <h2>setAnchor(anchorX,anchorY)</h2>
 <table>
@@ -119,14 +99,26 @@
 <tr><td>anchorY</td><td>number</td><td>Y anchor position 0->1</td></tr>
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
-<p>Set the anchor position - same as Corona except it is done with a method not by assigning member variables.</p>
+<p>Set the anchor position - same as Corona except it is done with a method not by assigning member variables. If you omit the parameters then it will use anchorX, anchorY as defaults.</p>
+<a name="BitmapString_setAnimationRate"></a>
+<h2>setAnimationRate(frequency)</h2>
+<table>
+<tr><td>frequency</td><td>number</td><td>updates per second of the animation rate, defaults to 15 updates per second.</td></tr>
+</table>
+<p>Set the animation rate - how many updates are a done a second. If this is > fps it will be fps.</p>
 <a name="BitmapString_setDirection"></a>
 <h2>setDirection(direction)</h2>
 <table>
-<tr><td>direction</td><td>number</td><td>string direction (degrees) 0 (default), 90, 180 or 360.</td></tr>
+<tr><td>direction</td><td>number</td><td>string direction (degrees) 0,90,180,270</td></tr>
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Set the direction - we only support 4 main compass points, and the font is always upright.</p>
+<a name="BitmapString_setEncoding"></a>
+<h2>setEncoding(encoding)</h2>
+<table>
+<tr><td>encoding</td><td>string</td><td>unicode, utf-8 or utf8 - nil is unicode</td></tr>
+</table>
+<p>Set the string encoding to use. Supports unicode and utf-8. Works by overriding the SourceClass member which is used to prototype a SourceClass when the string is being dismantled.</p>
 <a name="BitmapString_setFont"></a>
 <h2>setFont(font,fontSize)</h2>
 <table>
@@ -142,6 +134,13 @@
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Set the Font Size</p>
+<a name="BitmapString_setJustification"></a>
+<h2>setJustification(justification)</h2>
+<table>
+<tr><td>justification</td><td>number</td><td>BitmapString.Justify.LEFT/CENTER/RIGHT</td></tr>
+<tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
+</table>
+<p>Set multi-line justification.</p>
 <a name="BitmapString_setModifier"></a>
 <h2>setModifier(funcOrTable)</h2>
 <table>
@@ -152,25 +151,31 @@
 <a name="BitmapString_setScale"></a>
 <h2>setScale(xScale,yScale)</h2>
 <table>
-<tr><td>xScale</td><td>number</td><td>Horizontal scaling of string</td></tr>
-<tr><td>yScale</td><td>number</td><td>Vertical scaling of string</td></tr>
-<tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
+<tr><td>xScale</td><td></td><td></td></tr>
+<tr><td>yScale</td><td></td><td></td></tr>
 </table>
-<p>Set the overall scale of the font (e.g. pre-modifier)</p>
+<p>SetScale is no longer supported. The effect of disproportionately scaled fonts can be achieved simply by scaling the view group. For larger fonts, increase the font size.</p>
 <a name="BitmapString_setSpacing"></a>
 <h2>setSpacing(spacing)</h2>
 <table>
-<tr><td>spacing</td><td>number</td><td>Pixels to insert between letters (or remove, can be negative) - scaled by x Scaling.</td></tr>
+<tr><td>spacing</td><td>number</td><td>Pixels to insert between letters (or remove, can be negative)</td></tr>
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
-<p>Allows you to adjust the spacing between letters.</p>
+<p>Allows you to adjust the spacing between letters by adding a given number of pixels.</p>
 <a name="BitmapString_setText"></a>
-<h2>setText(text)</h2>
+<h2>setText(newText)</h2>
 <table>
-<tr><td>text</td><td>string</td><td>text string to set it to.</td></tr>
-<tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
+<tr><td>newText</td><td>string</td><td>Replacement text</td></tr>
+<tr><td>return</td><td>BitmapString</td><td>Chain</td></tr>
 </table>
-<p>Set the text. It uses the current text as a basis for display objects for the font, reusing them when possible, then frees any that are left over If there isn't a character to reuse, it creates one.</p>
+<p>Set the text of the string to the new text. If it changes, it recreates the entire string,using the previous text items where possible. lines, words, characters are counted, then it is formatted around (0,0) and multi line text is justified. If text member is defined it uses that as the default, failing that it uses ""</p>
+<a name="BitmapString_setTintBrackets"></a>
+<h2>setTintBrackets(cStart,cEnd)</h2>
+<table>
+<tr><td>cStart</td><td>string</td><td>start character</td></tr>
+<tr><td>cEnd</td><td>string</td><td>end character.</td></tr>
+</table>
+<p>Set the bounding characters for tint definitions (defaults to { and })</p>
 <a name="BitmapString_setTintColor"></a>
 <h2>setTintColor(r,g,b)</h2>
 <table>
@@ -179,28 +184,39 @@
 <tr><td>b</td><td>number</td><td>Blue component 0-1</td></tr>
 <tr><td>return</td><td>BitmapString</td><td>self</td></tr>
 </table>
-<p>Apply an overall tint to the string. This can be overridden or modified using the tint table of the modifier which itself has three fields - red, green and blue</p>
+<p>Apply an overall tint to the string. This can be overridden or modified using the tint table of the modifier which itself has three fields - red, green and blue. If nothing provided, clears the default tint.</p>
 <a name="BitmapString_setVerticalSpacing"></a>
 <h2>setVerticalSpacing(spacing)</h2>
 <table>
-<tr><td>spacing</td><td>number</td><td>Pixels to insert between letters (or remove, can be negative) - scaled by y Scaling.</td></tr>
+<tr><td>spacing</td><td>number</td><td>Pixels to insert between letters (or remove, can be negative)</td></tr>
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
-<p>Allows you to adjust the spacing between letters vertically</p>
-<a name="FontManager"></a>
-<hr><h1>FontManager</h1>
+<p>Allows you to adjust the spacing between letters vertically. This is a scalar, so 0.5 halves the distance.</p>
+<a name="BitmapString_show"></a>
+<h2>show()</h2>
+<table>
+<tr><td>return</td><td>BitmapString</td><td>self for chaining.</td></tr>
+</table>
+<p>Show is a way of getting round the problems of using members rather than methods when their setting has side-effects. The method copies the anchorX, anchorY and text values in, then sets and reformats the text appropriately.</p>
+<a name="BitmapString_stop"></a>
+<h2>stop()</h2>
+<table>
+<tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
+</table>
+<p>Turn animation off.</p>
+<a name="CharacterSource"></a>
+<hr><h1>CharacterSource</h1>
 <p><h3>Extends Base</h3></p>
-<p>The fontmananger class controls, animates and updates all the fonts on the screen. It also tracks what fonts are used, and keeps a library of standard effects. It is a singleton.</p>
-<p>Methods : <a href="#FontManager_(constructor)"/>(constructor)</a>,<a href="#FontManager_clearText"/>clearText</a>,<a href="#FontManager_curve"/>curve</a>,<a href="#FontManager_getFont"/>getFont</a>,<a href="#FontManager_getModifier"/>getModifier</a>,<a href="#FontManager_setAnimationRate"/>setAnimationRate</a>,<a href="#FontManager_setEncoding"/>setEncoding</a>,<a href="#FontManager_setTintBrackets"/>setTintBrackets</a></p><hr><a name="FontManager_(constructor)"></a>
-<h2>(constructor)()</h2>
-<p>Constructor - note this is the prototype and the instance.</p>
-<a name="FontManager__startEnterFrame"></a>
-<a name="FontManager__stopEnterFrame"></a>
-<a name="FontManager_addStringReference"></a>
-<a name="FontManager_clearText"></a>
-<h2>clearText()</h2>
-<p>Erase all text - clear screen effectively. All new text strings are registered with the font mananger.</p>
-<a name="FontManager_curve"></a>
+<p></p>
+<p>Methods : </p><hr><a name="CharacterSource_(constructor)"></a>
+<a name="CharacterSource_get"></a>
+<a name="CharacterSource_getRaw"></a>
+<a name="CharacterSource_isMore"></a>
+<a name="Curve"></a>
+<hr><h1>Curve</h1>
+<p><h3>Extends Base</h3></p>
+<p></p>
+<p>Methods : <a href="#Curve_curve"/>curve</a></p><hr><a name="Curve_curve"></a>
 <h2>curve(curveDefinition,position)</h2>
 <table>
 <tr><td>curveDefinition</td><td>Modifier Descriptor</td><td>Table containing startAngle,endAngle,curveCount,formula</td></tr>
@@ -208,43 +224,6 @@
 <tr><td>return</td><td>number</td><td>Value of curve (normally between 0 and 1)</td></tr>
 </table>
 <p>Helper function which calculates curves according to the definition - basically can take a segment of a trigonometrical curve and apply it to whatever you want, it can be repeated over a range, so you could say apply the sin curve from 0-180 5 times and get 5 'humps'</p>
-<a name="FontManager_enterFrame"></a>
-<a name="FontManager_getFont"></a>
-<h2>getFont(fontName)</h2>
-<table>
-<tr><td>fontName</td><td>string</td><td>Name of font to acquire</td></tr>
-<tr><td>return</td><td>BitmapFont</td><td>Font from cache,or loaded</td></tr>
-</table>
-<p>Get font by name, creating it if required.</p>
-<a name="FontManager_getModifier"></a>
-<h2>getModifier(name)</h2>
-<table>
-<tr><td>name</td><td>string</td><td>Name of modifier you want to access</td></tr>
-<tr><td>return</td><td>Modifier</td><td>Modifier that does what you want.</td></tr>
-</table>
-<p>Access one of the standard modifiers</p>
-<a name="FontManager_registerModifier"></a>
-<a name="FontManager_removeStringReference"></a>
-<a name="FontManager_setAnimationRate"></a>
-<h2>setAnimationRate(frequency)</h2>
-<table>
-<tr><td>frequency</td><td>number</td><td>updates per second of the animation rate, defaults to 15 updates per second.</td></tr>
-</table>
-<p>Set the animation rate - how many updates are a done a second. If this is > fps it will be fps.</p>
-<a name="FontManager_setEncoding"></a>
-<h2>setEncoding(enc)</h2>
-<table>
-<tr><td>enc</td><td>string</td><td>encoding, either (currently) unicode (default), utf8 or utf-8</td></tr>
-<tr><td>return</td><td>FontManager</td><td>chaining</td></tr>
-</table>
-<p>Set the string encoding used to convert strings to bitmap sequences</p>
-<a name="FontManager_setTintBrackets"></a>
-<h2>setTintBrackets(cStart,cEnd)</h2>
-<table>
-<tr><td>cStart</td><td>string</td><td>start character</td></tr>
-<tr><td>cEnd</td><td>string</td><td>end character.</td></tr>
-</table>
-<p>Set the bounding characters for tint definitions (defaults to { and })</p>
 <a name="JaggedModifier"></a>
 <hr><h1>JaggedModifier</h1>
 <p><h3>Extends Modifier</h3></p>
@@ -253,8 +232,15 @@
 <a name="Modifier"></a>
 <hr><h1>Modifier</h1>
 <p><h3>Extends Base</h3></p>
-<p>Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul> <li>modifier structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li> <li>cPos the character position, from 0-100 - how far along the string this is. This does not correlate to string character position, as this is changed to animate the display. </li> <li>info table containing information for the modifier : elapsed - elapsed time in ms, index - position in this line, length - length of this linem lineCount, lineIndex - line number of this character, lineCount - total number of lines </li></ul></p>
-<p>Methods : </p><hr><a name="SimpleCurveModifier"></a>
+<p>Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul> <li>modifier structure to modify - has xOffset, yOffset, xScale, yScale,alpha and rotation members (0,0,1,1,1,0) which it can tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li> <li>cPos the character position, from 0-100 - how far along the string this is. This does not correlate to string character position, as this is changed to animate the display. It is a percentage of the text width. </li> <li>info table containing information for the modifier : elapsed - elapsed time in ms, index - position in this line, length - length of this linem lineCount, lineIndex - line number of this character, lineCount - total number of lines </li></ul></p>
+<p>Methods : </p><hr><a name="ModifierStore"></a>
+<hr><h1>ModifierStore</h1>
+<p><h3>Extends Base</h3></p>
+<p>%     Modifier Store singleton - keeps an internal list of all standard modifiers</p>
+<p>Methods : </p><hr><a name="ModifierStore_(constructor)"></a>
+<a name="ModifierStore_get"></a>
+<a name="ModifierStore_register"></a>
+<a name="SimpleCurveModifier"></a>
 <hr><h1>SimpleCurveModifier</h1>
 <p><h3>Extends Modifier</h3></p>
 <p>Modifier which changes the vertical position on a curve</p>
@@ -283,6 +269,11 @@
 <p><h3>Extends SimpleCurveScaleModifier</h3></p>
 <p>Scale but shaped the other way.</p>
 <p>Methods : <a href="#SimpleCurveModifier_(constructor)"/><i>(constructor)</i></a></p><hr><a name="SimpleInverseCurveScaleModifier_modify"></a>
+<a name="UTF8Source"></a>
+<hr><h1>UTF8Source</h1>
+<p><h3>Extends CharacterSource</h3></p>
+<p>%    UTF-8 Encoder. UTF-8 is only encoded to the two byte level. Overrides getRaw() to extract UFT-8 chars</p>
+<p>Methods : </p><hr><a name="UTF8Source_getRaw"></a>
 <a name="WobbleModifier"></a>
 <hr><h1>WobbleModifier</h1>
 <p><h3>Extends Modifier</h3></p>

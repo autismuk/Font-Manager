@@ -497,9 +497,11 @@ end
 function BitmapString:removeSelf(checkCount)
 	self:destroy()
 	if checkCount then
-		assert(BitmapCharacter.instanceCount == 0,"Code error, contact author, cleanup fails.")
+		assert(BitmapCharacter.instanceCount == 0,"Code error, not all Strings are being destroyed")
 	end
 end
+
+BitmapString.remove = BitmapString.removeSelf 												-- synonym remove for removeSelf
 
 --//	Show is a way of getting round the problems of using members rather than methods when their setting has side-effects.
 --//	The method copies the anchorX, anchorY and text values in, then sets and reformats the text appropriately.
@@ -1208,3 +1210,4 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 -- ============
 -- You can't subclass it. Create an instance and decorate it.
 -- To animate you have to have a links from the Runtime. If you let the system remove it rather than stopping it yourself it will leave a trailing reference.
+-- FontDemo needs tweaking
