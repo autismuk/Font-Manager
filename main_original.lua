@@ -140,8 +140,7 @@ print(_G.scene,_G.scene.view,_G.sceneText,getmetatable(_G.sceneText:getView()),_
 -- changes made (that have retrospective effect - there are improvements as well !)
 
 -- a) setScale() no longer functions. Adjust font size to suit, or scale overall.
--- b) setDirection() only (currently) supports 0 and 90 directions. (possibly add 270,180)
--- c) there is no FontManager object, really, though setEncoding() and setAnimationRate() still work.
--- d) curve and scale have been switched so they are the right way round. Previously they were 'visual' opposites.
--- e) FontManager:Clear() does not exist
--- f) You cannot directly subclass BitMapString, because it is now a mixin.
+-- b) there is no FontManager object, really, though setEncoding() and setAnimationRate() still work.
+-- c) curve and scale have been switched so they are the right way round. Previously they were 'visual' opposites.
+-- d) FontManager:Clear() does not exist
+-- e) You cannot directly subclass BitMapString, because it is now a mixin.

@@ -149,7 +149,7 @@ BitmapFontContainer.new = nil 																-- very definitely :)
 
 local BitmapCharacter = Base:new()
 
-BitmapCharacter.isDebug = false																-- when this is true the objects real rectangle is shown.
+BitmapCharacter.isDebug = true																-- when this is true the objects real rectangle is shown.
 BitmapCharacter.instanceCount = 0 															-- tracks number of create/deleted instances of the character
 
 --//%	The font and unicode character are set in the constructor. These are immutable for this object - if you want a different letter/font you need to create a new
@@ -402,6 +402,9 @@ BitmapString.sourceClass = CharacterSource 													-- source for characters
 
 BitmapString.Justify = { LEFT = 0, CENTER = 1, CENTRE = 1, RIGHT = 2} 						-- Justification comments.
 
+BitmapString.startTintDef = "{" 															-- start and end markers for font tinting.
+BitmapString.endTintDef = "}"
+
 --//% We have a replacement constructor, which decorates a Corona Group with the BitmapString's methods.
 
 function BitmapString:new(...)
@@ -423,6 +426,7 @@ function BitmapString:initialise(fontName,fontSize)
 	self.characterList = {} 																-- list of characters.
 	self.currText = "" 																		-- text string is currently empty
 	self.isHorizontal = true																-- is horizontal text.
+	self.direction = 0 																		-- direction is 90 degrees.
 	self.justification = BitmapString.Justify.CENTER										-- and multi-line is centred.
 	self.verticalSpacingScalar = 1 															-- vertical spacing scalar
 	self.horizontalSpacingPixels = 0 														-- horizontal gap extra.
@@ -458,11 +462,10 @@ function BitmapString:destroy()
 	self.lineLength = nil self.horizontalSpacingPixels = nil self.verticalSpacingScalar = nil
 	self.internalXAnchor = nil self.internalYAnchor = nil self.tinting = nil 
 	self.modifier = nil self.lineLengthChars = nil self.isAnimated = nil 
-	self.creationTime = nil self.animationRate = nil
+	self.creationTime = nil self.animationRate = nil self.direction = nil
 	self.animationNext = nil self.animationFrequency = nil
 	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapSt)",k,v) end end -- dump any remaining refs.
 	self:__oldRemoveSelf() 																	-- finally, call the old removeSelf() method for the display group
-	-- for k,v in pairs(mt) do print(k,v) end
 end
 
 --// 	RemoveSelf method, synonym for destroy. Cleans up. Additionally, supports a 'check' on the count of bitmap instances, if this is done
@@ -522,6 +525,7 @@ function BitmapString:setText(newText)
 
 		if unicode ~= 13 then 	
 			self.lineLengthChars[yCharacter] = xCharacter 									-- update the line length entry.
+			self.lineCount = math.max(self.lineCount,yCharacter) 							-- update number of lines.
 			local newRect = { charNumber = xCharacter, lineNumber = yCharacter }			-- start with the character number.
 			newRect.wordNumber = wordNumber 												-- save the word number
 			newRect.totalCharacterNumber = characterCount 									-- save the character count (overall)
@@ -540,7 +544,6 @@ function BitmapString:setText(newText)
 				yCharacter = yCharacter + 1 												-- one character down.
 			end
 			self.characterList[#self.characterList+1] = newRect 							-- store it in the character lists
-			self.lineCount = math.max(self.lineCount,yCharacter) 							-- update number of lines.
 		else 	
 			xCharacter = 1 																	-- carriage return.
 			yCharacter = yCharacter + 1
@@ -549,7 +552,7 @@ function BitmapString:setText(newText)
 
 	for i = 1,#self.characterList do 														-- tell everyone the word count and line count
 		self.characterList[i].wordCount = wordCount
-		self.characterList[i].lineCount = lineCount 
+		self.characterList[i].lineCount = self.lineCount 
 		self.characterList[i].totalCharacterCount = characterCount - 1 						-- count of characters in total.
 	end
 	bucket:destroy() 																		-- empty what is left in the bucket
@@ -692,19 +695,39 @@ end
 
 function BitmapString:reformatLine(lineNumber,xPos)
 	local index = 1 																		-- index in character list.
+	local xEnd = xPos
+
+	if self.direction == 180 then 															-- if backwards, then advance xpos to end position
+		for _,charItem in ipairs(self.characterList) do 
+			if charItem.lineNumber == lineNumber then 
+				xPos = xPos + self.horizontalSpacingPixels + charItem.bitmapChar.boundingBox.width 
+			end 
+		end
+		xPos = xPos - self.horizontalSpacingPixels 											-- adjust for first
+		xEnd = xPos 																		-- remember the end
+	end
+
 	while index <= #self.characterList do 													-- work through all the characters.
 		local charItem = self.characterList[index] 											-- short cut to the item
 		if charItem.lineNumber == lineNumber then 											-- is it in the line we are rendering.
+			local ln = lineNumber 															-- line number to go to.
+			if self.direction == 270 then ln = charItem.lineCount - ln + 1 end 				-- vertically flip for 270 degree orientation
+			if self.direction == 180 then  													-- work backwards for 180 degree orientation.
+				xPos = xPos - charItem.bitmapChar.boundingBox.width 
+			end
 			charItem.bitmapChar:moveTo(xPos,												-- move and size correctly.
-										(lineNumber - 1) * self.fontSize * self.verticalSpacingScalar,self.fontSize) 
-			xPos = charItem.bitmapChar.boundingBox.x2 										-- get the next position to the right.
+										(ln - 1) * self.fontSize * self.verticalSpacingScalar,self.fontSize) 
+			xPos = math.max(charItem.bitmapChar.boundingBox.x2) 							-- get the next position to the right.
 			self.boundingBox.x2 = math.max(self.boundingBox.x2,xPos) 						-- update the bounding box.
 			self.boundingBox.y2 = math.max(self.boundingBox.y2,charItem.bitmapChar.boundingBox.y2)
 			xPos = xPos + self.horizontalSpacingPixels 										-- spacing goes after bounding box.
+			if self.direction == 180 then
+				xPos = charItem.bitmapChar.boundingBox.x1 - self.horizontalSpacingPixels 
+			end
 		end
 		index = index + 1 																	-- go to next entry
 	end
-	return xPos
+	return math.max(xPos,xEnd)
 end
 
 --//	Return the view group if you want to animate it using transition.to. The object now is the view group
@@ -813,12 +836,14 @@ function BitmapString:setAnchor(anchorX,anchorY)
 end
 
 --//	Set the direction - we only support 4 main compass points, and the font is always upright. 
---//	@direction [number] string direction (degrees) 0 (default), 90
+--//	@direction [number] string direction (degrees) 0,90,180,270
 --//	@return [BitmapString]	allows chaining.
 
 function BitmapString:setDirection(direction)
-	assert(direction == 0 or direction == 90,"Direction not supported")						-- now we only support, at present 0 and 90
-	self.isHorizontal = (direction == 0) 													-- set the horizontal flag
+	direction = (direction + 3600) % 360 													-- shift into range 0-360
+	assert(direction % 90 == 0,"Direction not supported")									-- now we only support 90 degree text.
+	self.isHorizontal = (direction == 0 or direction == 180) 								-- set the horizontal flag
+	self.direction = direction 																-- set the direction.
 	self:setFont() 																			-- recreate the font to update the alignment.
 	return self
 end
@@ -882,7 +907,17 @@ function BitmapString:setTintColor(r,g,b)
 	return self
 end
 
---//	SetScale is no longer supported.
+--//	Set the bounding characters for tint definitions (defaults to { and })
+--//	@cStart [string]		start character
+--//	@cEnd 	[string]		end character.
+
+function BitmapString:setTintBrackets(cStart,cEnd) 
+	BitmapString.startTintDef = cStart or "{"
+	BitmapString.endTintDef = cStart or "}"
+end
+
+--//	SetScale is no longer supported. The effect of disproportionately scaled fonts can be achieved simply by scaling
+--// 	the view group. For larger fonts, increase the font size.
 
 function BitmapString:setScale(xScale,yScale)
 	error("setScale() is no longer supported - use the scale of the object to produce different text size ratios, or adjust the font size")
@@ -1134,8 +1169,8 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
+-- extraction of {} as part of the CharacterSource class.
 -- coded tinting (inline code) - depends on Richard9's ideas ?
--- 180 and 270 setDirection()
 
 -- subclass BitmapString works ? No it doesn't :)
 -- problem with removal of animated string.

@@ -33,7 +33,10 @@ display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 bms2 = display.newBitmapText("Hello World !",0,350,"retrofont",55)
 bms2:setAnchor(0,0.5)
 -- bms2:setTintColor(1,1,0)
-bms2:setModifier("wobble"):animate()
+--bms2:setModifier("wobble"):animate()
+--bms2:setDirection(0):setAnchor(0,0):moveTo(160,240):setText("Ln1-a\nLn2")
+bms2:setJustification(bms2.Justify.CENTRE)
+bms2:setSpacing(0)
 
 --bms:addEventListener( "tap", function(e) print("tapped") end)
 
