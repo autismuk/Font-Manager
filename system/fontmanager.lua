@@ -355,10 +355,14 @@ local CharacterSource = Base:new()
 
 --//%	Initialise a character source
 --//	@str 	[string] 				string to use.
+--//	@start 	[string]				start character cmd
+--//	@end 	[string] 				end character for cmd
 
-function CharacterSource:initialise(str)
+function CharacterSource:initialise(str,startc,endc)
 	self.source = str 																		-- save the source.
 	self.index = 1 																			-- next character from here.
+	self.startCode = (startc or "{"):byte(1) 												-- get start and end code
+	self.endCode = (endc or "}"):byte(1)
 end
 
 --//% 	Get the next character from the source as a unicode number, if it is a {command} returns that as a string.
@@ -367,6 +371,14 @@ end
 function CharacterSource:get() 																
 	local unicode = self:getRaw() 															-- get the Unicode character, unprocessed.
 	if unicode == 10 then unicode = 13 end 													-- convert return to newline so 0x0D and 0x0A are synonymous.
+	if unicode == self.startCode then  														-- is it a start tint (e.g normally {)
+		local cmd = ""
+		while unicode ~= self.endCode do  													-- keep going till } found.
+			unicode = self:getRaw() 														-- get next.
+			if unicode ~= self.endCode then cmd = cmd .. string.char(unicode) end 			-- build a string up
+		end
+		unicode = cmd:lower() 																-- return a lower case string.
+	end 
 	return unicode 
 end
 
@@ -527,31 +539,39 @@ function BitmapString:setText(newText)
 	local bucket = BitmapCharacterBucket:new(self.characterList) 							-- create a bucket out of the old character list.
 	self.characterList = {} 																-- clear the character list.
 	self.currText = newText 																-- update the text saved.
-	local source = BitmapString.sourceClass:new(newText) 									-- create a character source for it.
+	local source = BitmapString.sourceClass:new(newText,BitmapString.startTintDef, 			-- create a character source for it.
+																		BitmapString.endTintDef)
 	local xCharacter = 1 local yCharacter = 1 												-- these are the indexes of the character.
 	self.lineCount = 1 																		-- number of lines.
 	local wordNumber = 0 																	-- current word number
 	local inWord = false 																	-- word tracking state.
 	self.lineLengthChars = {} 																-- line length in characters of each line.
 	local characterCount = 1 																-- current character number
+	local currentTint = nil 																-- current character specific tint.
 
 	while source:isMore() do 																-- is there more to get ?
 		local unicode = source:get() 														-- yes, get the next character.
 		if not self.isHorizontal and unicode == 13 then unicode = 32 end 					-- if vertical, then use space rather than CR.
 
-		local isWord = unicode > 32 														-- check for word split, e.g. not space.
-		if isWord ~= inWord then 															-- moved in or out of word
-			inWord = isWord 																-- update state
-			if inWord then wordNumber = wordNumber + 1 end 									-- moved into word, bump the word number
+		if type(unicode) == "number" then 													-- if it is a command, currently only a tint.
+			local isWord = unicode > 32 													-- check for word split, e.g. not space.
+			if isWord ~= inWord then 														-- moved in or out of word
+				inWord = isWord 															-- update state
+				if inWord then wordNumber = wordNumber + 1 end 								-- moved into word, bump the word number
+			end
 		end
 
-		if unicode ~= 13 then 	
+		if type(unicode) == "string" then 													-- is it a string.
+			currentTint = self:evaluateTint(unicode)										-- evaluate as section specific tint
+
+		elseif unicode ~= 13 then 	
 			self.lineLengthChars[yCharacter] = xCharacter 									-- update the line length entry.
 			self.lineCount = math.max(self.lineCount,yCharacter) 							-- update number of lines.
 			local newRect = { charNumber = xCharacter, lineNumber = yCharacter }			-- start with the character number.
 			newRect.wordNumber = wordNumber 												-- save the word number
 			newRect.totalCharacterNumber = characterCount 									-- save the character count (overall)
 			characterCount = characterCount+1
+			newRect.tinting = currentTint 													-- save the current tint in that character
 			newRect.bitmapChar = bucket:getInstance(unicode) 								-- is there one in the bucket we can use.
 			if newRect.bitmapChar == nil then 												-- no so create a new one
 				newRect.bitmapChar = BitmapCharacter:new(self.fontName,unicode) 			-- of the correct font and character.
@@ -694,6 +714,34 @@ function BitmapString:applyModifiers()
 	end
 end
 
+--//%	Convert a textual colour definition to a tint array
+--//	@descr 	[string]	description - can be text, n,n,n or ""
+--//	@return [table]		tint table containing red,green,blue members or nil.
+
+function BitmapString:evaluateTint(descr)
+	if descr == "" then return nil end 														-- empty goes back to the standard tint.
+	descr = descr:lower() 																	-- decapitalise
+	if BitmapString.standardColours[descr] ~= nil then return  								-- named colour returns that colour.
+		BitmapString.standardColours[descr] 
+	end
+	local r,g,b = descr:match("^([0-9%.]+)%,([0-9%.]+)%,([0-9%.]+)$")						-- rip out r,g,b bits
+	assert(b ~= nil,"Bad tint colour " .. descr) 											-- check it is valid
+	return { red = r, green = g, blue = b }
+end 
+
+BitmapString.standardColours = { 															-- known tinting colours.
+	black = 	{ red = 0, green = 0, blue = 0 },
+	red = 		{ red = 1, green = 0, blue = 0 },
+	green = 	{ red = 0, green = 1, blue = 0 },
+	yellow = 	{ red = 1, green = 1, blue = 0 },
+	blue= 		{ red = 0, green = 0, blue = 1 },
+	magenta = 	{ red = 1, green = 0, blue = 1 },
+	cyan = 		{ red = 0, green = 1, blue = 1 },
+	white = 	{ red = 1, green = 1, blue = 1 },
+	grey = 		{ red = 0.5, green = 0.5, blue = 0.5 },
+	orange = 	{ red = 1, green = 140/255, blue = 0 },
+	brown = 	{ red = 139/255, green = 69/255, blue = 19/255 }
+}
 --//	Set the string encoding to use. Supports unicode and utf-8. Works by overriding the SourceClass member which is used to prototype a
 --//	SourceClass when the string is being dismantled.
 --//	@encoding [string] 			unicode, utf-8 or utf8 - nil is unicode
@@ -1203,11 +1251,7 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
--- extraction of {} as part of the CharacterSource class.
--- coded tinting (inline code) - depends on Richard9's ideas ?
-
 -- Known issues
 -- ============
 -- You can't subclass it. Create an instance and decorate it.
 -- To animate you have to have a links from the Runtime. If you let the system remove it rather than stopping it yourself it will leave a trailing reference.
--- FontDemo needs tweaking
