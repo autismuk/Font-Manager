@@ -22,7 +22,7 @@ local BitmapFont = Base:new()
 
 BitmapFont.fontDirectory = "fonts" 															-- where font files are, fnt and png.
 
---//	The Bitmap Font constructor. This reads in the font data 
+--//	The Bitmap Font constructor. This reads in the font data from the .FNT file and calculates the font height.
 --//	@fontName [string] name of font (case is sensitive, so I advise use of lower case only)
 
 function BitmapFont:initialise(fontName)
@@ -83,7 +83,8 @@ function BitmapFont:loadFont(fontName)
 	return charData
 end
 
---//%	calculates the font height of the loaded bitmap
+--//%	Calculates the font height of the loaded bitmap, which defines the base height of the font. This is used when scaling the bitmaps
+--//	to specific font sizes.
 --//	@return [number] the actual font height.
 
 function BitmapFont:calculateFontHeight()
@@ -149,7 +150,7 @@ BitmapFontContainer.new = nil 																-- very definitely :)
 
 local BitmapCharacter = Base:new()
 
-BitmapCharacter.isDebug = true																-- when this is true the objects real rectangle is shown.
+BitmapCharacter.isDebug = false																-- when this is true the objects real rectangle is shown.
 BitmapCharacter.instanceCount = 0 															-- tracks number of create/deleted instances of the character
 
 --//%	The font and unicode character are set in the constructor. These are immutable for this object - if you want a different letter/font you need to create a new
@@ -192,7 +193,7 @@ function BitmapCharacter:destroy()
 		end
 	end
 	BitmapCharacter.instanceCount = BitmapCharacter.instanceCount - 1 						-- decrement the instance count.
-	for k,v in pairs(self) do print("(BitmapCharacter)",k,v) end
+	for k,v in pairs(self) do print("(BitmapCharacter)",k,v) end 							-- check for leftovers.
 end
 
 
@@ -231,7 +232,7 @@ function BitmapCharacter:moveBy(x,y)
 	self:moveTo(self.xDefault + x,self.yDefault + y)
 end
 
---//% 	Apply a modifier. 
+--//% 	Apply a modifier. This does not affect the bounding box, merely the visual appearance, and the target area for tap/touch events.
 --//	@modifier [table] 		Modifier containing xScale, yScale, xOffset, yOffset,rotation,alpha options.
 
 function BitmapCharacter:modify(modifier)
@@ -255,6 +256,20 @@ function BitmapCharacter:setTintColor(tint)
 		self.image:setFillColor( tint.red or 1,tint.green or 1,tint.blue or 1 )
 	end
 end
+
+--//% 	Get the bitmap image representing this character as a display object
+--//	@return [displayObject]		bitmap object
+
+function BitmapCharacter:getImage()
+	return self.image 
+end 
+
+--//%	Get the bounding box for the unmodified character.
+--//	return [boundingBox] 		table containing bounding box x1,y1,x2,y2,width and height members.
+
+function BitmapCharacter:getBoundingBox()
+	return self.boundingBox
+end 
 
 --- ************************************************************************************************************************************************************************
 --//%										Modifier Store singleton - keeps an internal list of all standard modifiers
@@ -289,9 +304,11 @@ function ModifierStore:get(name)
 end
 
 ModifierStore:initialise()																	-- make prototype an instance.
+ModifierStore.new = nil
 
 --- ************************************************************************************************************************************************************************
 --//	This is a collection of Bitmap Characters that may be available for re-use, when changing the text on a Bitmap String. For some reason I called it a Bucket class
+--//	This is tightly coupled to the BitmapString class which uses it.
 --- ************************************************************************************************************************************************************************
 
 local BitmapCharacterBucket = Base:new() 
@@ -331,7 +348,7 @@ function BitmapCharacterBucket:destroy()
 end
 
 --- ************************************************************************************************************************************************************************
---														This extracts characters, one at a time, from a string
+--							This extracts characters, one at a time, from a string, converting 13/10 to 13 and extracting {} commands
 --- ************************************************************************************************************************************************************************
 
 local CharacterSource = Base:new()
@@ -344,8 +361,8 @@ function CharacterSource:initialise(str)
 	self.index = 1 																			-- next character from here.
 end
 
---//% 	Get the next character from the source
---//	@return 	[number] 			unicode of character, returns 13 for both CR and LF, nil if there is nothing left.
+--//% 	Get the next character from the source as a unicode number, if it is a {command} returns that as a string.
+--//	@return 	[string/number] 			unicode of character, returns 13 for both CR and LF, nil if there is nothing left. 
 
 function CharacterSource:get() 																
 	local unicode = self:getRaw() 															-- get the Unicode character, unprocessed.
@@ -353,14 +370,14 @@ function CharacterSource:get()
 	return unicode 
 end
 
---//%	Are there any more characters to get from the source
+--//%	Check to see if there there any more characters to get from the source.
 --//	@return [boolean] true if there are.
 
 function CharacterSource:isMore() 
 	return self.index <= #self.source
 end
 
---//% 	Allows us to read a single character, if available. Can be overridden for UTF-8 support.
+--//% 	Allows us to read a single character, if available. Can be overridden for UTF-8 support. And is.
 --//	@return 	[number]			unicode of next character or nil.
 
 function CharacterSource:getRaw()
@@ -371,7 +388,7 @@ function CharacterSource:getRaw()
 end 
 
 --- ************************************************************************************************************************************************************************
---//%											UTF-8 Encoder. UTF-8 is only encoded to the two byte level.
+--//%								UTF-8 Encoder. UTF-8 is only encoded to the two byte level. Overrides getRaw() to extract UFT-8 chars
 --- ************************************************************************************************************************************************************************
 
 local UTF8Source = CharacterSource:new()
@@ -405,7 +422,8 @@ BitmapString.Justify = { LEFT = 0, CENTER = 1, CENTRE = 1, RIGHT = 2} 						-- J
 BitmapString.startTintDef = "{" 															-- start and end markers for font tinting.
 BitmapString.endTintDef = "}"
 
---//% We have a replacement constructor, which decorates a Corona Group with the BitmapString's methods.
+--// 	We have a replacement constructor, which decorates a Corona Group with the BitmapString's methods. Note that you cannot therefore subclass
+--//	BitmapString as normal, because it is a mixin. 
 
 function BitmapString:new(...)
 	local newObject = display.newGroup() 													-- create new group
@@ -419,6 +437,10 @@ function BitmapString:new(...)
 	newObject:initialise(...) 																-- now call the constructor.
 	return newObject
 end
+
+--//	Constructor initialisation. Sets the font name and size.
+--//	@fontName [string]		Name of font, corresponds to .fnt file.
+--//	@fontSize [number]		Font size, default 64, refers to the pixel height.
 
 function BitmapString:initialise(fontName,fontSize) 
 	self.fontName = fontName self.fontSize = fontSize or 64 								-- save the font name and the font size.
@@ -448,7 +470,7 @@ function BitmapString:initialise(fontName,fontSize)
 	end
 end 
 
---//	Destructor.
+--//	Destructor. Stops animation, clears text, blanks table and finally removes itself (as it is a viewgroup mixin)
 
 function BitmapString:destroy()
 	if self.characterList == nil then return end											-- already been done.
@@ -475,7 +497,6 @@ end
 function BitmapString:removeSelf(checkCount)
 	self:destroy()
 	if checkCount then
-		print(BitmapCharacter.instanceCount)
 		assert(BitmapCharacter.instanceCount == 0,"Code error, contact author, cleanup fails.")
 	end
 end
@@ -506,7 +527,6 @@ function BitmapString:setText(newText)
 	self.currText = newText 																-- update the text saved.
 	local source = BitmapString.sourceClass:new(newText) 									-- create a character source for it.
 	local xCharacter = 1 local yCharacter = 1 												-- these are the indexes of the character.
-	self.wordCount = 1 																		-- number of words
 	self.lineCount = 1 																		-- number of lines.
 	local wordNumber = 0 																	-- current word number
 	local inWord = false 																	-- word tracking state.
@@ -533,7 +553,7 @@ function BitmapString:setText(newText)
 			newRect.bitmapChar = bucket:getInstance(unicode) 								-- is there one in the bucket we can use.
 			if newRect.bitmapChar == nil then 												-- no so create a new one
 				newRect.bitmapChar = BitmapCharacter:new(self.fontName,unicode) 			-- of the correct font and character.
-				self:insert(newRect.bitmapChar.image) 										-- insert the bitmap image into the view group.
+				self:insert(newRect.bitmapChar:getImage()) 									-- insert the bitmap image into the view group.
 				if BitmapCharacter.isDebug then 											-- if debugging the bitmap character
 					self:insert(newRect.bitmapChar.debuggingRectangle) 						-- insert that as well.
 				end
@@ -549,9 +569,8 @@ function BitmapString:setText(newText)
 			yCharacter = yCharacter + 1
 		end
 	end
-
 	for i = 1,#self.characterList do 														-- tell everyone the word count and line count
-		self.characterList[i].wordCount = wordCount
+		self.characterList[i].wordCount = wordNumber
 		self.characterList[i].lineCount = self.lineCount 
 		self.characterList[i].totalCharacterCount = characterCount - 1 						-- count of characters in total.
 	end
@@ -560,7 +579,9 @@ function BitmapString:setText(newText)
 	return self
 end
 
---//%	Reformat and rejustify the text, calculate the non-modified bounding box.
+--//%	Reformat and rejustify the text, calculate the non-modified bounding box. This has several phases (1) it reformats the text, left justified based at (0,0)
+--//	(2) it justifies the text centrally or right if required, (3) it moves the origin from (0,0) if the anchor is set to anything other than (0,0) and finally
+--//	(4) it reapplies the modifiers.
 
 function BitmapString:reformatText() 
 	self.boundingBox = { x1 = 0,x2 = 0,y1 = 0, y2 = 0 }										-- initial bounding box.
@@ -577,7 +598,8 @@ function BitmapString:reformatText()
 	self:applyModifiers() 																	-- apply all the modifiers as appropriate.
 end
 
---//% 	Handle the string repositioning for anchoring.
+--//% 	Handle the string repositioning for anchoring. Uses the bounding box to work out the height and width, which is converted into an offset
+--//	all the bitmap characters and the debug rectangle (if used) are then moved. We cannot use anchorChildren because of the animation.
 
 function BitmapString:anchorMove()
 	if self.internalXAnchor ~= 0 or self.internalYAnchor ~= 0 then 							-- not anchored at 0,0 (e.g. top left)
@@ -599,7 +621,9 @@ function BitmapString:anchorMove()
 	end
 end
 
---//% 	Apply modifiers to all the characters.
+--//% 	Apply modifiers to all the characters. Works through all the characters, for each it creates an default modifier with the characters
+--//	personal tint, which it then sends to the modifier with the information structure to be modified. This modifier is then applied to the
+--//	bitmap character.
 
 function BitmapString:applyModifiers()
 	local currentTint = self.tinting or { red = 1, green = 1, blue = 1 } 					-- get current overall tinting or the stock one
@@ -621,7 +645,11 @@ function BitmapString:applyModifiers()
 		local modifier = { xScale = 1, yScale = 1, xOffset = 0, yOffset = 0, rotation = 0, 	-- the pre-modifier modifier.
 							alpha = 1,tint = { red = currentTint.red, green = currentTint.green, blue = currentTint.blue } }
 
-		-- TODO: If there is a tint inline setting then put that in the modifier.
+		if char.tinting then  																-- does the character have its own personal tinting.
+			modifier.tint.red = char.tinting.red  											-- if so, copy it into the modifier.
+			modifier.tint.blue = char.tinting.blue 
+			modifier.tint.green = char.tinting.green 
+		end
 
 		if self.modifier ~= nil then 
 
@@ -633,12 +661,13 @@ function BitmapString:applyModifiers()
 								lineIndex = char.lineNumber, 								-- current line number
 								lineCount = self.lineCount, 								-- number of lines.
 								wordIndex = char.wordNumber, 								-- word number
-								wordCount = self.wordCount 									-- count of lines.
+								wordCount = char.wordCount 									-- count of lines.
 			}
 
 			infoTable.charIndex = infoTable.index infoTable.charCount = infoTable.length 	-- modify for consistency , old ones still work of course.
 
-			local x = (bitmapChar.boundingBox.x1 + bitmapChar.boundingBox.x2) / 2 			-- position of character midpoint  
+			local charBox = bitmapChar:getBoundingBox() 									-- get the bounding box
+			local x = (charBox.x1 + charBox.x2) / 2 										-- position of character midpoint  
 			local cPos = (x - (self.boundingBox.x1 + adjustment)) / 						-- convert to percentage of position.
 									(self.boundingBox.width-adjustment*2) * 100 
 			cPos = math.max(math.min(cPos,100),0)											-- force into range
@@ -663,21 +692,22 @@ function BitmapString:applyModifiers()
 	end
 end
 
---//	Set the string encoding to use. Supports unicode and utf-8
+--//	Set the string encoding to use. Supports unicode and utf-8. Works by overriding the SourceClass member which is used to prototype a
+--//	SourceClass when the string is being dismantled.
 --//	@encoding [string] 			unicode, utf-8 or utf8 - nil is unicode
 
 function BitmapString:setEncoding(encoding)
 	encoding = (encoding or "unicode"):lower() 												-- default is unicode, make l/c
 	if encoding == "" or encoding == "unicode" then 
 		BitmapString.sourceClass = CharacterSource 
-	elseif encoding == "utf8" or encoding == "utf-8" then 
+	elseif encoding == "utf8" or encoding == "utf-8" then 									-- utf-8 and utf8 use that source 
 		BitmapString.sourceClass = UTF8Source
-	else
+	else 																					-- otherwise we don't know.
 		error("Unsupported encoding "..encoding)
 	end
 end
 
---//%	Justify the text 
+--//%	Justify the text. Only centre and right, it is left justified by default.
 --//%	@isRightJustify [boolean]	true if to be right justified rather than centred (default if not called is left)
 
 function BitmapString:justifyText(isRightJustify)
@@ -688,7 +718,8 @@ function BitmapString:justifyText(isRightJustify)
 	end
 end
 
---//%	Reformat a single line, update the bounding box, return the right most display pixel used
+--//%	Reformat a single line, update the bounding box, return the right most display pixel used. This positions a line according to the direction.
+--//	(for direction 180 it works backwards)
 --// 	@lineNumber	[number]	line to reformat
 --// 	@xPos 		[number] 	indent from left to reformat with
 --//	@return 	[number]	rightmost pixel used.
@@ -700,7 +731,7 @@ function BitmapString:reformatLine(lineNumber,xPos)
 	if self.direction == 180 then 															-- if backwards, then advance xpos to end position
 		for _,charItem in ipairs(self.characterList) do 
 			if charItem.lineNumber == lineNumber then 
-				xPos = xPos + self.horizontalSpacingPixels + charItem.bitmapChar.boundingBox.width 
+				xPos = xPos + self.horizontalSpacingPixels + charItem.bitmapChar:getBoundingBox().width 
 			end 
 		end
 		xPos = xPos - self.horizontalSpacingPixels 											-- adjust for first
@@ -717,12 +748,13 @@ function BitmapString:reformatLine(lineNumber,xPos)
 			end
 			charItem.bitmapChar:moveTo(xPos,												-- move and size correctly.
 										(ln - 1) * self.fontSize * self.verticalSpacingScalar,self.fontSize) 
-			xPos = math.max(charItem.bitmapChar.boundingBox.x2) 							-- get the next position to the right.
+			local charBox = charItem.bitmapChar:getBoundingBox() 							-- get character bounding box
+			xPos = math.max(charBox.x2) 													-- get the next position to the right.
 			self.boundingBox.x2 = math.max(self.boundingBox.x2,xPos) 						-- update the bounding box.
-			self.boundingBox.y2 = math.max(self.boundingBox.y2,charItem.bitmapChar.boundingBox.y2)
+			self.boundingBox.y2 = math.max(self.boundingBox.y2,charBox.y2)
 			xPos = xPos + self.horizontalSpacingPixels 										-- spacing goes after bounding box.
 			if self.direction == 180 then
-				xPos = charItem.bitmapChar.boundingBox.x1 - self.horizontalSpacingPixels 
+				xPos = charBox.x1 - self.horizontalSpacingPixels 
 			end
 		end
 		index = index + 1 																	-- go to next entry
@@ -731,13 +763,14 @@ function BitmapString:reformatLine(lineNumber,xPos)
 end
 
 --//	Return the view group if you want to animate it using transition.to. The object now is the view group
---//	but this is left in for consistency
+--//	but this is left in for consistency. You can just remove getView() methods.
 --//	@return [self]
 
 function BitmapString:getView() return self end 								
 
 --//	Turns animation on, with an optional speed scalar. This causes the 'cPos' in modifiers to change with time
---//	allowing the various animation effects
+--//	allowing the various animation effects. Note that if you turn animation on it creates a reference which you have to remove
+--//	if you want the automatic garbage collection for Storyboard and Composer.
 --//	@speedScalar [number]	Speed Scalar, defaults to 1. 3 is three times as fast.
 --//	@return [BitmapString]	allows chaining.
 
@@ -750,7 +783,7 @@ function BitmapString:animate(speedScalar)
 	return self
 end
 
---//	Turn animation off.
+--//	Turn animation off. 
 --//	@return [BitmapString]	allows chaining.
 
 function BitmapString:stop()
@@ -761,7 +794,7 @@ function BitmapString:stop()
 	return self
 end
 
---//%	Enter Frame event handler
+--//%	Enter Frame event handler. Ignores fps and uses its own animation rate which is 15Hz by default.
 
 function BitmapString:enterFrame(event)
 	assert(self.isAnimated,"Event listener on but not animated ?")							-- it should be animating !
@@ -776,8 +809,7 @@ end
 --//	@frequency [number]		updates per second of the animation rate, defaults to 15 updates per second.
 
 function BitmapString:setAnimationRate(frequency)
-	BitmapString.animationFrequency = frequency or 15
-	print(BitmapString.animationFrequency)
+	BitmapString.animationFrequency = frequency or 15 										-- set the animation frequency, default 15
 end
 
 --//	Set multi-line justification.
@@ -793,7 +825,7 @@ function BitmapString:setJustification(justification)
 	return self
 end
 
---//	Move the view group - i.e. the font
+--//	Move the view group - i.e. the font. Included for consistency, you can just assign to x,y
 --//	@x 		[number]		Horizontal position
 --//	@y 		[number]		Vertictal position
 --//	@return [BitmapString]	allows chaining.
@@ -848,7 +880,7 @@ function BitmapString:setDirection(direction)
 	return self
 end
 
---//	Allows you to adjust the spacing between letters.
+--//	Allows you to adjust the spacing between letters by adding a given number of pixels.
 --//	@spacing [number]	Pixels to insert between letters (or remove, can be negative) 
 --//	@return [BitmapString]	allows chaining.
 
@@ -858,7 +890,7 @@ function BitmapString:setSpacing(spacing)
 	return self
 end
 
---//	Allows you to adjust the spacing between letters vertically
+--//	Allows you to adjust the spacing between letters vertically. This is a scalar, so 0.5 halves the distance.
 --//	@spacing [number]	Pixels to insert between letters (or remove, can be negative)
 --//	@return [BitmapString]	allows chaining.
 
@@ -913,7 +945,7 @@ end
 
 function BitmapString:setTintBrackets(cStart,cEnd) 
 	BitmapString.startTintDef = cStart or "{"
-	BitmapString.endTintDef = cStart or "}"
+	BitmapString.endTintDef = cEnd or "}"
 end
 
 --//	SetScale is no longer supported. The effect of disproportionately scaled fonts can be achieved simply by scaling
@@ -1001,10 +1033,10 @@ end
 --
 --//		Modifiers can be functions, classes or text references to system modifiers. The modifier takes five parameters <br><ul>
 --//
---//			<li>modifier 		structure to modify - has xOffset, yOffset, xScale, yScale and rotation members (0,0,1,1,0) which it can
+--//			<li>modifier 		structure to modify - has xOffset, yOffset, xScale, yScale,alpha  and rotation members (0,0,1,1,1,0) which it can
 --// 								tweak. Called for each character of the string. You can see all of them in Wobble, or just rotation in Jagged.</li>
 --//			<li>cPos 			the character position, from 0-100 - how far along the string this is. This does not correlate to string character
---// 								position, as this is changed to animate the display. </li>
+--// 								position, as this is changed to animate the display. It is a percentage of the text width. </li>
 --// 			<li>info 			table containing information for the modifier : elapsed - elapsed time in ms, index - position in this line, 
 --// 								length - length of this linem lineCount, lineIndex - line number of this character, lineCount - total number of lines
 --//								</li></ul>
@@ -1172,5 +1204,7 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 -- extraction of {} as part of the CharacterSource class.
 -- coded tinting (inline code) - depends on Richard9's ideas ?
 
--- subclass BitmapString works ? No it doesn't :)
--- problem with removal of animated string.
+-- Known issues
+-- ============
+-- You can't subclass it. Create an instance and decorate it.
+-- To animate you have to have a links from the Runtime. If you let the system remove it rather than stopping it yourself it will leave a trailing reference.

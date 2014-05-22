@@ -53,7 +53,7 @@ function pulser(modifier, cPos, info)
 	if info.index == w then  																	-- are we scaling this character
 		local newScale = 1 + (info.elapsed % 360) / 360 										-- calculate the scale zoom - make it 2- rather than 1+, it goes backwards
 		modifier.xScale,modifier.yScale = newScale,newScale 									-- scale it up
-		-- modifier.rotation = info.elapsed % 360 												-- this looks ridiculous, but it's interesting
+	 	--modifier.rotation = info.elapsed % 360 												-- this looks ridiculous, but it's interesting
 		modifier.tint.red = 0 																	-- so, we set the tinting for that one as well.
 	end
 end
@@ -93,7 +93,7 @@ end
 local str4 = display.newBitmapText("pulse",160,240,"retrofont",80) 								-- create a new string using Corona method.
 str4:setModifier(pulser):animate() 																-- make it use the above modifier, and animate it.
 
--- str4:setDirection(180) 																		-- backwards
+--str4:setDirection(180) 																		-- backwards
 -- str4:setText("Hello\nWorld !") 																-- you can change the text, strings aren't immutable.
 
 local demoTarget = {} 																			-- something to send an event to.
