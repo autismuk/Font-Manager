@@ -168,7 +168,7 @@ function RolloutEventAdaptor:setText(bitmapString,text)
 		if type(nextItem) == "string" and self.commandList[nextItem] ~= nil then 				-- if it is a string and a known command.
 			self:addEvent(charPos,nextItem) 													-- create an event at the current time, e.g. character position.
 		end 
-		if type(nextItem) == "number" and nextItem ~= 13 then  									-- if numeric and not return
+		if type(nextItem) == "number" and nextItem ~= 13 then  									-- if numeric e.g. character and not return (return doesn't count)
 			charPos = charPos + 1 																-- bump the character position.
 		end
 	end
