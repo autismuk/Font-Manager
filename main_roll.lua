@@ -71,6 +71,7 @@ function EventAdaptor:initialise(modifier)
 	self.coreModifier = modifier 																-- save the modifier to be adapted.
 	self.eventList = {} 																		-- event list, keyed on name, { time = <fire time>,name = <string>,[action = <func>]}
 	self.lastEventTime = 0 																		-- last 'time' when an event occurred.
+	self.eventCount = 0 																		-- number of events
 end 
 
 --//	Add an event to the event queue
@@ -81,6 +82,7 @@ end
 function EventAdaptor:addEvent(time, name ,action)
 	local newEvent = { time = time, name = name, action = action }								-- construct an event object.
 	self.eventList[#self.eventList+1] = newEvent 												-- add to the list
+	self.eventCount = self.eventCount + 1 														-- increment event counts.
 	return self
 end
 
@@ -99,6 +101,8 @@ function EventAdaptor:modify(modifier, cPos, info)
 																		modifierInstance = self.coreModifier, bitmapStringInstance }
 				self:fireEvent(event.name,event,data) 											-- then fire that event.
 				self.eventList[key] = nil 														-- forget about the event, freeing up any references.
+				self.eventCount = self.eventCount - 1 											-- adjust count
+				if self.eventCount == 0 then self:clearupEvent() end 							-- if completed then clean up.
 			end
 		end
 		self.lastEventTime = position  															-- update the last fire time.
@@ -126,6 +130,11 @@ end
 function EventAdaptor:eventHandler(eventName,eventInfo,data)
 	-- TODO: Really you should override this
 	print("[Debug]",eventName,"fired at",eventInfo.time)
+end
+
+--//	Clear up any event references we can get rid of.
+
+function EventAdaptor:clearupEvent()
 end
 
 --- ************************************************************************************************************************************************************************
@@ -195,6 +204,13 @@ function RolloutEventAdaptor:eventHandler(eventName,eventInfo,eventData)
 	eventData.bitmapStringInstance = self.bitmapStringInstance 									-- tell it about the bitmap display object
 	method(self,eventName,eventInfo,eventData) 													-- call the handler
 end 
+
+--//	Cleaning up after the last event, we lose the reference to the bitmap String.
+
+function RolloutEventAdaptor:clearupEvent()
+	EventAdaptor.clearupEvent(self)	 															-- superclass
+	self.bitmapStringInstance = nil  															-- stops us keeping a reference
+end
 
 --- ************************************************************************************************************************************************************************
 --																		Sample Roll out subclass
