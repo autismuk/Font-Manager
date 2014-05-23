@@ -129,17 +129,18 @@ function EventAdaptor:eventHandler(eventName,eventInfo,data)
 end
 
 --- ************************************************************************************************************************************************************************
---								A subclass of the EventAdaptor which always uses the Rollout Modifier, and is specific to the task
+--								A subclass of the EventAdaptor which always uses the Rollout Modifier or a subclass, and is specific to the task
 --- ************************************************************************************************************************************************************************
 
 local RolloutEventAdaptor = EventAdaptor:new()
 
 --//	Constructor. 
 --//	@fontManagerInstance 	[FontManager]			Font manager instance as returned from require.
+--//	@modifierInstance  		[RollOutModifier] 		Rollout Modifier or subclass.
 
-function RolloutEventAdaptor:initialise(fontManagerInstance)
+function RolloutEventAdaptor:initialise(fontManagerInstance,modifierInstance)
 	self.fontManagerInstance = fontManagerInstance 												-- we need this so we can access the parsing methods in FM.
-	self.rollOutModifier = RolloutModifier:new() 												-- we are adapting one of these.
+	self.rollOutModifier = modifierInstance 													-- and save the modifier we are using.
 	self.commandList = { }
 	EventAdaptor.initialise(self,self.rollOutModifier) 											-- call the superclass constructor
 end
@@ -201,8 +202,8 @@ end
 
 local SampleRollOut = RolloutEventAdaptor:new()
 
-function SampleRollOut:initialise(fontManagerInstance)
-	RolloutEventAdaptor.initialise(self,fontManagerInstance) 									-- constructor for superclass
+function SampleRollOut:initialise(fontManagerInstance,modifierInstance)
+	RolloutEventAdaptor.initialise(self,fontManagerInstance,modifierInstance) 					-- constructor for superclass
 	self:addEventType("slow"):addEventType("fast"):addEventType("shake")						-- add known commands
 end
 
@@ -232,6 +233,6 @@ local text = "Lorem{shake} ipsum\n{fast}dolorsitamet{slow},\nconsectetur\nadipis
 local textObject = display.newBitmapText("",160,240,"font2",44) 								-- create a text object, left justify it.
 textObject:setJustification(textObject.Justify.LEFT)
 
-local eventMod = SampleRollOut:new(fm) 	 														-- create the sample roll out modifier instance.
+local eventMod = SampleRollOut:new(fm,RolloutModifier:new()) 	 								-- create the sample roll out modifier instance.
 eventMod:setText(textObject,text) 																-- set the text of the text object.
 
