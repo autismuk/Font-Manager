@@ -193,7 +193,7 @@ function BitmapCharacter:destroy()
 		end
 	end
 	BitmapCharacter.instanceCount = BitmapCharacter.instanceCount - 1 						-- decrement the instance count.
-	for k,v in pairs(self) do print("(BitmapCh)",k,v) end 									-- check for leftovers.
+	--for k,v in pairs(self) do print("(BitmapCh)",k,v) end 									-- check for leftovers.
 end
 
 
@@ -506,7 +506,7 @@ function BitmapString:destroy()
 	self.modifier = nil self.lineLengthChars = nil self.isAnimated = nil 
 	self.creationTime = nil self.animationRate = nil self.direction = nil
 	self.animationNext = nil self.animationFrequency = nil
-	for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapSt)",k,v) end end -- dump any remaining refs.
+	-- for k,v in pairs(self) do if type(v) ~= "function" then print("(BitmapSt)",k,v) end end -- dump any remaining refs.
 	self:__oldRemoveSelf() 																	-- finally, call the old removeSelf() method for the display group
 end
 

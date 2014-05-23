@@ -8,8 +8,6 @@
 ---
 --- ************************************************************************************************************************************************************************
 
--- event adaptor for rollout modifier.
--- parse the text for events.
 
 display.setStatusBar(display.HiddenStatusBar)
 fm = require("system.fontmanager")
