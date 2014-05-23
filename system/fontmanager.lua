@@ -466,7 +466,7 @@ function BitmapString:initialise(fontName,fontSize)
 	self.fontName = fontName self.fontSize = fontSize or 64 								-- save the font name and the font size.
 	assert(self.fontName ~= nil,"No default font name for Bitmap String")					-- check a font was provided.
 	self.characterList = {} 																-- list of characters.
-	self.currText = "" 																		-- text string is currently empty
+	self.currText = nil 																	-- text string currently has no value
 	self.isHorizontal = true																-- is horizontal text.
 	self.direction = 0 																		-- direction is 90 degrees.
 	self.justification = BitmapString.Justify.CENTER										-- and multi-line is centred.
