@@ -242,10 +242,10 @@ end
 			
 -- add command implementation.
 																								-- some working text.
-local text = "Lorem{shake} ipsum\n{fast}dolorsitamet{slow},\nconsectetur\nadipiscing\nelit. Duis nec\nlobortis massa.\nFusce dictum\naliquam fermen"
+local text = "Lorem{shake} ipsum\n{fast}dolor{$crab}sitamet{slow},\nconsectetur{fast}\nadipiscing\nelit. Duis nec\nlobortis massa.\nFusce dictum\naliquam fermen"
 
 local textObject = display.newBitmapText("",160,240,"font2",44) 								-- create a text object, left justify it.
-textObject:setJustification(textObject.Justify.LEFT)
+textObject:setJustification(textObject.Justify.LEFT):setVerticalSpacing(0.9)
 
 local eventMod = SampleRollOut:new(fm,RolloutModifier:new()) 	 								-- create the sample roll out modifier instance.
 eventMod:setText(textObject,text) 																-- set the text of the text object.

@@ -87,6 +87,9 @@ Colour tinting can be done using setTintColor() - colours everything, can be in-
 The character pair used to detect tinting instructions can be set using fm.FontManager:setTintBrackets("(",")") for example - defaults to {}  - colours are
 black,red,green,yellow,blue,magenta,cyan,white,grey,orange,brown
 
+You can also use a similar syntax to include any image in the string as {$crab} - the $ sign indicates it is an external non-font image (thanks to Richard9 for this idea)
+this currently loads icons/<name>.png but this will be changeable. The graphic will be scaled along with all the other letters, wobble, curve, animate like any other as well.
+
 If you are relying on Composer or Storyboard to clean up your display objects, this will work but *only* if the animation is off. When the animation is on a reference
 to the object is maintained, so it will not garbage collect. You can use str4:stop() to stop animation or str4:removeSelf() to stop everything, and clean up the string.
 
@@ -129,6 +132,7 @@ New features from v1
 - Justification of multi-line text
 - more information options for modifiers.
 - debugging rectangles for seeing the 'box' for characters and strings.
+- icons
 
 Paul Robson 22/5/14
 paul@robsons.org.uk

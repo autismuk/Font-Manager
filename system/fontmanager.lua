@@ -21,6 +21,7 @@ _G.Base =  _G.Base or { new = function(s,...) local o = { } setmetatable(o,s) s.
 local BitmapFont = Base:new()
 
 BitmapFont.fontDirectory = "fonts" 															-- where font files are, fnt and png.
+BitmapFont.imageMapping = "icons/*.png" 													-- maps icons to a location.
 
 --//	The Bitmap Font constructor. This reads in the font data from the .FNT file and calculates the font height.
 --//	@fontName [string] name of font (case is sensitive, so I advise use of lower case only)
@@ -156,13 +157,24 @@ BitmapCharacter.instanceCount = 0 															-- tracks number of create/dele
 --//%	The font and unicode character are set in the constructor. These are immutable for this object - if you want a different letter/font you need to create a new
 --//	instance. We do not initially really care where it is, how big it is, or anything like that. 
 --//	@fontName [string] 						name of font
---//	@unicodeCharacter [string/number]		character/character code to use.
+--//	@character [string/number]				character/character code to use.
 
-function BitmapCharacter:initialise(fontName,unicodeCharacter)
-	local info = BitmapFontContainer:getFontInstance(fontName): 							-- access the font instance for this name and create the image.
-														createImage(unicodeCharacter)
+function BitmapCharacter:initialise(fontName,character)
+
+	local info
+	if (character.." "):match("^%$%w") == nil then 											-- if it is not a $<image> ?
+		info = BitmapFontContainer:getFontInstance(fontName): 								-- access the font instance for this name and create the image.
+														createImage(character)
+	else  																					-- for a $image, create an info structure that has the same
+		info = { charData = {} }  															-- data that a font character would have.				
+		info.image = display.newImage(BitmapFont.imageMapping:gsub("%*",character:sub(2)))
+		info.charData.width = info.image.width 
+		info.charData.height = info.image.height 
+		info.charData.xOffset,info.charData.yOffset = 0,0
+		info.fontHeight = info.image.height
+	end
 	BitmapCharacter.instanceCount = BitmapCharacter.instanceCount + 1 						-- bump the instance count.
-	self.character = unicodeCharacter 														-- this is the character it is.
+	self.character = character 																-- this is the character it is.
 	self.image = info.image 																-- save the display object
 	self.info = info.charData 																-- save the associated information. Note, we can only use width, height, xOffset, yOffset
 	self.basePhysicalHeight = info.fontHeight 												-- save the physical height of the bitmap.
@@ -331,12 +343,12 @@ function BitmapCharacterBucket:initialise(bitmapCharacterTable)
 end
 
 --//%	Get an instance of a unicode character from the bucket, and remove it from the bucket.
---//	@unicodeCharacter [number] 				character code wanted from the bucket.
+--//	@character 		  [number/string] 		character code wanted from the bucket.
 --//	@return 		  [BitmapCharacter]		useable bitmap character from bucket or nil if not found.
 
-function BitmapCharacterBucket:getInstance(unicodeCharacter)
+function BitmapCharacterBucket:getInstance(character)
 	for index,bucketItem in pairs(self.collection) do 										-- work through the bucket
-		if bucketItem:getCharacter() == unicodeCharacter then  								-- found a match ?
+		if bucketItem:getCharacter() == character then  									-- found a match ?
 			local instance = bucketItem 													-- save the instance.
 			self.collection[index] = nil 													-- remove it from the list
 			return instance 																-- return the instance
@@ -376,18 +388,18 @@ end
 --//	@return 	[string/number] 			unicode of character, returns 13 for both CR and LF, nil if there is nothing left. 
 
 function CharacterSource:get() 																
-	local unicode = self:getRaw() 															-- get the Unicode character, unprocessed.
-	if unicode == 10 then unicode = 13 end 													-- convert return to newline so 0x0D and 0x0A are synonymous.
-	if unicode == self.startCode then  														-- is it a start tint (e.g normally {)
+	local code = self:getRaw() 															-- get the code character, unprocessed.
+	if code == 10 then code = 13 end 													-- convert return to newline so 0x0D and 0x0A are synonymous.
+	if code == self.startCode then  													-- is it a start tint (e.g normally {)
 		local cmd = ""
-		while unicode ~= self.endCode do  													-- keep going till } found.
-			unicode = self:getRaw() 														-- get next.
-			assert(unicode ~= nil,"Missing closing terminator in command")
-			if unicode ~= self.endCode then cmd = cmd .. string.char(unicode) end 			-- build a string up
+		while code ~= self.endCode do  													-- keep going till } found.
+			code = self:getRaw() 														-- get next.
+			assert(code ~= nil,"Missing closing terminator in command")
+			if code ~= self.endCode then cmd = cmd .. string.char(code) end 			-- build a string up
 		end
-		unicode = cmd:lower() 																-- return a lower case string.
+		code = cmd:lower() 																-- return a lower case string.
 	end 
-	return unicode 
+	return code 
 end
 
 --//%	Check to see if there there any more characters to get from the source.
@@ -558,21 +570,22 @@ function BitmapString:setText(newText)
 	local currentTint = nil 																-- current character specific tint.
 
 	while source:isMore() do 																-- is there more to get ?
-		local unicode = source:get() 														-- yes, get the next character.
-		if not self.isHorizontal and unicode == 13 then unicode = 32 end 					-- if vertical, then use space rather than CR.
+		local code = source:get() 															-- yes, get the next character.
+		local isImageCharacter = (code.." "):sub(1,1) == '$'
+		if not self.isHorizontal and code == 13 then code = 32 end 							-- if vertical, then use space rather than CR.
 
-		if type(unicode) == "number" then 													-- if it is a command, currently only a tint.
-			local isWord = unicode > 32 													-- check for word split, e.g. not space.
+		if type(code) == "number" then 														-- if it is a command, currently only a tint.
+			local isWord = code > 32 														-- check for word split, e.g. not space.
 			if isWord ~= inWord then 														-- moved in or out of word
 				inWord = isWord 															-- update state
 				if inWord then wordNumber = wordNumber + 1 end 								-- moved into word, bump the word number
 			end
 		end
 
-		if type(unicode) == "string" then 													-- is it a string.
-			currentTint = self:evaluateTint(unicode)										-- evaluate as section specific tint
+		if type(code) == "string" and not isImageCharacter then 							-- is it a string, but not an image character
+			currentTint = self:evaluateTint(code)											-- evaluate as section specific tint
 
-		elseif unicode ~= 13 then 															-- it's a normal character
+		elseif code ~= 13 then 															-- it's a normal character
 
 			self.lineLengthChars[yCharacter] = xCharacter 									-- update the line length entry.
 			self.lineCount = math.max(self.lineCount,yCharacter) 							-- update number of lines.
@@ -581,9 +594,9 @@ function BitmapString:setText(newText)
 			newRect.totalCharacterNumber = characterCount 									-- save the character count (overall)
 			characterCount = characterCount+1
 			newRect.tinting = currentTint 													-- save the current tint in that character
-			newRect.bitmapChar = bucket:getInstance(unicode) 								-- is there one in the bucket we can use.
+			newRect.bitmapChar = bucket:getInstance(code) 									-- is there one in the bucket we can use.
 			if newRect.bitmapChar == nil then 												-- no so create a new one
-				newRect.bitmapChar = BitmapCharacter:new(self.fontName,unicode) 			-- of the correct font and character.
+				newRect.bitmapChar = BitmapCharacter:new(self.fontName,code) 				-- of the correct font and character.
 				self:insert(newRect.bitmapChar:getImage()) 									-- insert the bitmap image into the view group.
 				if BitmapCharacter.isDebug then 											-- if debugging the bitmap character
 					self:insert(newRect.bitmapChar.debuggingRectangle) 						-- insert that as well.
@@ -1266,7 +1279,7 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
--- factory for objects ? {@crab} loads <BitmapFont.imageDirectory>/crab.png
+-- method to set the BitmapFont.imageMapping
 
 -- Known issues
 -- ============

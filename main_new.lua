@@ -12,11 +12,11 @@ display.setStatusBar(display.HiddenStatusBar)
 
 fm = require("system.fontmanager")																-- get an instance of the font manager.
 
-bms = fm.BitmapString:new("demofont",60)														
+bms = fm.BitmapString:new("demofont",60):setText("Hello")														
 bms:setText("Hello world\nAgain Padding.\nLine 3")
 bms:moveTo(160,140)
-bms.xScale = 1
-bms.yScale = 1
+bms.xScale = 0.5
+bms.yScale = 0.5
 --bms.rotation = 10
 bms:setFont("font2")
 bms:setVerticalSpacing(1.2)
@@ -30,13 +30,13 @@ display.newLine(0,240,320,240):setStrokeColor( 1,1,0 )
 display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 
 
-bms2 = display.newBitmapText("Hello World !",0,350,"retrofont",55)
+bms2 = display.newBitmapText("Hello World {$crab}!",0,350,"retrofont",42)
 bms2:setAnchor(0,0.5)
 -- bms2:setTintColor(1,1,0)
 --bms2:setModifier("wobble"):animate()
 --bms2:setDirection(0):setAnchor(0,0):moveTo(160,240):setText("Ln1-a\nLn2")
 bms2:setJustification(bms2.Justify.CENTRE)
-bms2:setSpacing(0)
+bms2:setSpacing(0):setModifier("wobble"):animate()
 
 --bms:addEventListener( "tap", function(e) print("tapped") end)
 
@@ -68,5 +68,5 @@ end)
 -- bms:removeSelf()
 -- bms2:removeSelf(true)
 
-transition.to(bms,{ x = 160, y = 100, time = 1000,rotation = 360*3 })
-transition.to(bms2,{ yScale = 1.75, time = 1000 })
+transition.to(bms,{ x = 160, y = 100, xScale = 1,yScale = 1, time = 1000,rotation = 360*3 })
+transition.to(bms2,{ yScale = 1.55, time = 1000 })
