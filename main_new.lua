@@ -29,6 +29,8 @@ bms:setModifier("curve"):animate(4)
 display.newLine(0,240,320,240):setStrokeColor( 1,1,0 )
 display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 
+bms:setImageLocation("fred/*.png")
+--bms:setImageLocation()
 
 bms2 = display.newBitmapText("Hello World {$crab}!",0,350,"retrofont",42)
 bms2:setAnchor(0,0.5)
@@ -37,6 +39,7 @@ bms2:setAnchor(0,0.5)
 --bms2:setDirection(0):setAnchor(0,0):moveTo(160,240):setText("Ln1-a\nLn2")
 bms2:setJustification(bms2.Justify.CENTRE)
 bms2:setSpacing(0):setModifier("wobble"):animate()
+
 
 --bms:addEventListener( "tap", function(e) print("tapped") end)
 

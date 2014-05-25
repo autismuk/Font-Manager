@@ -21,7 +21,6 @@ _G.Base =  _G.Base or { new = function(s,...) local o = { } setmetatable(o,s) s.
 local BitmapFont = Base:new()
 
 BitmapFont.fontDirectory = "fonts" 															-- where font files are, fnt and png.
-BitmapFont.imageMapping = "icons/*.png" 													-- maps icons to a location.
 
 --//	The Bitmap Font constructor. This reads in the font data from the .FNT file and calculates the font height.
 --//	@fontName [string] name of font (case is sensitive, so I advise use of lower case only)
@@ -166,8 +165,11 @@ function BitmapCharacter:initialise(fontName,character)
 		info = BitmapFontContainer:getFontInstance(fontName): 								-- access the font instance for this name and create the image.
 														createImage(character)
 	else  																					-- for a $image, create an info structure that has the same
-		info = { charData = {} }  															-- data that a font character would have.				
-		info.image = display.newImage(BitmapFont.imageMapping:gsub("%*",character:sub(2)))
+		info = { charData = {} }  															-- data that a font character would have.	
+		info.image = display.newImage(character:sub(2)) 									-- if this fails, Corona will print a message.
+		if info.image == nil then  															-- failed, put a circle there so it's obvious.
+			info.image = display.newCircle(0,0,10,10)
+		end
 		info.charData.width = info.image.width 
 		info.charData.height = info.image.height 
 		info.charData.xOffset,info.charData.yOffset = 0,0
@@ -351,6 +353,7 @@ function BitmapCharacterBucket:getInstance(character)
 		if bucketItem:getCharacter() == character then  									-- found a match ?
 			local instance = bucketItem 													-- save the instance.
 			self.collection[index] = nil 													-- remove it from the list
+			-- print("Recycle" .. character)
 			return instance 																-- return the instance
 		end
 	end
@@ -448,7 +451,7 @@ local BitmapString = Base:new() 															-- exists purely for the document
 BitmapString.isDebug = false 																-- provides visual debug support for the string.
 BitmapString.animationFrequency = 15 														-- animation update frequency, Hz. (static)
 BitmapString.sourceClass = CharacterSource 													-- source for characters
-
+BitmapString.imageMapping = "icons/*.png" 													-- maps icons to a location.
 BitmapString.Justify = { LEFT = 0, CENTER = 1, CENTRE = 1, RIGHT = 2} 						-- Justification comments.
 
 BitmapString.startTintDef = "{" 															-- start and end markers for font tinting.
@@ -585,7 +588,11 @@ function BitmapString:setText(newText)
 		if type(code) == "string" and not isImageCharacter then 							-- is it a string, but not an image character
 			currentTint = self:evaluateTint(code)											-- evaluate as section specific tint
 
-		elseif code ~= 13 then 															-- it's a normal character
+		elseif code ~= 13 then 																-- it's a normal character
+
+			if isImageCharacter then 														-- if image character then expand it.
+				code = "$"..BitmapString:getImageLocation(code:sub(2))
+			end 
 
 			self.lineLengthChars[yCharacter] = xCharacter 									-- update the line length entry.
 			self.lineCount = math.max(self.lineCount,yCharacter) 							-- update number of lines.
@@ -594,6 +601,7 @@ function BitmapString:setText(newText)
 			newRect.totalCharacterNumber = characterCount 									-- save the character count (overall)
 			characterCount = characterCount+1
 			newRect.tinting = currentTint 													-- save the current tint in that character
+
 			newRect.bitmapChar = bucket:getInstance(code) 									-- is there one in the bucket we can use.
 			if newRect.bitmapChar == nil then 												-- no so create a new one
 				newRect.bitmapChar = BitmapCharacter:new(self.fontName,code) 				-- of the correct font and character.
@@ -602,6 +610,7 @@ function BitmapString:setText(newText)
 					self:insert(newRect.bitmapChar.debuggingRectangle) 						-- insert that as well.
 				end
 			end
+
 			if self.isHorizontal then 														-- Horizontal or vertical text
 				xCharacter = xCharacter + 1 												-- one character to the left
 			else 
@@ -882,6 +891,21 @@ end
 
 function BitmapString:setAnimationRate(frequency)
 	BitmapString.animationFrequency = frequency or 15 										-- set the animation frequency, default 15
+end
+
+--//	Map the image name to a file name. You can override this to get more complex images, or just use the setImageLocation method.
+--//	@baseImage 	[string] 		Base Image name of an icon, shorn of the $ (e.g. {$fred} => "fred")
+--//	@return 	[string]		Path name of image to use (by default icons/fred.png)
+
+function BitmapString:getImageLocation(baseImage)
+	return BitmapString.imageMapping:gsub("%*",baseImage)
+end
+
+--//	Set the default location for images to be used in fonts (e.g. {$icon}).
+--//	@location 	[string] 		Path name with an asterisk to be used where the name should be substituted, defaults to icon/*.png
+
+function BitmapString:setImageLocation(location)
+	BitmapString.imageMapping = location or "icons/*.png"
 end
 
 --//	Set multi-line justification.
@@ -1274,7 +1298,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
--- method to set the BitmapFont.imageMapping
 -- multi character delimiters (ASCII only)
 
 -- Known issues
