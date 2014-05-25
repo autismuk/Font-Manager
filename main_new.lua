@@ -12,8 +12,10 @@ display.setStatusBar(display.HiddenStatusBar)
 
 fm = require("system.fontmanager")																-- get an instance of the font manager.
 
+fm.BitmapString:setTintBrackets("@[","@]")
+
 bms = fm.BitmapString:new("demofont",60):setText("Hello")														
-bms:setText("Hello world\nAgain Padding.\nLine 3")
+bms:setText("Hello world\nAgain @[brown@]Padding.\n@[cyan@]Line 3")
 bms:moveTo(160,140)
 bms.xScale = 0.5
 bms.yScale = 0.5
@@ -29,10 +31,11 @@ bms:setModifier("curve"):animate(4)
 display.newLine(0,240,320,240):setStrokeColor( 1,1,0 )
 display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 
-bms:setImageLocation("fred/*.png")
+--bms:setImageLocation("fred/*.png")
 --bms:setImageLocation()
 
-bms2 = display.newBitmapText("Hello World {$crab}!",0,350,"retrofont",42)
+
+bms2 = display.newBitmapText("Hello World @[$crab@]!",0,350,"retrofont",42)
 bms2:setAnchor(0,0.5)
 -- bms2:setTintColor(1,1,0)
 --bms2:setModifier("wobble"):animate()

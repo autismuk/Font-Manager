@@ -377,31 +377,33 @@ local CharacterSource = Base:new()
 
 --//%	Initialise a character source
 --//	@str 	[string] 				string to use.
---//	@start 	[string]				start character cmd
---//	@end 	[string] 				end character for cmd
+--//	@start 	[string]				start character string
+--//	@end 	[string] 				end character string
 
 function CharacterSource:initialise(str,startc,endc)
 	self.source = str 																		-- save the source.
 	self.index = 1 																			-- next character from here.
-	self.startCode = (startc or "{"):byte(1) 												-- get start and end code
-	self.endCode = (endc or "}"):byte(1)
+	self.startCode = startc or "{"			 												-- get start and end code
+	self.endCode = endc or "}"
 end
 
 --//% 	Get the next character from the source as a unicode number, if it is a {command} returns that as a string.
 --//	@return 	[string/number] 			unicode of character, returns 13 for both CR and LF, nil if there is nothing left. 
 
 function CharacterSource:get() 																
-	local code = self:getRaw() 															-- get the code character, unprocessed.
-	if code == 10 then code = 13 end 													-- convert return to newline so 0x0D and 0x0A are synonymous.
-	if code == self.startCode then  													-- is it a start tint (e.g normally {)
+	if self:nextMatches(self.startCode) then  											-- is it a start tint (e.g normally {)
 		local cmd = ""
-		while code ~= self.endCode do  													-- keep going till } found.
+		while not self:nextMatches(self.endCode) do  									-- keep going till } (or whatever) found.
 			code = self:getRaw() 														-- get next.
 			assert(code ~= nil,"Missing closing terminator in command")
 			if code ~= self.endCode then cmd = cmd .. string.char(code) end 			-- build a string up
 		end
 		code = cmd:lower() 																-- return a lower case string.
+		return code
 	end 
+
+	local code = self:getRaw() 															-- get the code character, unprocessed.
+	if code == 10 then code = 13 end 													-- convert return to newline so 0x0D and 0x0A are synonymous.
 	return code 
 end
 
@@ -420,6 +422,18 @@ function CharacterSource:getRaw()
 	local unicode = self.source:sub(self.index,self.index):byte(1) 							-- get character, make into a number
 	self.index = self.index + 1 															-- advance to next.
 	return unicode 
+end 
+
+--//% 	Check to see if the next character matches the given string or not (ASCII) - if it does, then skip it. This is fairly tightly
+--//	coupled to getRaw() because it does not use it at present. However it is mandatory that the match string by Unicode not UTF-8.
+--//	if this is a serious problem I'll improve this, but this should be sufficient.
+--//	@return 	[boolean]			true if a match is found.
+
+function CharacterSource:nextMatches(match)
+	if not self:isMore() then return false end 												-- nothing to match against.
+	if self.source:sub(self.index,self.index+#match-1) ~= match then return false end
+	self.index = self.index + #match 
+	return true 
 end 
 
 --- ************************************************************************************************************************************************************************
@@ -1035,13 +1049,17 @@ function BitmapString:setTintColor(r,g,b)
 	return self
 end
 
---//	Set the bounding characters for tint definitions (defaults to { and })
---//	@cStart [string]		start character
---//	@cEnd 	[string]		end character.
+--//	Set the bounding strings for tint definitions (defaults to { and }). These can be multiple character strings
+--//	but must be standard ASCII characters.
+--//	@cStart [string]		start string
+--//	@cEnd 	[string]		end string.
 
 function BitmapString:setTintBrackets(cStart,cEnd) 
 	BitmapString.startTintDef = cStart or "{"
 	BitmapString.endTintDef = cEnd or "}"
+	assert(BitmapString.startTintDef ~= "") 												-- these will cause absolute chaos.
+	assert(BitmapString.endTintDef ~= "")
+	assert(BitmapString.startTintDef ~= BitmapString.endTintDef)
 end
 
 --//	SetScale is no longer supported. The effect of disproportionately scaled fonts can be achieved simply by scaling

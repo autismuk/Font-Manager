@@ -84,8 +84,9 @@ Colour tinting can be done using setTintColor() - colours everything, can be in-
 
 	"Hello{blue}blue {1,0,1}purple {}world"	
 
-The character pair used to detect tinting instructions can be set using fm.FontManager:setTintBrackets("(",")") for example - defaults to {}  - colours are
-black,red,green,yellow,blue,magenta,cyan,white,grey,orange,brown
+The character pair used to detect tinting instructions can be set using fm.FontManager:setTintBrackets("@(",")@") for example - defaults to {}  - colours are
+black,red,green,yellow,blue,magenta,cyan,white,grey,orange,brown. The delimiters must be standard ASCII irrespective of encoding used. These are global for an
+application ; don't have different delimiters for different strings at the same time.
 
 You can also use a similar syntax to include any image in the string as {$crab} - the $ sign indicates it is an external non-font image (thanks to Richard9 for this idea)
 this currently loads icons/<name>.png but this will be changeable. The graphic will be scaled along with all the other letters, wobble, curve, animate like any other as well.
@@ -128,13 +129,5 @@ end
 
 f) Curve is now a static class in its own right rather than being a method of FontManage.
 
-New features from v1
-====================
-- it's now a real displayObject like any other.
-- Justification of multi-line text
-- more information options for modifiers.
-- debugging rectangles for seeing the 'box' for characters and strings.
-- icons
-
-Paul Robson 22/5/14
+Paul Robson 25/5/14
 paul@robsons.org.uk
