@@ -50,7 +50,7 @@
 <hr><h1>BitmapString</h1>
 <p><h3>Extends Base</h3></p>
 <p></p>
-<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_clear"/>clear</a>,<a href="#BitmapString_destroy"/>destroy</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_removeSelf"/>removeSelf</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setAnimationRate"/>setAnimationRate</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setEncoding"/>setEncoding</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setJustification"/>setJustification</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setTintBrackets"/>setTintBrackets</a>,<a href="#BitmapString_setTintColor"/>setTintColor</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a>,<a href="#BitmapString_show"/>show</a>,<a href="#BitmapString_stop"/>stop</a></p><hr><a name="BitmapString_(constructor)"></a>
+<p>Methods : <a href="#BitmapString_(constructor)"/>(constructor)</a>,<a href="#BitmapString_animate"/>animate</a>,<a href="#BitmapString_clear"/>clear</a>,<a href="#BitmapString_destroy"/>destroy</a>,<a href="#BitmapString_getImageLocation"/>getImageLocation</a>,<a href="#BitmapString_getView"/>getView</a>,<a href="#BitmapString_moveTo"/>moveTo</a>,<a href="#BitmapString_removeSelf"/>removeSelf</a>,<a href="#BitmapString_setAnchor"/>setAnchor</a>,<a href="#BitmapString_setAnimationRate"/>setAnimationRate</a>,<a href="#BitmapString_setDirection"/>setDirection</a>,<a href="#BitmapString_setEncoding"/>setEncoding</a>,<a href="#BitmapString_setFont"/>setFont</a>,<a href="#BitmapString_setFontSize"/>setFontSize</a>,<a href="#BitmapString_setImageLocation"/>setImageLocation</a>,<a href="#BitmapString_setJustification"/>setJustification</a>,<a href="#BitmapString_setModifier"/>setModifier</a>,<a href="#BitmapString_setScale"/>setScale</a>,<a href="#BitmapString_setSpacing"/>setSpacing</a>,<a href="#BitmapString_setText"/>setText</a>,<a href="#BitmapString_setTintBrackets"/>setTintBrackets</a>,<a href="#BitmapString_setTintColor"/>setTintColor</a>,<a href="#BitmapString_setVerticalSpacing"/>setVerticalSpacing</a>,<a href="#BitmapString_show"/>show</a>,<a href="#BitmapString_stop"/>stop</a></p><hr><a name="BitmapString_(constructor)"></a>
 <h2>(constructor)(fontName,fontSize)</h2>
 <table>
 <tr><td>fontName</td><td>string</td><td>Name of font, corresponds to .fnt file.</td></tr>
@@ -74,6 +74,13 @@
 <p>Destructor. Stops animation, clears text, blanks table and finally removes itself (as it is a viewgroup mixin)</p>
 <a name="BitmapString_enterFrame"></a>
 <a name="BitmapString_evaluateTint"></a>
+<a name="BitmapString_getImageLocation"></a>
+<h2>getImageLocation(baseImage)</h2>
+<table>
+<tr><td>baseImage</td><td>string</td><td>Base Image name of an icon, shorn of the $ (e.g. {$fred} => "fred")</td></tr>
+<tr><td>return</td><td>string</td><td>Path name of image to use (by default icons/fred.png)</td></tr>
+</table>
+<p>Map the image name to a file name. You can override this to get more complex images, or just use the setImageLocation method.</p>
 <a name="BitmapString_getView"></a>
 <h2>getView()</h2>
 <table>
@@ -139,6 +146,12 @@
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Set the Font Size</p>
+<a name="BitmapString_setImageLocation"></a>
+<h2>setImageLocation(location)</h2>
+<table>
+<tr><td>location</td><td>string</td><td>Path name with an asterisk to be used where the name should be substituted, defaults to icon/*.png</td></tr>
+</table>
+<p>Set the default location for images to be used in fonts (e.g. {$icon}).</p>
 <a name="BitmapString_setJustification"></a>
 <h2>setJustification(justification)</h2>
 <table>
@@ -177,10 +190,10 @@
 <a name="BitmapString_setTintBrackets"></a>
 <h2>setTintBrackets(cStart,cEnd)</h2>
 <table>
-<tr><td>cStart</td><td>string</td><td>start character</td></tr>
-<tr><td>cEnd</td><td>string</td><td>end character.</td></tr>
+<tr><td>cStart</td><td>string</td><td>start string</td></tr>
+<tr><td>cEnd</td><td>string</td><td>end string.</td></tr>
 </table>
-<p>Set the bounding characters for tint definitions (defaults to { and })</p>
+<p>Set the bounding strings for tint definitions (defaults to { and }). These can be multiple character strings but must be standard ASCII characters.</p>
 <a name="BitmapString_setTintColor"></a>
 <h2>setTintColor(r,g,b)</h2>
 <table>
@@ -217,6 +230,7 @@
 <a name="CharacterSource_get"></a>
 <a name="CharacterSource_getRaw"></a>
 <a name="CharacterSource_isMore"></a>
+<a name="CharacterSource_nextMatches"></a>
 <a name="Curve"></a>
 <hr><h1>Curve</h1>
 <p><h3>Extends Base</h3></p>
