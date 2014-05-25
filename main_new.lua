@@ -68,5 +68,5 @@ end)
 -- bms:removeSelf()
 -- bms2:removeSelf(true)
 
-transition.to(bms,{ x = 160, y = 100, xScale = 1,yScale = 1, time = 1000,rotation = 360*3 })
+transition.to(bms,{ x = 160, y = 120, xScale = 1,yScale = 1, time = 1000,rotation = 360*3 })
 transition.to(bms2,{ yScale = 1.55, time = 1000 })

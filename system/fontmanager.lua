@@ -1036,11 +1036,6 @@ end
 --- ************************************************************************************************************************************************************************
 --
 --		This adds a display.newBitmapText method which is fairly close to that provided by Corona for newText, as close as I can get. 
---		
---		However this still uses BitmapString methods, so you cannot assign to x,y,anchorX,anchorY,xScale,yScale etc. At present anyway.
---
---		Bear in mind that what is returned by this is not a Corona DisplayObject and cannot be used like one.  To access the viewGroup use the getView()
---		method. Clear up using the strings remove() method , not using removeSelf() or relying on it being removed if it is part of a group.
 --
 --- ************************************************************************************************************************************************************************
 
@@ -1280,6 +1275,7 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
 -- method to set the BitmapFont.imageMapping
+-- multi character delimiters (ASCII only)
 
 -- Known issues
 -- ============
