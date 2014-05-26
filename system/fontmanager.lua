@@ -1,6 +1,6 @@
 --- ************************************************************************************************************************************************************************
 ---
----				Name : 		fontmananger.lua
+---				Name : 		fontmanager.lua
 ---				Purpose :	Manage and Animate strings of bitmap fonts.
 ---				Created:	30 April 2014 (Reengineered 19th May 2014)
 ---				Author:		Paul Robson (paul@robsons.org.uk)
@@ -489,11 +489,12 @@ end
 
 --//	Constructor initialisation. Sets the font name and size.
 --//	@fontName [string]		Name of font, corresponds to .fnt file.
---//	@fontSize [number]		Font size, default 64, refers to the pixel height.
+--//	@fontSize [number]		Font size, defaults to 64 pixels, refers to the pixel height.
 
 function BitmapString:initialise(fontName,fontSize) 
-	self.fontName = fontName self.fontSize = fontSize or 64 								-- save the font name and the font size.
+	self.fontName = fontName 																-- save the font name and the font size.
 	assert(self.fontName ~= nil,"No default font name for Bitmap String")					-- check a font was provided.
+	self.fontSize = fontSize or 64															-- save the font size which defaults to 64
 	self.characterList = {} 																-- list of characters.
 	self.currText = nil 																	-- text string currently has no value
 	self.isHorizontal = true																-- is horizontal text.
@@ -642,7 +643,7 @@ function BitmapString:setText(newText)
 		self.characterList[i].totalCharacterCount = characterCount - 1 						-- count of characters in total.
 	end
 	bucket:destroy() 																		-- empty what is left in the bucket
-	self:reformatText() 																	-- reformat the text left justified and recalculate the bounding box.
+	self:reformatText() 																	-- reformat the text justified and recalculate the bounding box.
 	return self
 end
 
@@ -787,7 +788,7 @@ BitmapString.standardColours = { 															-- known tinting colours.
 	orange = 	{ red = 1, green = 140/255, blue = 0 },
 	brown = 	{ red = 139/255, green = 69/255, blue = 19/255 }
 }
---//	Set the string encoding to use. Supports unicode and utf-8. Works by overriding the SourceClass member which is used to prototype a
+--//	Set the string encoding to use. Supports unicode and utf-8. Works by overriding the SourceClass member which is used to create a
 --//	SourceClass when the string is being dismantled.
 --//	@encoding [string] 			unicode, utf-8 or utf8 - nil is unicode
 
@@ -1082,7 +1083,7 @@ end
 --- ************************************************************************************************************************************************************************
 
 function display.newBitmapText(...)
-	local options = arg 																		-- equivalent to 'options' in documentation
+	local options = arg[1] 																		-- equivalent to 'options' in documentation
 	if #arg > 1 then 																			-- legacy syntax [parentgroup],text,x,y,font,fontSize if more than one argument
 		local paramOffset = 1 																	-- where to start getting parameters from
 		options = {} 																			-- create an equivalent 'options'
@@ -1100,13 +1101,18 @@ function display.newBitmapText(...)
 	end
 	assert(options.text ~= nil,"newBitmapText:bad 'text' parameter")							-- some simple validation.
 	assert(options.font ~= nil and type(options.font) == "string","newBitmapText:bad 'font' parameter")
-	assert(options.fontSize ~= nil and type(options.fontSize) == "number","newBitmapText:bad 'fontSize' parameter")
 	if options.width ~= nil or options.height ~= nil then print("newBitmapText does not support multiline text") end
 
 	local bitmapString = display.hiddenBitmapStringPrototype:new(options.font,options.fontSize)	-- create a bitmap string object
 	bitmapString:setText(options.text) 															-- set the text
 	if options.x ~= nil then bitmapString:moveTo(options.x,options.y or 0) end 					-- if a position is provided, move it there.
 	if options.parent ~= nil then options.parent:insert(bitmapString:getView()) end 			-- insert into parent
+
+	local justify = BitmapString.Justify.LEFT 													-- convert the align option into an appropriate parameter.
+	print(options.align)
+	if options.align == "center" then justify = BitmapString.Justify.CENTER end 
+	if options.align == "right" then justify = BitmapString.Justify.RIGHT end 
+	bitmapString:setJustification(justify)
 	return bitmapString
 end
 
@@ -1316,9 +1322,8 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
--- multi character delimiters (ASCII only)
-
 -- Known issues
 -- ============
 -- You can't subclass it. Create an instance and decorate it.
 -- To animate you have to have a links from the Runtime. If you let the system remove it rather than stopping it yourself it will leave a trailing reference.
+

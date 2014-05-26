@@ -13,8 +13,8 @@ The main differences are that
 (i) assigning text,anchorX,anchorY etc. won't work. The methods have similar functionality though, anchors, scales, positioning should work the same. You can use the
 show() method which will copy text, anchorX and anchorY into the objec.
 
-(ii) the display object is a display object (a group) but it is also a mixin (decorated with the bitmap functionality) so it cannot be directly used as a prototype. The
-best way to create a new prototype object is to create a bitmap string and decorate it.
+(ii) the display object is a display object (a group) but it is also a mixin (decorated with the bitmap functionality) so it cannot be directly used as class. The
+best way to create a new class is to create a bitmap string and decorate it.
 
 So for example, you can write code like:
 
@@ -41,8 +41,11 @@ and to animate this curve is actually easier :
 
 	str4:animate()
 
-There are stock animations (run main.lua in the Corona simulator !) and you can also make your own up, and customise the standard ones. The pulse effect 
-(see main.lua) is done by this code.
+There are stock animations (run main.lua in the Corona simulator !) and you can also make your own up, and customise the standard ones.  The stock
+animations (currently) are wobble, scale, curve, iscale, icurve, jagged, zoomin and zoomout. There are demos of these on the FontDemo app at my 
+github (both animated and static.)
+
+The pulse effect (see main.lua) is done by this code.
 
 	function pulser(modifier, cPos, info)
 		local w = math.floor(info.elapsed/360) % info.length + 1 									-- every 360ms change character, creates a number 1 .. length
