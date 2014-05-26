@@ -1327,3 +1327,9 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 -- You can't subclass it. Create an instance and decorate it.
 -- To animate you have to have a links from the Runtime. If you let the system remove it rather than stopping it yourself it will leave a trailing reference.
 
+--[[
+
+	Date 		Changes Made
+	---- 		------------
+	26/5/14 	Corrected code in display.newBitmapString so it works properly.
+--]]
