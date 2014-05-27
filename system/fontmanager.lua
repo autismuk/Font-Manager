@@ -93,6 +93,7 @@ function BitmapFont:calculateFontHeight()
 		miny = math.min(miny,def.yOffset) 													-- work out the uppermost position and the lowermost.
 		maxy = math.max(maxy,def.yOffset + def.height)
 	end
+	self.minimumYOffset = miny 																-- save minimum y Offset.
 	return maxy - miny + 1																	-- calculate the overall height of the font.
 end
 
@@ -110,7 +111,8 @@ function BitmapFont:createImage(unicodeCharacter)
 	return {
 		image = display.newImage(self.imageSheet,spriteNumber),								-- the display image
 		charData = self.characterData[unicodeCharacter], 									-- the information
-		fontHeight = self.fontHeight 														-- the main height of the font (for scaling)
+		fontHeight = self.fontHeight, 														-- the main height of the font (for scaling)
+		yOffsetMin = self.minimumYOffset 													-- the smallest value of yOffset
 	}
 end
 
@@ -150,7 +152,7 @@ BitmapFontContainer.new = nil 																-- very definitely :)
 
 local BitmapCharacter = Base:new()
 
-BitmapCharacter.isDebug = false																-- when this is true the objects real rectangle is shown.
+BitmapCharacter.isDebug = false 																-- when this is true the objects real rectangle is shown.
 BitmapCharacter.instanceCount = 0 															-- tracks number of create/deleted instances of the character
 
 --//%	The font and unicode character are set in the constructor. These are immutable for this object - if you want a different letter/font you need to create a new
@@ -225,8 +227,9 @@ function BitmapCharacter:moveTo(x,y,newHeight)
 	local scale = newHeight / self.basePhysicalHeight 										-- the new scale required.
 	self.image.xScale,self.image.yScale = scale,scale 										-- scale the characters up.
 	local width = self.info.width * scale 													-- how wide the characters box is.
-	y = y + self.info.yOffset/2 * self.actualHeight / self.basePhysicalHeight * scale		-- adjust half the y offset (from the middle) and adjust for the font size.
-	x = x + width / 2 y = y + newHeight / 2	
+	x = x + self.info.xOffset * scale /2
+	y = y + self.info.yOffset * scale 														-- adjust half the y offset (from the middle) and adjust for the font size.
+	x = x + width / 2 y = y + self.image.height / 2	* scale
 	self.image.x,self.image.y = x,y  														-- physically move the image.
 	self.boundingBox = { x1 = self.xDefault, x2 = self.xDefault + width, y1 = self.yDefault, y2 = self.yDefault + newHeight }
 	self.boundingBox.width = self.boundingBox.x2 - self.boundingBox.x1 						-- it is done this way so they cannot get out of sync 
@@ -1109,7 +1112,6 @@ function display.newBitmapText(...)
 	if options.parent ~= nil then options.parent:insert(bitmapString:getView()) end 			-- insert into parent
 
 	local justify = BitmapString.Justify.LEFT 													-- convert the align option into an appropriate parameter.
-	print(options.align)
 	if options.align == "center" then justify = BitmapString.Justify.CENTER end 
 	if options.align == "right" then justify = BitmapString.Justify.RIGHT end 
 	bitmapString:setJustification(justify)
@@ -1332,4 +1334,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 	Date 		Changes Made
 	---- 		------------
 	26/5/14 	Corrected code in display.newBitmapString so it works properly.
+	27/5/14 	Text alignment bug reported by Richard 9. Tested with static Arial export.
+
 --]]

@@ -14,14 +14,15 @@ fm = require("system.fontmanager")																-- get an instance of the font
 
 fm.BitmapString:setTintBrackets("@[","@]") 														-- change the tint brackets
 
-bms = fm.BitmapString:new("demofont",60):setText("Hello")										-- create a string "Hello"
+bms = fm.BitmapString:new("demofont",56):setText("Hello")										-- create a string "Hello"
 bms:setText("Hello world\nAgain @[brown@]Padding.\n@[cyan@]Line 3") 							-- set the text
+--bms:setText("Agiy")
 bms:moveTo(160,140) 																			-- postion it
 bms.xScale = 0.5 																				-- scale it
 bms.yScale = 0.5
 bms:setJustification(bms.Justify.LEFT) 															-- left justify
 --bms.rotation = 10 																			-- rotate
-bms:setFont("font2") 																			-- change font
+--bms:setFont("font2") 																			-- change font
 bms:setVerticalSpacing(1.2) 																	-- change vertical spacing.
 bms:setSpacing(-4) 																				-- change horizontal spacing
 bms:setModifier("curve"):animate(4) 															-- curve shape and then animate
@@ -34,14 +35,12 @@ display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 --bms:setImageLocation("fred/*.png") 															-- this sets where $images are found.
 --bms:setImageLocation() 																		-- back to default
 
-
-local options = { text = "Hello World @[$crab@]\n!",x = 0,y = 350,								-- use display.newBitmapText with an options table
+local options = { text = "Hello Worly @[$crab@]\n!",x = 0,y = 350,								-- use display.newBitmapText with an options table
 										font = "retrofont", align = "right"} 					-- (see display.newText())
 bms2 = display.newBitmapText(options)
 bms2:setAnchor(0,0.5) 																			-- set the anchor point
 -- bms2:setTintColor(1,1,0) 																	-- tint it yellow
 bms2:setSpacing(0):setModifier("wobble"):animate() 												-- clear horizontal spacing, wobble and animate
-
 
 --bms:addEventListener( "tap", function(e) print("tapped") end) 								-- check add event listener works
 
@@ -69,7 +68,7 @@ end)
 -- bms:removeSelf()
 -- bms2:removeSelf(true)
 
-transition.to(bms,{ x = 160, y = 120, xScale = 1,yScale = 1, time = 1000,rotation = 360*3 }) 	-- you can transition them like any other object
+transition.to(bms,{ x = 160, y = 120, xScale = 1,yScale = 1, time = 1000/1,rotation = 360*3 }) 	-- you can transition them like any other object
 transition.to(bms2,{ yScale = 1.55, time = 1000 })
 
 -- *BUT*

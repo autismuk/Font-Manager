@@ -25,8 +25,8 @@ str:moveTo(160,240):setFontSize(90) 															-- centre it, double the scal
 str:setText(msg)																				-- set the text
 --str:setDirection(180) 																		-- write it backwards (why did I do this ?)
 str:setAnchor(0.5,0) 																			-- anchor top centre,
-str:setModifier("iscale")																		-- shape with a curve
-str:setVerticalSpacing(0.5):animate(4)															-- animate it - if you comment this out it will curve but not animate
+--str:setModifier("iscale")																		-- shape with a curve
+str:setVerticalSpacing(0.9):animate(4)															-- animate it - if you comment this out it will curve but not animate
  																								-- the number is a speed scalar.
 
 str:setTintColor(1,1,0) 																		-- apply a tint to it.
@@ -36,7 +36,7 @@ str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do 
 str2:setAnchor(0,0):setDirection(90)															-- and setAnchor() for example, rather than accessing members directly.
 
 local str3 = fm.BitmapString:new("font2",56):													-- a third string, created using the constructor, showing chaining.
-								moveTo(160,400):setText("Wobbly text")
+								moveTo(160,400):setText("Wob9ly text")
 
 -- str3:setModifier(fm.Modifiers.WobbleModifier:new(2))											-- a more violent wobble with a new wobble modifier instance
 -- str3:setModifier(SimpleCurveModifier:new(0,180,4,2)) 										-- simple curves and scales with a different part of the trigonometrical curve
