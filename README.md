@@ -1,5 +1,6 @@
 Font-Manager
 ============
+
 Bitmap Font Manager for Corona / Lua - provides font management, bitmap string management, animation and special effects.
 
 This is v2. It has been completely re-engineered from v1, though it is pretty much the same (see end). It is a much more robust and coherent design than v1
@@ -22,16 +23,24 @@ So for example, you can write code like:
 
 	transition.to(str4, { time = 1000, xScale = 2,yScale = 2})
 
-notice the str4:getView() has been removed. However, it does still work - it is a dummy now.
+notice the str4:getView() has been removed. However, it does still work - it is a dummy now whose only purpose is to make code that used getView() work unchanged.
 
-You can also create strings like this.
+You can also create strings like this in an OOP manner.
 
 	local str4 = fm.BitmapString:new("retrofont",40):moveTo(160,240)
 
 ... same thing. the display.newBitmapText() is actually a shorthand to this to help people who aren't OOP minded. Which is fine :)
 
+The font height (40 in this example) is the vertical total height of the font in pixels, including ascenders and descenders. So you can guarantee that a string
+created with a 40 pixel height will fit in a 40 pixel gap (unless you use multi-lines, obviously !).
+
 The strings have their own internal direction and position, they also have modifiers so you can tweak the shape and size and rotation of individual
-characters, either statically, or they can be animated automatically.
+characters, either statically, or they can be animated automatically. 
+
+The basic idea is that the string has a static, boring, non-animated position where it just 'is' - no modifier, no animation. From the point of view of the
+graphics system, this is where the string 'is' (for anchoring and so on) irrespective of how you animate or modify it. This is because if you anchored on the
+actual displayed graphic, the anchor points might move around in an arbitrary way. The exception to this is the tap/touch event listeners which operate on 
+where the font characters actually are visually.
 
 So to curve this string can be as simple as :
 
@@ -41,11 +50,15 @@ and to animate this curve is actually easier :
 
 	str4:animate()
 
+and to stop it
+
+	str4:stop()
+
 There are stock animations (run main.lua in the Corona simulator !) and you can also make your own up, and customise the standard ones.  The stock
 animations (currently) are wobble, scale, curve, iscale, icurve, jagged, zoomin and zoomout. There are demos of these on the FontDemo app at my 
 github (both animated and static.)
 
-The pulse effect (see main.lua) is done by this code.
+The pulse effect (see main.lua) is done by this code - this is a 'programmed modifier'
 
 	function pulser(modifier, cPos, info)
 		local w = math.floor(info.elapsed/360) % info.length + 1 									-- every 360ms change character, creates a number 1 .. length
@@ -59,9 +72,7 @@ and to use this instead, just
 
 	str4:setModifier(pulser)
 
-Using groups with these is not a good idea unless you are careful, as they are managed seperately and tracked individually. 
-
-But you can get rid of them individually, effectively.
+You can get rid of them individually, effectively.
 
 	str4:setText("")
 
@@ -73,7 +84,7 @@ You can chain things if you want and not bother with references
 
 	display.newBitmapText("Hello World !",160,240,"retrofont",40):setModifier("curve"):animate()
 
-will create it, set its modifier and run it until you clear the screen.
+will create it, set its modifier and run it indefinitely.
 
 Event listeners now operate as they do on any other viewgroup, this class does not have its own addEventListener methods.
 
@@ -96,6 +107,7 @@ this currently loads icons/<name>.png but this will be changeable. The graphic w
 
 If you are relying on Composer or Storyboard to clean up your display objects, this will work but *only* if the animation is off. When the animation is on a reference
 to the object is maintained, so it will not garbage collect. You can use str4:stop() to stop animation or str4:removeSelf() to stop everything, and clean up the string.
+It will look like it works, but it doesn't, it will keep a reference.
 
 Note: fm, assumes you've done something like fm = require("fontmanager")
 

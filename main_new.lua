@@ -12,56 +12,51 @@ display.setStatusBar(display.HiddenStatusBar)
 
 fm = require("system.fontmanager")																-- get an instance of the font manager.
 
-fm.BitmapString:setTintBrackets("@[","@]")
+fm.BitmapString:setTintBrackets("@[","@]") 														-- change the tint brackets
 
-bms = fm.BitmapString:new("demofont",60):setText("Hello")													
-bms:setText("Hello world\nAgain @[brown@]Padding.\n@[cyan@]Line 3")
-bms:moveTo(160,140)
-bms.xScale = 0.5
+bms = fm.BitmapString:new("demofont",60):setText("Hello")										-- create a string "Hello"
+bms:setText("Hello world\nAgain @[brown@]Padding.\n@[cyan@]Line 3") 							-- set the text
+bms:moveTo(160,140) 																			-- postion it
+bms.xScale = 0.5 																				-- scale it
 bms.yScale = 0.5
-bms:setJustification(bms.Justify.LEFT)
---bms.rotation = 10
-bms:setFont("font2")
-bms:setVerticalSpacing(1.2)
-bms:setSpacing(-4)
-bms:setModifier("curve"):animate(4)
+bms:setJustification(bms.Justify.LEFT) 															-- left justify
+--bms.rotation = 10 																			-- rotate
+bms:setFont("font2") 																			-- change font
+bms:setVerticalSpacing(1.2) 																	-- change vertical spacing.
+bms:setSpacing(-4) 																				-- change horizontal spacing
+bms:setModifier("curve"):animate(4) 															-- curve shape and then animate
 
--- bms.anchorX,bms.anchorY = 0.5,0.5 bms.text = "Yo !" bms:show()
+-- bms.anchorX,bms.anchorY = 0.5,0.5 bms.text = "Yo !" bms:show() 								-- can change things this way
 
 display.newLine(0,240,320,240):setStrokeColor( 1,1,0 )
 display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 
---bms:setImageLocation("fred/*.png")
---bms:setImageLocation()
+--bms:setImageLocation("fred/*.png") 															-- this sets where $images are found.
+--bms:setImageLocation() 																		-- back to default
 
 
-local options = { text = "Hello World @[$crab@]\n!",x = 0,y = 350,font = "retrofont", align = "right"}
+local options = { text = "Hello World @[$crab@]\n!",x = 0,y = 350,								-- use display.newBitmapText with an options table
+										font = "retrofont", align = "right"} 					-- (see display.newText())
 bms2 = display.newBitmapText(options)
-bms2:setAnchor(0,0.5)
--- bms2:setTintColor(1,1,0)
---bms2:setModifier("wobble"):animate()
---bms2:setDirection(0):setAnchor(0,0):moveTo(160,240):setText("Ln1-a\nLn2")
-bms2:setSpacing(0):setModifier("wobble"):animate()
+bms2:setAnchor(0,0.5) 																			-- set the anchor point
+-- bms2:setTintColor(1,1,0) 																	-- tint it yellow
+bms2:setSpacing(0):setModifier("wobble"):animate() 												-- clear horizontal spacing, wobble and animate
 
 
---bms:addEventListener( "tap", function(e) print("tapped") end)
+--bms:addEventListener( "tap", function(e) print("tapped") end) 								-- check add event listener works
 
--- for i = 1,1000 do 
---	local newString = "" for j = 1,math.random(5,15) do newString = newString .. string.char(math.random(32,95)) end
---	if i % 2 == 0 then bms:setText(newString) else  bms2:setText(newString) end
--- end
 
--- bms:removeSelf()
+-- bms:removeSelf() 																			-- make them go away
 -- bms2:removeSelf(true)
 
--- fm.FontManager:setAnimationFrequency(3)
+-- fm.FontManager:setAnimationFrequency(3) 														-- animation rate (e.g. 3 animations / second)
 
--- bms2:setModifier(function(modifier,cPos,infoTable)
+-- bms2:setModifier(function(modifier,cPos,infoTable) 											-- simple modifier making every 3rd character semi transparent
 --	if infoTable.charIndex % 3 == 0 then modifier.alpha = 0.4 end
 -- end)
 
 --[[
-bms:setModifier(function(modifier,cPos,infoTable)
+bms:setModifier(function(modifier,cPos,infoTable) 												-- an early roll out, see main_roll for a much better one.
 	local pos = math.floor(infoTable.elapsed / 2)
 	modifier.alpha = 0
 	if infoTable.totalIndex < math.floor(pos/100) then
@@ -74,5 +69,9 @@ end)
 -- bms:removeSelf()
 -- bms2:removeSelf(true)
 
-transition.to(bms,{ x = 160, y = 120, xScale = 1,yScale = 1, time = 1000,rotation = 360*3 })
+transition.to(bms,{ x = 160, y = 120, xScale = 1,yScale = 1, time = 1000,rotation = 360*3 }) 	-- you can transition them like any other object
 transition.to(bms2,{ yScale = 1.55, time = 1000 })
+
+-- *BUT*
+-- if you use it in Composer, and animate, you must stop the animation (bms:stop()) or remove the bitmap (bms:removeSelf()) because if you don't and CoronaClass
+-- garbage collects the scene, it won't work properly.

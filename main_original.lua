@@ -14,7 +14,7 @@ fm = require("system.fontmanager")																-- get an instance of the font
 fm.FontManager:setEncoding("utf8") 																-- set expected encoding to UTF-8 (default is Unicode character set.)
 
 local bgr = display.newRect( 0,0,320,480) 														-- blue background
-bgr:setFillColor(0,0,1)
+bgr:setFillColor(0,0,0.4)
 bgr.anchorX,bgr.anchorY = 0,0
 
 local msg = "An{brown}other {1,0,1}line\rwit{}h\ra curve" .. string.char(0xC3,0xBE,0x2A) 		-- this is A~ 3/4 in Unicode, and a circle with a vertical line in UTF-8.
