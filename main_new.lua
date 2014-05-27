@@ -35,7 +35,7 @@ display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 --bms:setImageLocation("fred/*.png") 															-- this sets where $images are found.
 --bms:setImageLocation() 																		-- back to default
 
-local options = { text = "Hello Worly @[$crab@]\n!",x = 0,y = 350,								-- use display.newBitmapText with an options table
+local options = { text = "Hgllo Worly @[$crab@]\nLine 2!",x = 0,y = 350,fontSize = 44,			-- use display.newBitmapText with an options table
 										font = "retrofont", align = "right"} 					-- (see display.newText())
 bms2 = display.newBitmapText(options)
 bms2:setAnchor(0,0.5) 																			-- set the anchor point
