@@ -14,7 +14,7 @@ fm = require("system.fontmanager")																-- get an instance of the font
 
 fm.BitmapString:setTintBrackets("@[","@]") 														-- change the tint brackets
 
-bms = fm.BitmapString:new("demofont",56):setText("Hello")										-- create a string "Hello"
+bms = fm.BitmapString:new("bmgfont@4x",56):setText("Hello")										-- create a string "Hello"
 bms:setText("Hello world\nAgain @[brown@]Padding.\n@[cyan@]Line 3") 							-- set the text
 --bms:setText("Agiy")
 bms:moveTo(160,140) 																			-- postion it
