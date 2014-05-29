@@ -1323,7 +1323,9 @@ local Modifiers = { WobbleModifier = WobbleModifier,										-- create table so
 return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = BitmapString, Curve = Curve, BitmapFont = BitmapFont }
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
+
 -- option to create any displayObject.
+-- padding functionality.
 
 -- Known issues
 -- ============

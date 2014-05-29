@@ -14,7 +14,7 @@ fm = require("system.fontmanager")																-- get an instance of the font
 
 fm.BitmapString:setTintBrackets("@[","@]") 														-- change the tint brackets
 
-bms = fm.BitmapString:new("bmgfont@4x",56):setText("Hello")										-- create a string "Hello"
+bms = fm.BitmapString:new("padbm",36):setText("Hello")											-- create a string "Hello"
 bms:setText("Hello world\nAgain @[brown@]Padding.\n@[cyan@]Line 3") 							-- set the text
 --bms:setText("Agiy")
 bms:moveTo(160,140) 																			-- postion it
@@ -23,8 +23,8 @@ bms.yScale = 0.5
 bms:setJustification(bms.Justify.LEFT) 															-- left justify
 --bms.rotation = 10 																			-- rotate
 --bms:setFont("font2") 																			-- change font
-bms:setVerticalSpacing(1.2) 																	-- change vertical spacing.
-bms:setSpacing(-4) 																				-- change horizontal spacing
+--bms:setVerticalSpacing(1.2) 																	-- change vertical spacing.
+--bms:setSpacing(-4) 																				-- change horizontal spacing
 bms:setModifier("curve"):animate(4) 															-- curve shape and then animate
 
 -- bms.anchorX,bms.anchorY = 0.5,0.5 bms.text = "Yo !" bms:show() 								-- can change things this way
