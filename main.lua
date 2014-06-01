@@ -25,4 +25,3 @@ require("main_original")
 -- It's much easier than it looks, you can almost treat it like display.newText() calls. The 'complex' bit is the modifiers, and you may well not need these.
 
 -- Paul Robson 26/5/2014
-

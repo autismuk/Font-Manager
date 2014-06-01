@@ -1342,7 +1342,7 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- option to create any displayObject.
 -- padding functionality.
--- Fix up bmGlyph stuff.
+-- Fix up bmGlyph stuff (multi-resolution fonts)
 
 -- Known issues
 -- ============
@@ -1353,8 +1353,8 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 	Date 		Changes Made
 	---- 		------------
-	26/5/14 	Corrected code in display.newBitmapString so it works properly.
-	27/5/14 	Text alignment bug reported by Richard 9. Tested with static Arial export.
-	01/6/14 	Full UTF-8 Support.
+	26/05/14 	Corrected code in display.newBitmapString so it works properly.
+	27/05/14 	Text alignment bug reported by Richard 9. Tested with static Arial export.
+	01/06/14 	Full UTF-8 Support (up to 6 bytes)
 
 --]]
