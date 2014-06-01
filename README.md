@@ -34,6 +34,8 @@ You can also create strings like this in an OOP manner.
 The font height (40 in this example) is the vertical total height of the font in pixels, including ascenders and descenders. So you can guarantee that a string
 created with a 40 pixel height will fit in a 40 pixel gap (unless you use multi-lines, obviously !).
 
+The font names check for scaling. So if you ask for a font called "retrofont" for an iPad Retina it will look for retrofont@4x.fnt, then it will look for retrofont@2x.fnt, then it will look for retrofont.fnt. A normal iPad will look for retrofont@2x.fnt, then retrofont.fnt etc. This is for compatibility with bmGlyph which can output fonts at different scales to save on texture memory in the device. This is completely independent of scaling in config.lua ; it works out the desired scale using the recommended code in the Corona article on Retina displays and looks for it manually.
+
 The strings have their own internal direction and position, they also have modifiers so you can tweak the shape and size and rotation of individual
 characters, either statically, or they can be animated automatically. 
 
@@ -142,5 +144,16 @@ end
 
 f) Curve is now a static class in its own right rather than being a method of FontManage.
 
-Paul Robson 21/6/14
+Updates
+=======
+
+1/6/14 		UTF-8 now supports up to six byte characters
+1/6/14		Autoscanning for @nx fonts.
+
+Paul Robson 1/6/14
 paul@robsons.org.uk
+
+Thanks go to : Richard 9 on the forums, Sephane Queraud (BmGlyph) and Michael Daley (GlyphDesigner) for their assistance and ideas.
+
+bmGlyph:			http://www.bmglyph.com
+Glyph Designer:		http://71squared.com/glyphdesigner

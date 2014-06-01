@@ -45,13 +45,11 @@ end
 --//	@return [CharacterData] 	Entry for character data.
 
 function BitmapFont:loadFont(fontName)
-	local fontFile = BitmapFont.fontDirectory .. "/" .. fontName .. ".fnt" 					-- this is the directory the font is in.
-	local source = io.lines(system.pathForFile(fontFile,system.ResourceDirectory)) 			-- read the lines from this file.
 	local options = { frames = {} }															-- this is going to be the options read in (see newImageSheet() function)
 	local spriteCount = 1 																	-- next available 'frame'
 	local imageFile = nil 																	-- this is the sprite image file which will be read in eventually.
 	local charData = {} 																	-- character data structure for this font.
-
+	local source = io.lines(self:getFontFile(fontName)) 									-- read the lines from this file.
 
 	for l in source do 
 		local page,fileName = l:match('^%s*page%s*id%s*=%s*(%d+)%s*file%s*=%s*%"(.*)%"$') 	-- is it the page line, which tells us the file name ?
@@ -81,9 +79,40 @@ function BitmapFont:loadFont(fontName)
 
 	assert(imageFile ~= nil,"No image file in fnt file, contact the author")				-- didn't find a 'page' entry i.e. no file name
 	self.imageSheet = graphics.newImageSheet(imageFile,options) 							-- load in the image sheet
-	assert(self.imageSheet ~= nil,"Image file " .. imageFile .. "failed to load for fnt file ".. fontFile)	
+	assert(self.imageSheet ~= nil,"Image file " .. imageFile .. "failed to load for fnt file ".. fontName)	
 	return charData
 end
+
+--//%	Get font file name, scaling for display size and checking for @nx files.
+--//	@fontFile 	[string] 		Base name of font file. May use @4x tags to force high res font
+--//	@return 	[string]		Path of font file.
+
+function BitmapFont:getFontFile(fontFile)
+	--// TODO: Work out scale, check if 4x, 3x 2x 1x exist and use them if they do.
+	--// TODO: Explain in docs what it actually does.
+	local scaleFactor = 1
+	if fontFile:match("%@%d+x$") == nil then 												-- if not enforcing the use of a font.
+		local deviceWidth = ( display.contentWidth - (display.screenOriginX * 2) ) / 		-- Corona's code to work out the scale
+																			display.contentScaleX
+		scaleFactor = math.floor( deviceWidth / display.contentWidth )
+		scaleFactor = math.max(scaleFactor,1) 												-- have a scale factor of at least 1.
+		while scaleFactor > 1 and self:getFileNameScalar(fontFile,scaleFactor) == nil do 	-- while scale > 1 and file not present
+				scaleFactor = scaleFactor - 1 												-- try previous file.
+		end
+	end
+	return self:getFileNameScalar(fontFile,scaleFactor)										-- return the file.
+end 
+
+--//%	Create a full file name for a font scaled by a particular amount (so 2 => @2x etc.)
+--//	@fontFile 	[string] 		Base name of font file
+--//	@fontScalar [number]		Possible scalar size 2,3,4 etc.
+--//	@return 	[string]		Path of font file.
+
+function BitmapFont:getFileNameScalar(fontFile,fontScalar)
+	if fontScalar > 1 then fontFile = fontFile .. "@" .. fontScalar .. "x" end 				-- if >1 then add @2x or whatever to the name
+	return system.pathForFile(BitmapFont.fontDirectory .. "/" .. 							-- create full file path
+												fontFile..".fnt",system.ResourceDirectory)
+end 
 
 --//%	Calculates the font height of the loaded bitmap, which defines the base height of the font. This is used when scaling the bitmaps
 --//	to specific font sizes.
@@ -1342,7 +1371,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- option to create any displayObject.
 -- padding functionality.
--- Fix up bmGlyph stuff (multi-resolution fonts)
 
 -- Known issues
 -- ============
