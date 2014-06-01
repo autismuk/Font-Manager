@@ -149,6 +149,7 @@ Updates
 
 1/6/14 		UTF-8 now supports up to six byte characters
 1/6/14		Autoscanning for @nx fonts.
+1/6/14 		Padding in .fnt file is read and used to expand character box appropriately.
 
 Paul Robson 1/6/14
 paul@robsons.org.uk

@@ -50,6 +50,7 @@ function BitmapFont:loadFont(fontName)
 	local imageFile = nil 																	-- this is the sprite image file which will be read in eventually.
 	local charData = {} 																	-- character data structure for this font.
 	local source = io.lines(self:getFontFile(fontName)) 									-- read the lines from this file.
+	self.padding = { 0,0,0,0 } 																-- clear padding.
 
 	for l in source do 
 		local page,fileName = l:match('^%s*page%s*id%s*=%s*(%d+)%s*file%s*=%s*%"(.*)%"$') 	-- is it the page line, which tells us the file name ?
@@ -74,6 +75,12 @@ function BitmapFont:loadFont(fontName)
 			assert(charData[charID] == nil,"Duplicate character code, contact author")
 			charData[charID*1] = charInfo 													-- store the full font information in the characterData table.
 			spriteCount = spriteCount + 1 													-- bump the number of sprites
+		end
+		if l:match("padding") ~= nil then 
+			self.padding[1],self.padding[2],self.padding[3],self.padding[4] = 				-- parse out padding information
+				l:match("padding%s*%=%s*([%d+])%s*%,%s*([%d+])%s*%,%s*([%d+])%s*%,%s*([%d+])")
+			assert(self.padding[4] ~= nil,"Bad padding parameter format") 					-- check the padding scanned okay.
+			for i = 1,4 do self.padding[i] = self.padding[i] * 1 end 						-- convert to numbers
 		end
 	end
 
@@ -143,7 +150,8 @@ function BitmapFont:createImage(unicodeCharacter)
 		image = display.newImage(self.imageSheet,spriteNumber),								-- the display image
 		charData = self.characterData[unicodeCharacter], 									-- the information
 		fontHeight = self.fontHeight, 														-- the main height of the font (for scaling)
-		yOffsetMin = self.minimumYOffset 													-- the smallest value of yOffset
+		yOffsetMin = self.minimumYOffset, 													-- the smallest value of yOffset
+		padding = self.padding																-- padding up/right/down/left
 	}
 end
 
@@ -214,6 +222,7 @@ function BitmapCharacter:initialise(fontName,character)
 	self.info = info.charData 																-- save the associated information. Note, we can only use width, height, xOffset, yOffset
 	self.basePhysicalHeight = info.fontHeight 												-- save the physical height of the bitmap.
 	self.actualHeight = info.fontHeight 													-- initially same size as the physical height.
+	self.padding = info.padding 															-- save padding
 	self.image.anchorX, self.image.anchorY = 0.5,0.5 										-- anchor at the middle of the display image.
 	self.tinting = nil 																		-- current default tinting.
 	if self.isDebug then 																	-- if you want it, create the debug rectangle.
@@ -233,7 +242,7 @@ function BitmapCharacter:destroy()
 	if self.image ~= nil then 
 		self.image:removeSelf() self.image = nil self.info = nil self.boundingBox = nil 	-- clean up by hand, to make sure :)
 		self.xDefault = nil self.yDefault = nil self.actualHeight = nil self.basePhysicalHeight = nil
-		self.character = nil self.tinting = nil
+		self.character = nil self.tinting = nil self.padding = nil
 		if self.debuggingRectangle ~= nil then  											-- remove debugging rectangle if exists.
 			self.debuggingRectangle:removeSelf()
 			self.debuggingRectangle = nil
@@ -261,8 +270,15 @@ function BitmapCharacter:moveTo(x,y,newHeight)
 	x = x + self.info.xOffset * scale /2
 	y = y + self.info.yOffset * scale 														-- adjust half the y offset (from the middle) and adjust for the font size.
 	x = x + width / 2 y = y + self.image.height / 2	* scale
+	x = x + self.padding[4] * scale y = y + self.padding[1] * scale  						-- adjust for padding left and up
+
 	self.image.x,self.image.y = x,y  														-- physically move the image.
-	self.boundingBox = { x1 = self.xDefault, x2 = self.xDefault + width, y1 = self.yDefault, y2 = self.yDefault + newHeight }
+
+	self.boundingBox = { x1 = self.xDefault,  												-- calculate bounding box, add padding space.
+						 x2 = self.xDefault + width + (self.padding[2]+self.padding[4]) * scale,
+						 y1 = self.yDefault, 
+						 y2 = self.yDefault + newHeight + (self.padding[1]+self.padding[3]) * scale
+	}
 	self.boundingBox.width = self.boundingBox.x2 - self.boundingBox.x1 						-- it is done this way so they cannot get out of sync 
 	self.boundingBox.height = self.boundingBox.y2 - self.boundingBox.y1
 	if self.isDebug then 																	-- move the debugging box, if provided.
@@ -889,9 +905,10 @@ function BitmapString:reformatLine(lineNumber,xPos)
 			if self.direction == 180 then  													-- work backwards for 180 degree orientation.
 				xPos = xPos - charItem.bitmapChar.boundingBox.width 
 			end
-			charItem.bitmapChar:moveTo(xPos,												-- move and size correctly.
-										(ln - 1) * self.fontSize * self.verticalSpacingScalar,self.fontSize) 
 			local charBox = charItem.bitmapChar:getBoundingBox() 							-- get character bounding box
+			charItem.bitmapChar:moveTo(xPos,												-- move and size correctly.
+										(ln - 1) * charBox.height * self.verticalSpacingScalar,self.fontSize) 
+			charBox = charItem.bitmapChar:getBoundingBox() 									-- get character bounding box
 			xPos = math.max(charBox.x2) 													-- get the next position to the right.
 			self.boundingBox.x2 = math.max(self.boundingBox.x2,xPos) 						-- update the bounding box.
 			self.boundingBox.y2 = math.max(self.boundingBox.y2,charBox.y2)
@@ -1368,9 +1385,7 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
-
 -- option to create any displayObject.
--- padding functionality.
 
 -- Known issues
 -- ============
@@ -1384,5 +1399,7 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 	26/05/14 	Corrected code in display.newBitmapString so it works properly.
 	27/05/14 	Text alignment bug reported by Richard 9. Tested with static Arial export.
 	01/06/14 	Full UTF-8 Support (up to 6 bytes)
+	01/06/14 	Auto-selection of differing scales of png to allow for different device resolutions
+	01/06/14 	Reads padding from font file.
 
 --]]
