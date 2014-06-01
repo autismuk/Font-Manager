@@ -92,7 +92,7 @@ You can set the font encoding with
 
 	fm.FontManager:setEncoding("utf8")
 
-currently unicode, utf-8 and utf8 are supported. UTF-8 format is only supported as a 2 byte length. If anyone wants this extended please let me know.
+currently unicode, utf-8 and utf8 are supported. UTF-8 format is supported up to six bytes
 
 Colour tinting can be done using setTintColor() - colours everything, can be in-string and also can be modified.  Colour tinting looks like :
 
@@ -142,5 +142,5 @@ end
 
 f) Curve is now a static class in its own right rather than being a method of FontManage.
 
-Paul Robson 25/5/14
+Paul Robson 21/6/14
 paul@robsons.org.uk

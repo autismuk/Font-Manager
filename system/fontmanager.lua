@@ -52,6 +52,7 @@ function BitmapFont:loadFont(fontName)
 	local imageFile = nil 																	-- this is the sprite image file which will be read in eventually.
 	local charData = {} 																	-- character data structure for this font.
 
+
 	for l in source do 
 		local page,fileName = l:match('^%s*page%s*id%s*=%s*(%d+)%s*file%s*=%s*%"(.*)%"$') 	-- is it the page line, which tells us the file name ?
 		if page ~= nil then 																-- if so , use it for the file name.
@@ -77,6 +78,7 @@ function BitmapFont:loadFont(fontName)
 			spriteCount = spriteCount + 1 													-- bump the number of sprites
 		end
 	end
+
 	assert(imageFile ~= nil,"No image file in fnt file, contact the author")				-- didn't find a 'page' entry i.e. no file name
 	self.imageSheet = graphics.newImageSheet(imageFile,options) 							-- load in the image sheet
 	assert(self.imageSheet ~= nil,"Image file " .. imageFile .. "failed to load for fnt file ".. fontFile)	
@@ -152,7 +154,7 @@ BitmapFontContainer.new = nil 																-- very definitely :)
 
 local BitmapCharacter = Base:new()
 
-BitmapCharacter.isDebug = false 																-- when this is true the objects real rectangle is shown.
+BitmapCharacter.isDebug = false 															-- when this is true the objects real rectangle is shown.
 BitmapCharacter.instanceCount = 0 															-- tracks number of create/deleted instances of the character
 
 --//%	The font and unicode character are set in the constructor. These are immutable for this object - if you want a different letter/font you need to create a new
@@ -451,10 +453,23 @@ local UTF8Source = CharacterSource:new()
 function UTF8Source:getRaw()
 	local ch = CharacterSource.getRaw(self) 												-- get the next character from the source.
 	if ch < 0x80 then return ch end 														-- single character UTF-8
-	local c2 = CharacterSource.getRaw(self) 												-- get the next character.
-	assert(math.floor(ch / 0x20) == 0x06,"UTF-8 more than 2 bytes not supported yet") 		-- only support 0000-07FF at present.
-	assert(math.floor(c2 / 0x40) == 0x02,"Malformed UTF-8 character")						-- has to be 10xx xxxx
-	return (ch % 0x20) * 0x40 + (c2 % 0x40) 												-- return the combined result.
+	local topBits = 32 																		-- modulus of byte 1.
+	local topPart = 6
+	local countChars = 1
+	while math.floor(ch/topBits) ~= topPart do 												-- keep going till it is 110 xxxxx
+		topBits = topBits / 2 																-- shift everything left.
+		topPart = (topPart + 1) * 2 														-- next top bits value
+		countChars = countChars + 1 														-- one more character
+		assert(countChars < 6,"Unsupport UTF-8 format (7 byte)")
+	end
+	ch = ch % topBits 																		-- the first bit (e.g. xxxxx)
+	while countChars > 0 do  																-- pull in all the extended characters 10xx xxxx
+		countChars = countChars - 1 														-- decrement counter
+		local c2 = CharacterSource.getRaw(self)  											-- get next extension
+		assert(math.floor(c2/64) == 2,"Malformed UTF-8 Character") 							-- check to see if 10xx xxxx
+		ch = ch * 64 + c2 % 64 																-- shift character code into correct position
+	end 
+	return ch
 end
 
 --- ************************************************************************************************************************************************************************
@@ -1324,8 +1339,10 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 
 -- the above isn't a typo. It's so that old FontManager calls () still work :)
 
+
 -- option to create any displayObject.
 -- padding functionality.
+-- Fix up bmGlyph stuff.
 
 -- Known issues
 -- ============
@@ -1338,5 +1355,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 	---- 		------------
 	26/5/14 	Corrected code in display.newBitmapString so it works properly.
 	27/5/14 	Text alignment bug reported by Richard 9. Tested with static Arial export.
+	01/6/14 	Full UTF-8 Support.
 
 --]]

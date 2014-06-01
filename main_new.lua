@@ -14,18 +14,18 @@ fm = require("system.fontmanager")																-- get an instance of the font
 
 fm.BitmapString:setTintBrackets("@[","@]") 														-- change the tint brackets
 
-bms = fm.BitmapString:new("padbm",36):setText("Hello")											-- create a string "Hello"
+bms = fm.BitmapString:new("newTest",240/3):setText("Hello")										-- create a string "Hello"
 bms:setText("Hello world\nAgain @[brown@]Padding.\n@[cyan@]Line 3") 							-- set the text
+bms:setText("QM")
 --bms:setText("Agiy")
-bms:moveTo(160,140) 																			-- postion it
-bms.xScale = 0.5 																				-- scale it
-bms.yScale = 0.5
+bms:moveTo(0,0) 																				-- postion it
+bms:setAnchor(0,0)
 bms:setJustification(bms.Justify.LEFT) 															-- left justify
 --bms.rotation = 10 																			-- rotate
 --bms:setFont("font2") 																			-- change font
 --bms:setVerticalSpacing(1.2) 																	-- change vertical spacing.
 --bms:setSpacing(-4) 																				-- change horizontal spacing
-bms:setModifier("curve"):animate(4) 															-- curve shape and then animate
+--bms:setModifier("curve"):animate(4) 															-- curve shape and then animate
 
 -- bms.anchorX,bms.anchorY = 0.5,0.5 bms.text = "Yo !" bms:show() 								-- can change things this way
 
@@ -37,10 +37,10 @@ display.newLine(160,0,160,480):setStrokeColor( 1,1,0 )
 
 local options = { text = "Hgllo Worly @[$crab@]\nLine 2!",x = 0,y = 350,fontSize = 44,			-- use display.newBitmapText with an options table
 										font = "retrofont", align = "right"} 					-- (see display.newText())
-bms2 = display.newBitmapText(options)
-bms2:setAnchor(0,0.5) 																			-- set the anchor point
+--bms2 = display.newBitmapText(options)
+--bms2:setAnchor(0,0) 																			-- set the anchor point
 -- bms2:setTintColor(1,1,0) 																	-- tint it yellow
-bms2:setSpacing(0):setModifier("wobble"):animate() 												-- clear horizontal spacing, wobble and animate
+--bms2:setSpacing(0):setModifier("wobble"):animate() 												-- clear horizontal spacing, wobble and animate
 
 --bms:addEventListener( "tap", function(e) print("tapped") end) 								-- check add event listener works
 
@@ -68,8 +68,8 @@ end)
 -- bms:removeSelf()
 -- bms2:removeSelf(true)
 
-transition.to(bms,{ x = 160, y = 120, xScale = 1,yScale = 1, time = 1000/1,rotation = 360*3 }) 	-- you can transition them like any other object
-transition.to(bms2,{ yScale = 1.55, time = 1000 })
+--transition.to(bms,{ x = 160, y = 0, xScale = 1,yScale = 1, time = 1000/1,rotation = 360*3 }) 	-- you can transition them like any other object
+--transition.to(bms2,{ yScale = 1.55, time = 1000 })
 
 -- *BUT*
 -- if you use it in Composer, and animate, you must stop the animation (bms:stop()) or remove the bitmap (bms:removeSelf()) because if you don't and CoronaClass

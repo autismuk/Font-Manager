@@ -18,10 +18,12 @@ bgr:setFillColor(0,0,0.4)
 bgr.anchorX,bgr.anchorY = 0,0
 
 local msg = "An{brown}other {1,0,1}line\rwit{}h\ra curve" .. string.char(0xC3,0xBE,0x2A) 		-- this is A~ 3/4 in Unicode, and a circle with a vertical line in UTF-8.
+msg = msg .. string.char(0xE2,0x82,0xAC,0x21)
+msg = msg .. string.char(0xF0,0xA4,0xAD,0xA2,0x21)
 																								-- the curly brackets set tinting colours.
 
-local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
-str:moveTo(160,240):setFontSize(90) 															-- centre it, double the scale, size 48.
+local str = fm.BitmapString:new("unifont") 														-- create a string OOP method.
+str:moveTo(160,240):setFontSize(70) 															-- centre it, double the scale, size 48.
 str:setText(msg)																				-- set the text
 --str:setDirection(180) 																		-- write it backwards (why did I do this ?)
 str:setAnchor(0.5,0) 																			-- anchor top centre,
@@ -106,7 +108,7 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 
 -- for _,n in pairs(str4) do print("str4",_,n) end
 
-local t = 3000 																					-- run over 8 seconds.
+local t = 300 																					-- run over 8 seconds.
 
 -- str:getView().isVisible = false str2:getView().isVisible = false str3:getView().isVisible = false str4:getView().isVisible = false
 
