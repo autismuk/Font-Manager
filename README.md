@@ -31,18 +31,17 @@ You can also create strings like this in an OOP manner.
 
 ... same thing. the display.newBitmapText() is actually a shorthand to this to help people who aren't OOP minded. Which is fine :)
 
-The font height (40 in this example) is the vertical total height of the font in pixels, including ascenders and descenders. So you can guarantee that a string
-created with a 40 pixel height will fit in a 40 pixel gap (unless you use multi-lines, obviously !).
+The font height (40 in this example) is the vertical total height of the font in pixels, including ascenders and descenders. So you can guarantee that a string created with a 40 pixel height will fit in a 40 pixel gap (unless you use multi-lines, obviously !). 
+
+If you use the DEFAULT_SIZE constant, which is in both a string instance and the BitmapString class as a static, it will use the actual physical size of the font - the 1x font, not the 4x font. It will be consistent on differing resolution devices. If you actually *want* to use the 4x font (say) use font@4x as the font name, 
+with DEFAULT_SIZE.
 
 The font names check for scaling. So if you ask for a font called "retrofont" for an iPad Retina it will look for retrofont@4x.fnt, then it will look for retrofont@2x.fnt, then it will look for retrofont.fnt. A normal iPad will look for retrofont@2x.fnt, then retrofont.fnt etc. This is for compatibility with bmGlyph which can output fonts at different scales to save on texture memory in the device. This is completely independent of scaling in config.lua ; it works out the desired scale using the recommended code in the Corona article on Retina displays and looks for it manually.
 
 The strings have their own internal direction and position, they also have modifiers so you can tweak the shape and size and rotation of individual
 characters, either statically, or they can be animated automatically. 
 
-The basic idea is that the string has a static, boring, non-animated position where it just 'is' - no modifier, no animation. From the point of view of the
-graphics system, this is where the string 'is' (for anchoring and so on) irrespective of how you animate or modify it. This is because if you anchored on the
-actual displayed graphic, the anchor points might move around in an arbitrary way. The exception to this is the tap/touch event listeners which operate on 
-where the font characters actually are visually.
+The basic idea is that the string has a static, boring, non-animated position where it just 'is' - no modifier, no animation. From the point of view of the graphics system, this is where the string 'is' (for anchoring and so on) irrespective of how you animate or modify it. This is because if you anchored on the actual displayed graphic, the anchor points might move around in an arbitrary way. The exception to this is the tap/touch event listeners which operate on where the font characters actually are visually.
 
 So to curve this string can be as simple as :
 
@@ -56,9 +55,7 @@ and to stop it
 
 	str4:stop()
 
-There are stock animations (run main.lua in the Corona simulator !) and you can also make your own up, and customise the standard ones.  The stock
-animations (currently) are wobble, scale, curve, iscale, icurve, jagged, zoomin and zoomout. There are demos of these on the FontDemo app at my 
-github (both animated and static.)
+There are stock animations (run main.lua in the Corona simulator !) and you can also make your own up, and customise the standard ones.  The stock animations (currently) are wobble, scale, curve, iscale, icurve, jagged, zoomin and zoomout. There are demos of these on the FontDemo app at my github (both animated and static.)
 
 The pulse effect (see main.lua) is done by this code - this is a 'programmed modifier'
 
@@ -100,16 +97,11 @@ Colour tinting can be done using setTintColor() - colours everything, can be in-
 
 	"Hello{blue}blue {1,0,1}purple {}world"	
 
-The character pair used to detect tinting instructions can be set using fm.FontManager:setTintBrackets("@(",")@") for example - defaults to {}  - colours are
-black,red,green,yellow,blue,magenta,cyan,white,grey,orange,brown. The delimiters must be standard ASCII irrespective of encoding used. These are global for an
-application ; don't have different delimiters for different strings at the same time.
+The character pair used to detect tinting instructions can be set using fm.FontManager:setTintBrackets("@(",")@") for example - defaults to {}  - colours are black, red, green, yellow, blue, magenta, cyan, white, grey, orange, brown. The delimiters must be standard ASCII irrespective of encoding used. These are global for an application ; don't have different delimiters for different strings at the same time.
 
-You can also use a similar syntax to include any image in the string as {$crab} - the $ sign indicates it is an external non-font image (thanks to Richard9 for this idea)
-this currently loads icons/<name>.png but this will be changeable. The graphic will be scaled along with all the other letters, wobble, curve, animate like any other as well.
+You can also use a similar syntax to include any image in the string as {$crab} - the $ sign indicates it is an external non-font image (thanks to Richard9 for this idea) this currently loads icons/<name>.png but this will be changeable. The graphic will be scaled along with all the other letters, wobble, curve, animate like any other as well.
 
-If you are relying on Composer or Storyboard to clean up your display objects, this will work but *only* if the animation is off. When the animation is on a reference
-to the object is maintained, so it will not garbage collect. You can use str4:stop() to stop animation or str4:removeSelf() to stop everything, and clean up the string.
-It will look like it works, but it doesn't, it will keep a reference.
+If you are relying on Composer or Storyboard to clean up your display objects, this will work but *only* if the animation is off. When the animation is on a reference to the object is maintained, so it will not garbage collect. You can use str4:stop() to stop animation or str4:removeSelf() to stop everything, and clean up the string. It will look like it works, but it doesn't, it will keep a reference.
 
 Note: fm, assumes you've done something like fm = require("fontmanager")
 
@@ -150,8 +142,9 @@ Updates
 1/6/14 		UTF-8 now supports up to six byte characters
 1/6/14		Autoscanning for @nx fonts.
 1/6/14 		Padding in .fnt file is read and used to expand character box appropriately.
+1/6/14		Added DEFAULT_SIZE (uses the actual physical bitmap size for 1x)
 
-Paul Robson 1/6/14
+Paul Robson 
 paul@robsons.org.uk
 
 Thanks go to : Richard 9 on the forums, Sephane Queraud (BmGlyph) and Michael Daley (GlyphDesigner) for their assistance and ideas.

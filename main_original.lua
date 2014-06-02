@@ -19,26 +19,25 @@ bgr.anchorX,bgr.anchorY = 0,0
 
 local msg = "An{brown}other {1,0,1}line\rwit{}h\ra curve" .. string.char(0xC3,0xBE,0x2A) 		-- this is A~ 3/4 in Unicode, and a circle with a vertical line in UTF-8.
 msg = msg .. string.char(0xE2,0x82,0xAC,0x21)
-msg = msg .. string.char(0xF0,0xA4,0xAD,0xA2,0x45)
+-- msg = msg .. string.char(0xF0,0xA4,0xAD,0xA2,0x45)
 																								-- the curly brackets set tinting colours.
 
-local str = fm.BitmapString:new("newTest") 														-- create a string OOP method.
-str:moveTo(160,240):setFontSize(40) 															-- centre it, double the scale, size 48.
+local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
+str:moveTo(160,240):setFontSize(60) 												
 str:setText(msg)																				-- set the text
 --str:setDirection(180) 																		-- write it backwards (why did I do this ?)
 str:setAnchor(0.5,0) 																			-- anchor top centre,
 --str:setModifier("iscale")																		-- shape with a curve
 str:setVerticalSpacing(1):animate(4)															-- animate it - if you comment this out it will curve but not animate
  																								-- the number is a speed scalar.
-
 str:setTintColor(1,1,0) 																		-- apply a tint to it.
 
 str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do it Corona style !  - YAY !!!!
 																								-- *BUT* it does not have compatible methods. So you have to use moveTo()
 str2:setAnchor(0,0):setDirection(90)															-- and setAnchor() for example, rather than accessing members directly.
 
-local str3 = fm.BitmapString:new("font2",56):													-- a third string, created using the constructor, showing chaining.
-								moveTo(160,400):setText("Wob9ly text")
+local str3 = fm.BitmapString:new("font2",str.DEFAULT_SIZE):										-- a third string, created using the constructor, showing chaining.
+								moveTo(160,400):setText("Wobble..")								-- could use fm.BitmapString.DEFAULT_SIZE
 
 -- str3:setModifier(fm.Modifiers.WobbleModifier:new(2))											-- a more violent wobble with a new wobble modifier instance
 -- str3:setModifier(SimpleCurveModifier:new(0,180,4,2)) 										-- simple curves and scales with a different part of the trigonometrical curve
@@ -127,7 +126,6 @@ transition.to(str2:getView(), { time = t,x = 300, y = 400, alpha = 0.4,xScale = 
 transition.to(str3:getView(), { time = t,rotation = 360 })
 
 transition.to(str4:getView(), { time = t, xScale = 2,yScale = 2})
-
 
 --[[
 local composer = require( "composer" )

@@ -33,6 +33,7 @@
 <a name="BitmapFont_createImage"></a>
 <a name="BitmapFont_getFileNameScalar"></a>
 <a name="BitmapFont_getFontFile"></a>
+<a name="BitmapFont_getScaledDefaultSize"></a>
 <a name="BitmapFont_loadFont"></a>
 <a name="BitmapFontContainer"></a>
 <hr><h1>BitmapFontContainer</h1>
@@ -56,7 +57,7 @@
 <h2>(constructor)(fontName,fontSize)</h2>
 <table>
 <tr><td>fontName</td><td>string</td><td>Name of font, corresponds to .fnt file.</td></tr>
-<tr><td>fontSize</td><td>number</td><td>Font size, defaults to 64 pixels, refers to the pixel height.</td></tr>
+<tr><td>fontSize</td><td>number</td><td>Height of font in pixels, default is current size if ommitted, DEFAULT_SIZE is actual physical font size on PNG.</td></tr>
 </table>
 <p>We have a replacement constructor, which decorates a Corona Group with the BitmapString's methods. Note that you cannot therefore subclass BitmapString as normal, because it is a mixin. Constructor initialisation. Sets the font name and size.</p>
 <a name="BitmapString_anchorMove"></a>
@@ -137,14 +138,14 @@
 <h2>setFont(font,fontSize)</h2>
 <table>
 <tr><td>font</td><td>String/Reference</td><td>Font to use to create string</td></tr>
-<tr><td>fontSize</td><td>number</td><td>Height of font in pixels, default is current size if ommitted.</td></tr>
+<tr><td>fontSize</td><td>number</td><td>Height of font in pixels, default is current size if ommitted, DEFAULT_SIZE is actual physical font size on PNG.</td></tr>
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Change the font used, optionally change its size (there is another helper to just change the size). This involves freeing and reallocating the whole font objects - if you just want to change the base size, use that helper.</p>
 <a name="BitmapString_setFontSize"></a>
 <h2>setFontSize(size)</h2>
 <table>
-<tr><td>size</td><td>number</td><td>new font size (vertical pixel height), default is no change</td></tr>
+<tr><td>size</td><td>number</td><td>Height of font in pixels, default is current size if ommitted, DEFAULT_SIZE is actual physical font size on PNG.</td></tr>
 <tr><td>return</td><td>BitmapString</td><td>allows chaining.</td></tr>
 </table>
 <p>Set the Font Size</p>

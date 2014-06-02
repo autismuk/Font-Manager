@@ -107,6 +107,7 @@ function BitmapFont:getFontFile(fontFile)
 				scaleFactor = scaleFactor - 1 												-- try previous file.
 		end
 	end
+	self.fontScalar = scaleFactor 															-- save the scale factor
 	return self:getFileNameScalar(fontFile,scaleFactor)										-- return the file.
 end 
 
@@ -154,6 +155,14 @@ function BitmapFont:createImage(unicodeCharacter)
 		padding = self.padding																-- padding up/right/down/left
 	}
 end
+
+--//%	Return the size of the scaled fault. So for normal this would be the font size, @2x would be half the font size, @4x a quarter of
+--//	the font size and so on. This allows DEFAULT_SIZE to be consistent irrespective of which scale is being used.
+--//	@return [number]	Size of font in 1x.
+
+function BitmapFont:getScaledDefaultSize() 
+	return self.fontHeight / self.fontScalar 
+end 
 
 --- ************************************************************************************************************************************************************************
 --//		This singleton class manages an internal list of bitmap fonts, which must implement the BitmapFont method createImage() but otherwise does not care.
@@ -533,6 +542,7 @@ BitmapString.Justify = { LEFT = 0, CENTER = 1, CENTRE = 1, RIGHT = 2} 						-- J
 
 BitmapString.startTintDef = "{" 															-- start and end markers for font tinting.
 BitmapString.endTintDef = "}"
+BitmapString.DEFAULT_SIZE = -1 																-- use the built in font size.
 
 --// 	We have a replacement constructor, which decorates a Corona Group with the BitmapString's methods. Note that you cannot therefore subclass
 --//	BitmapString as normal, because it is a mixin. 
@@ -545,14 +555,15 @@ function BitmapString:new(...)
 			newObject[name] = object  														-- decorate the new Object
 		end
 	end
-	newObject.Justify = BitmapString.Justify 												-- expose justify constants
+	newObject.Justify = BitmapString.Justify 												-- expose constants
+	newObject.DEFAULT_SIZE = BitmapString.DEFAULT_SIZE
 	newObject:initialise(...) 																-- now call the constructor.
 	return newObject
 end
 
 --//	Constructor initialisation. Sets the font name and size.
 --//	@fontName [string]		Name of font, corresponds to .fnt file.
---//	@fontSize [number]		Font size, defaults to 64 pixels, refers to the pixel height.
+--//	@fontSize [number]		Height of font in pixels, default is current size if ommitted, DEFAULT_SIZE is actual physical font size on PNG.
 
 function BitmapString:initialise(fontName,fontSize) 
 	self.fontName = fontName 																-- save the font name and the font size.
@@ -649,6 +660,10 @@ function BitmapString:setText(newText)
 	self.lineLengthChars = {} 																-- line length in characters of each line.
 	local characterCount = 1 																-- current character number
 	local currentTint = nil 																-- current character specific tint.
+
+	if self.fontSize < 0 then 
+		self.fontSize = BitmapFontContainer:getFontInstance(self.fontName):getScaledDefaultSize()
+	end
 
 	while source:isMore() do 																-- is there more to get ?
 		local code = source:get() 															-- yes, get the next character.
@@ -1013,7 +1028,7 @@ end
 --//	Change the font used, optionally change its size (there is another helper to just change the size). This involves freeing and reallocating
 --//	the whole font objects - if you just want to change the base size, use that helper.
 --//	@font [String/Reference]	Font to use to create string
---//	@fontSize [number]			Height of font in pixels, default is current size if ommitted.
+--//	@fontSize [number]			Height of font in pixels, default is current size if ommitted, DEFAULT_SIZE is actual physical font size on PNG.
 --//	@return [BitmapString]	allows chaining.
 
 function BitmapString:setFont(font,fontSize)
@@ -1076,7 +1091,7 @@ function BitmapString:setVerticalSpacing(spacing)
 end
 
 --//	Set the Font Size
---//	@size [number]	new font size (vertical pixel height), default is no change
+--//	@size [number]			Height of font in pixels, default is current size if ommitted, DEFAULT_SIZE is actual physical font size on PNG.
 --//	@return [BitmapString]	allows chaining.
 
 function BitmapString:setFontSize(size)
@@ -1401,5 +1416,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 	01/06/14 	Full UTF-8 Support (up to 6 bytes)
 	01/06/14 	Auto-selection of differing scales of png to allow for different device resolutions
 	01/06/14 	Reads padding from font file.
+	02/06/14 	Implemented DEFAULT_SIZE
 
 --]]
