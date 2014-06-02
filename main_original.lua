@@ -107,7 +107,7 @@ str4:addEventListener( "tap", demoTarget )														-- print 'tap' if you ta
 
 -- for _,n in pairs(str4) do print("str4",_,n) end
 
-local t = 300 																					-- run over 8 seconds.
+local t = 3000 																					-- run over 8 seconds.
 
 -- str:getView().isVisible = false str2:getView().isVisible = false str3:getView().isVisible = false str4:getView().isVisible = false
 
