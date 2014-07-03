@@ -21,6 +21,7 @@ bms:setText("QM")
 bms:moveTo(0,0) 																				-- postion it
 bms:setAnchor(0,0)
 bms:setJustification(bms.Justify.LEFT) 															-- left justify
+bms:show()
 --bms.rotation = 10 																			-- rotate
 --bms:setFont("font2") 																			-- change font
 --bms:setVerticalSpacing(1.2) 																	-- change vertical spacing.
