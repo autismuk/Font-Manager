@@ -23,6 +23,12 @@ local BitmapFont = Base:new()
 
 BitmapFont.fontDirectory = "fonts" 															-- where font files are, fnt and png.
 
+--//	Changes the directory where bitmap fonts are found.
+--//	@newDir [string] name of font directory
+function BitmapFont:setFontDirectory(newDir)
+	BitmapFont.fontDirectory = newDir
+end
+
 --//	The Bitmap Font constructor. This reads in the font data from the .FNT file and calculates the font height.
 --//	@fontName [string] name of font (case is sensitive, so I advise use of lower case only)
 
@@ -240,7 +246,7 @@ function BitmapCharacter:initialise(fontName,character)
 	self.tinting = nil 																		-- current default tinting.
 	if self.isDebug then 																	-- if you want it, create the debug rectangle.
 		self.debuggingRectangle = display.newRect(0,0,1,1)									-- moving it will update its location correctly.
-		self.debuggingRectangle:setStrokeColor(0,0.4,0) 									-- make it green, one width and transparent
+		self.debuggingRectangle:setStrokeColor(1,0,0) 									    -- make it red, one width 
 		self.debuggingRectangle.strokeWidth = 1
 		self.debuggingRectangle:setFillColor( 0,0,0,0 )
 		self.debuggingRectangle.anchorX,self.debuggingRectangle.anchorY = 0,0 				-- anchor at top left, position it with the bounding box.
@@ -548,6 +554,13 @@ BitmapString.startTintDef = "{" 															-- start and end markers for font
 BitmapString.endTintDef = "}"
 BitmapString.DEFAULT_SIZE = -1 																-- use the built in font size.
 
+--//	enable bounding box for characters (red) and string (green)
+--//	@flag [boolean] true/false
+function BitmapString:showBoundingBox(flag)
+	BitmapString.isDebug = flag
+	BitmapCharacter.isDebug = flag
+end
+
 --// 	We have a replacement constructor, which decorates a Corona Group with the BitmapString's methods. Note that you cannot therefore subclass
 --//	BitmapString as normal, because it is a mixin. 
 
@@ -590,7 +603,7 @@ function BitmapString:initialise(fontName,fontSize)
 	self.creationTime = system.getTimer() 													-- remember the start time.
 	if BitmapString.isDebug then 
 		self.debuggingRectangle = display.newRect(0,0,1,1)									-- moving it will update its location correctly.
-		self.debuggingRectangle:setStrokeColor(0.4,0.4,0) 									-- make it green, one width and transparent
+		self.debuggingRectangle:setStrokeColor(0,1,0) 									    -- make it green, one width 
 		self.debuggingRectangle.strokeWidth = 1
 		self.debuggingRectangle:setFillColor( 0,0,0,0 )
 		self.debuggingRectangle.anchorX,self.debuggingRectangle.anchorY = 0,0 				-- anchor at top left, position it with the bounding box.
