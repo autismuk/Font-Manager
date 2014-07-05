@@ -3,7 +3,8 @@
 ---				Name : 		fontmanager.lua
 ---				Purpose :	Manage and Animate strings of bitmap fonts.
 ---				Created:	30 April 2014 (Reengineered 19th May 2014)
----				Author:		Paul Robson (paul@robsons.org.uk)
+---				Authors:	Paul Robson (paul@robsons.org.uk)
+---							Ingemar Bergmark.
 ---				License:	MIT
 ---
 --- ************************************************************************************************************************************************************************
@@ -22,12 +23,6 @@ require("config")
 local BitmapFont = Base:new()
 
 BitmapFont.fontDirectory = "fonts" 															-- where font files are, fnt and png.
-
---//	Changes the directory where bitmap fonts are found.
---//	@newDir [string] name of font directory
-function BitmapFont:setFontDirectory(newDir)
-	BitmapFont.fontDirectory = newDir
-end
 
 --//	The Bitmap Font constructor. This reads in the font data from the .FNT file and calculates the font height.
 --//	@fontName [string] name of font (case is sensitive, so I advise use of lower case only)
@@ -108,6 +103,13 @@ function BitmapFont:getFontFile(fontFile)
 	self.fontScalar = 1 / display.contentScaleX  											-- save the scale factor
 	return self:getFileNameScalar(fontFile)													-- return the file.
 end 
+
+--//	Changes the directory where bitmap fonts are found.
+--//	@newDir [string] name of font directory
+
+function BitmapFont:setFontDirectory(newDir)
+	BitmapFont.fontDirectory = newDir
+end
 
 --//%	Create a full file name for a font scaled by a particular amount (so 2 => @2x etc.)
 --//	@fontFile 	[string] 		Base name of font file
@@ -241,7 +243,7 @@ function BitmapCharacter:initialise(fontName,character)
 	self.info = info.charData 																-- save the associated information. Note, we can only use width, height, xOffset, yOffset
 	self.basePhysicalHeight = info.fontHeight 												-- save the physical height of the bitmap.
 	self.actualHeight = info.fontHeight 													-- initially same size as the physical height.
-	self.padding = info.padding 															-- save padding
+	self.padding = info.padding or { 0,0,0,0 }												-- save padding
 	self.image.anchorX, self.image.anchorY = 0.5,0.5 										-- anchor at the middle of the display image.
 	self.tinting = nil 																		-- current default tinting.
 	if self.isDebug then 																	-- if you want it, create the debug rectangle.
@@ -1435,5 +1437,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 	01/06/14 	Auto-selection of differing scales of png to allow for different device resolutions
 	01/06/14 	Reads padding from font file.
 	02/06/14 	Implemented DEFAULT_SIZE
+	05/07/14 	Ingemar Bergmark fixed the way it handles multi resolution pngs to work with the Corona system.
 
 --]]
