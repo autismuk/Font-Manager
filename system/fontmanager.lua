@@ -119,8 +119,8 @@ function BitmapFont:getFileNameScalar(fontFile)
 	local selectedSuffix = ""																-- default suffix
 	local selectedScale = -1 																-- selected scale from config.lua (no guarantee that the
 																							-- order in the table is ascending)
-
-	for configSuffix, configScale in pairs(application.content.imageSuffix) do 				-- traverse through config.lua's imageSuffix table	
+	
+	for configSuffix, configScale in pairs(application.content.imageSuffix or {}) do 		-- traverse through config.lua's imageSuffix table	
 		if (self.fontScalar >= configScale) and (configScale > selectedScale) then 			-- to get file suffix to use
 			selectedScale = configScale
 			selectedSuffix = configSuffix
@@ -1438,5 +1438,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 	01/06/14 	Reads padding from font file.
 	02/06/14 	Implemented DEFAULT_SIZE
 	05/07/14 	Ingemar Bergmark fixed the way it handles multi resolution pngs to work with the Corona system.
-
+				Fixed padding bug with image characters
+				Stopped crashing when no imageSuffix in config.
 --]]
