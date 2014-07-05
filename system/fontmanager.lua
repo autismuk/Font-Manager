@@ -11,6 +11,7 @@
 -- Standard OOP (with Constructor parameters added.)
 _G.Base =  _G.Base or { new = function(s,...) local o = { } setmetatable(o,s) s.__index = s o:initialise(...) return o end, initialise = function() end }
 
+require("config")
 
 --- ************************************************************************************************************************************************************************
 --// 	This class encapsulates a bitmap font, producing characters 'on demand'. Has a factory method for producing character images from that font (using imageSheets)
@@ -53,8 +54,10 @@ function BitmapFont:loadFont(fontName)
 	self.padding = { 0,0,0,0 } 																-- clear padding.
 
 	for l in source do 
-		local page,fileName = l:match('^%s*page%s*id%s*=%s*(%d+)%s*file%s*=%s*%"(.*)%"$') 	-- is it the page line, which tells us the file name ?
-		if page ~= nil then 																-- if so , use it for the file name.
+		local page = l:match('^%s*page%s*id%s*=%s*(%d+)%s*file%s*=%s*%"(.*)%"$') 		    -- get the page line
+		local fileName = fontName .. ".png" 												-- no need to add suffix as Corona will figure it out
+
+		if page ~= nil then 																-- check page.
 			assert(page == "0","We do not support font files with page > 0. If you have one contact the author")
 			imageFile = BitmapFont.fontDirectory .. "/" .. fileName 						-- not currently supporting multi page files, are there any ?
 		end
@@ -95,31 +98,32 @@ end
 --//	@return 	[string]		Path of font file.
 
 function BitmapFont:getFontFile(fontFile)
-	--// TODO: Work out scale, check if 4x, 3x 2x 1x exist and use them if they do.
 	--// TODO: Explain in docs what it actually does.
-	local scaleFactor = 1
-	if fontFile:match("%@%d+x$") == nil then 												-- if not enforcing the use of a font.
-		local deviceWidth = ( display.contentWidth - (display.screenOriginX * 2) ) / 		-- Corona's code to work out the scale
-																			display.contentScaleX
-		scaleFactor = math.floor( deviceWidth / display.contentWidth )
-		scaleFactor = math.max(scaleFactor,1) 												-- have a scale factor of at least 1.
-		while scaleFactor > 1 and self:getFileNameScalar(fontFile,scaleFactor) == nil do 	-- while scale > 1 and file not present
-				scaleFactor = scaleFactor - 1 												-- try previous file.
-		end
-	end
-	self.fontScalar = scaleFactor 															-- save the scale factor
-	return self:getFileNameScalar(fontFile,scaleFactor)										-- return the file.
+	self.fontScalar = 1 / display.contentScaleX  											-- save the scale factor
+	return self:getFileNameScalar(fontFile)													-- return the file.
 end 
 
 --//%	Create a full file name for a font scaled by a particular amount (so 2 => @2x etc.)
 --//	@fontFile 	[string] 		Base name of font file
---//	@fontScalar [number]		Possible scalar size 2,3,4 etc.
 --//	@return 	[string]		Path of font file.
 
-function BitmapFont:getFileNameScalar(fontFile,fontScalar)
-	if fontScalar > 1 then fontFile = fontFile .. "@" .. fontScalar .. "x" end 				-- if >1 then add @2x or whatever to the name
+function BitmapFont:getFileNameScalar(fontFile)
+	local selectedSuffix = ""																-- default suffix
+	local selectedScale = -1 																-- selected scale from config.lua (no guarantee that the
+																							-- order in the table is ascending)
+
+	for configSuffix, configScale in pairs(application.content.imageSuffix) do 				-- traverse through config.lua's imageSuffix table	
+		if (self.fontScalar >= configScale) and (configScale > selectedScale) then 			-- to get file suffix to use
+			selectedScale = configScale
+			selectedSuffix = configSuffix
+		end
+	end
+
+	fontFile = fontFile .. selectedSuffix
+	self.suffix = selectedSuffix 															-- save the selected suffix
+
 	return system.pathForFile(BitmapFont.fontDirectory .. "/" .. 							-- create full file path
-												fontFile..".fnt",system.ResourceDirectory)
+												fontFile .. ".fnt", system.ResourceDirectory)
 end 
 
 --//%	Calculates the font height of the loaded bitmap, which defines the base height of the font. This is used when scaling the bitmaps
