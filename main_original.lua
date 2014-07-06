@@ -37,7 +37,7 @@ str2 = display.newBitmapText("Bye !",0,0,"font2",45) 											-- or we can do 
 str2:setAnchor(0,0):setDirection(90)															-- and setAnchor() for example, rather than accessing members directly.
 
 local str3 = fm.BitmapString:new("font2",str.DEFAULT_SIZE):										-- a third string, created using the constructor, showing chaining.
-								moveTo(160,400):setText("Wobble..")								-- could use fm.BitmapString.DEFAULT_SIZE
+								moveTo(160,400):setText("Total..")								-- could use fm.BitmapString.DEFAULT_SIZE
 
 -- str3:setModifier(fm.Modifiers.WobbleModifier:new(2))											-- a more violent wobble with a new wobble modifier instance
 -- str3:setModifier(SimpleCurveModifier:new(0,180,4,2)) 										-- simple curves and scales with a different part of the trigonometrical curve

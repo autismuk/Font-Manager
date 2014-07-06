@@ -12,7 +12,7 @@
 -- Standard OOP (with Constructor parameters added.)
 _G.Base =  _G.Base or { new = function(s,...) local o = { } setmetatable(o,s) s.__index = s o:initialise(...) return o end, initialise = function() end }
 
-require("config")
+require("config") 																			-- load in config.lua
 
 --- ************************************************************************************************************************************************************************
 --// 	This class encapsulates a bitmap font, producing characters 'on demand'. Has a factory method for producing character images from that font (using imageSheets)
@@ -131,7 +131,7 @@ function BitmapFont:getFileNameScalar(fontFile)
 		end
 	end
 
-	fontFile = fontFile .. selectedSuffix
+	fontFile = fontFile .. selectedSuffix 													-- required font file name.
 	self.suffix = selectedSuffix 															-- save the selected suffix
 	local fullPath = BitmapFont.fontDirectory .. "/" .. fontFile .. ".fnt" 					-- create full file path
 	local fileName =  system.pathForFile(fullPath, system.ResourceDirectory) 				-- get the actual file name.
@@ -311,6 +311,8 @@ function BitmapCharacter:moveTo(x,y,newHeight)
 		local b = self.boundingBox
 		self.debuggingRectangle.x,self.debuggingRectangle.y = b.x1,b.y1
 		self.debuggingRectangle.width,self.debuggingRectangle.height = b.width,b.height
+		self.debuggingRectangle:toFront()
+		self.debuggingRectangle.strokeWidth = math.max(display.contentWidth/150,1)
 	end
 end
 
@@ -614,6 +616,7 @@ function BitmapString:initialise(fontName,fontSize)
 		self.debuggingRectangle.strokeWidth = 1
 		self.debuggingRectangle:setFillColor( 0,0,0,0 )
 		self.debuggingRectangle.anchorX,self.debuggingRectangle.anchorY = 0,0 				-- anchor at top left, position it with the bounding box.
+		self.debuggingRectangle.strokeWidth = math.max(display.contentWidth/150,1)
 		self:insert(self.debuggingRectangle)
 	end
 end 
@@ -728,7 +731,7 @@ function BitmapString:setText(newText)
 					self:insert(newRect.bitmapChar.debuggingRectangle) 						-- insert that as well.
 				end
 			end
-
+			newRect.bitmapChar:moveTo(0,0,self.fontSize) 									-- make sure it is the right font size (Green Box Fix 6/7/14)
 			if self.isHorizontal then 														-- Horizontal or vertical text
 				xCharacter = xCharacter + 1 												-- one character to the left
 			else 
@@ -854,7 +857,6 @@ function BitmapString:applyModifiers()
 			if math.abs(modifier.xScale) < 0.001 then modifier.xScale = 0.001 end 			-- very low value scaling does not work, zero causes an error
 			if math.abs(modifier.yScale) < 0.001 then modifier.yScale = 0.001 end
 		end
-
 
 		bitmapChar:setTintColor(modifier.tint) 												-- apply the tint part of the modifier.
 		if self.modifier ~= nil then 
@@ -1446,5 +1448,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 				Fixed padding bug with image characters
 				Stopped crashing when no imageSuffix in config.
 	06/07/14 	Amended getFileNameScalar() so it crashes nicely if the .FNT file is not present.
-	
+	06/07/14 	Made the debug rectangles more obviously visible.
+				Fixed bug where initially bounding box was in wrong position.
 --]]
