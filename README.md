@@ -143,11 +143,13 @@ Updates
 1/6/14		Autoscanning for @nx fonts.
 1/6/14 		Padding in .fnt file is read and used to expand character box appropriately.
 1/6/14		Added DEFAULT_SIZE (uses the actual physical bitmap size for 1x)
+5/7/14 		Added in Ingemar's changes to use Corona's scaling system. 
+6/7/14 		Couple of minor consequential bugs fixed from those changes.
 
 Paul Robson 
 paul@robsons.org.uk
 
-Thanks go to : Richard 9 on the forums, Sephane Queraud (BmGlyph) and Michael Daley (GlyphDesigner) for their assistance and ideas.
+Thanks go to : Richard 9 and Ingemar Bergmark on the forums, Sephane Queraud (BmGlyph) and Michael Daley (GlyphDesigner) for their assistance and ideas.
 
 bmGlyph:			http://www.bmglyph.com
 Glyph Designer:		http://71squared.com/glyphdesigner

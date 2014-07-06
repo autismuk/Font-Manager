@@ -51,7 +51,8 @@ function BitmapFont:loadFont(fontName)
 	local spriteCount = 1 																	-- next available 'frame'
 	local imageFile = nil 																	-- this is the sprite image file which will be read in eventually.
 	local charData = {} 																	-- character data structure for this font.
-	local source = io.lines(self:getFontFile(fontName)) 									-- read the lines from this file.
+	local fontFile = self:getFontFile(fontName)												-- get .FNT file
+	local source = io.lines(fontFile) 														-- read the lines from this file.
 	self.padding = { 0,0,0,0 } 																-- clear padding.
 
 	for l in source do 
@@ -129,9 +130,10 @@ function BitmapFont:getFileNameScalar(fontFile)
 
 	fontFile = fontFile .. selectedSuffix
 	self.suffix = selectedSuffix 															-- save the selected suffix
-
-	return system.pathForFile(BitmapFont.fontDirectory .. "/" .. 							-- create full file path
-												fontFile .. ".fnt", system.ResourceDirectory)
+	local fullPath = BitmapFont.fontDirectory .. "/" .. fontFile .. ".fnt" 					-- create full file path
+	local fileName =  system.pathForFile(fullPath, system.ResourceDirectory) 				-- get the actual file name.
+	assert(fileName ~= nil,"Could not access "..fullPath.." in system.ResourceDirectory")	-- check it actually is there.
+	return fileName
 end 
 
 --//%	Calculates the font height of the loaded bitmap, which defines the base height of the font. This is used when scaling the bitmaps
@@ -1440,4 +1442,6 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 	05/07/14 	Ingemar Bergmark fixed the way it handles multi resolution pngs to work with the Corona system.
 				Fixed padding bug with image characters
 				Stopped crashing when no imageSuffix in config.
+	06/07/14 	Amended getFileNameScalar() so it crashes nicely if the .FNT file is not present.
+	
 --]]
