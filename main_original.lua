@@ -22,7 +22,7 @@ msg = msg .. string.char(0xE2,0x82,0xAC,0x21)
 -- msg = msg .. string.char(0xF0,0xA4,0xAD,0xA2,0x45)
 																								-- the curly brackets set tinting colours.
 
-local str = fm.BitmapString:new("demofontx") 													-- create a string OOP method.
+local str = fm.BitmapString:new("demofont") 													-- create a string OOP method.
 str:moveTo(160,240):setFontSize(60) 												
 str:setText(msg)																				-- set the text
 --str:setDirection(180) 																		-- write it backwards (why did I do this ?)

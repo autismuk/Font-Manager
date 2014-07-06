@@ -10,8 +10,8 @@ application =
 
 		imageSuffix =
 		{
-			--["@2x"] = 2, -- for iPhone, iPod touch, iPad1, and iPad2
-			--["@4x"] = 4, -- for iPad 3
+			["@2x"] = 2, -- for iPhone, iPod touch, iPad1, and iPad2
+			["@4x"] = 4, -- for iPad 3
 		}
 	}
 }

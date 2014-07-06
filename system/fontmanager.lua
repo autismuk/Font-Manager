@@ -123,8 +123,11 @@ function BitmapFont:getFileNameScalar(fontFile)
 	
 	for configSuffix, configScale in pairs(application.content.imageSuffix or {}) do 		-- traverse through config.lua's imageSuffix table	
 		if (self.fontScalar >= configScale) and (configScale > selectedScale) then 			-- to get file suffix to use
-			selectedScale = configScale
-			selectedSuffix = configSuffix
+			local reqName = BitmapFont.fontDirectory.."/"..fontFile..configSuffix..".fnt" 	-- this file should be present
+			if system.pathForFile(reqName) ~= nil then  									-- if the file was found.
+				selectedScale = configScale  												-- use that suffix/prefix.
+				selectedSuffix = configSuffix
+			end
 		end
 	end
 
