@@ -21,6 +21,7 @@ local RolloutModifier = Base:new()
 function RolloutModifier:initialise() 
 	self.lastElapsed = nil 																		-- time of last modifier call
 	self.totalElapsed = 0 																		-- total elapsed time, speed of time is effect by speed
+	self.outstandingPause = 0 																	-- number of pause milliseconds outstanding.
 	self:setSpeed() 																			-- set speed to default.
 end
 
@@ -31,6 +32,13 @@ function RolloutModifier:setSpeed(speed)
 	self.charsPerSecond = speed or 4
 end
 
+--//	Adds to the pause counter - this allows the timer system to delay for a specified period.
+--//	@millisecs 	[number]	Time to delay.
+
+function RolloutModifier:addPause(millisecs)
+	self.outstandingPause = self.outstandingPause + millisecs 									-- add to required pause.
+end
+
 --//	Modifier responsible for rollout. All it does is change the alpha to hide or make characters visible.
 --//	@modifier [table]		Modifications to be made to font.
 --//	@cPos 	  [number]		Animation position
@@ -39,8 +47,15 @@ end
 
 function RolloutModifier:modify(modifier, cPos, info)
 	if self.lastElapsed ~= nil then  															-- if not the first
-		self.totalElapsed = self.totalElapsed + 												-- bump the total elapsed time adjusting for the speed.
-						(info.elapsed - self.lastElapsed) * self.charsPerSecond
+		local time = info.elapsed - self.lastElapsed 											-- time elapsed since last
+
+		if self.outstandingPause >= 0 then  													-- time outstanding.
+			self.outstandingPause = self.outstandingPause - time 								-- deduct elapsed time from pause time.
+			time = 0 																			-- don't bother to count this, it's near enough.
+		end 
+
+		self.totalElapsed = self.totalElapsed + time * self.charsPerSecond						-- bump the total elapsed time adjusting for the speed.
+						 
 	end
 	self.lastElapsed = info.elapsed 															-- record time of last call to modifier.
 
@@ -218,7 +233,8 @@ local SampleRollOut = RolloutEventAdaptor:new()
 
 function SampleRollOut:initialise(fontManagerInstance,modifierInstance)
 	RolloutEventAdaptor.initialise(self,fontManagerInstance,modifierInstance) 					-- constructor for superclass
-	self:addEventType("slow"):addEventType("fast"):addEventType("shake")						-- add known commands
+	self:addEventType("slow"):addEventType("fast") 												-- add known commands
+	self:addEventType("shake"):addEventType("pause4")					
 end
 
 function SampleRollOut:slowEvent(name,info,data) 
@@ -235,6 +251,11 @@ function SampleRollOut:shakeEvent(name,info,data)
 	print("Shake event at",info.time,data.bitmapStringInstance) 								-- haven't bothered to implement this but it comes out on the console.
 end
 
+function SampleRollOut:pause4Event(name,info,data) 												-- add a pause to the text - 'pause4' pauses for 4 seconds
+	print("Pause4 event at",info.time)															-- these have to be registered tin the constructor.
+	data.modifierInstance:addPause(4000) 	
+end
+
 --- ************************************************************************************************************************************************************************
 -- 																				Main program
 --- ************************************************************************************************************************************************************************
@@ -242,7 +263,7 @@ end
 			
 -- add command implementation.
 																								-- some working text.
-local text = "Lorem{shake} ipsum\n{fast}dolor{$crab}sitamet{slow},\nconsectetur{fast}\nadipiscing\nelit. Duis nec\nlobortis massa.\nFusce dictum\naliquam fermen"
+local text = "Lor{pause4}em{shake} ipsum\n{fast}dolor{$crab}sitamet{slow},\nconsectetur{fast}\nadipiscing\nelit. Duis nec\nlobortis massa.\nFusce dictum\naliquam fermen"
 
 local textObject = display.newBitmapText("",160,240,"font2",44) 								-- create a text object, left justify it.
 textObject:setJustification(textObject.Justify.LEFT):setVerticalSpacing(0.9)

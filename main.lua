@@ -14,9 +14,9 @@
 -- main_roll is a 'rolling out text' demo which was a suggestion of Richard9's and also used as a text. It's a demo of using it for RPG type text boxes
 -- main_test is an exhaustive test, creating and destroying umpteen strings and tweaking them to see if everything cleans up correctly.
 
-require("main_original")
+--require("main_original")
 --require("main_new")
---require("main_roll")
+require("main_roll")
 --require("main_test")
 
 -- probably the best way to learn it is to look at main_original and main_new and experiment and see what happens. Change calls, add some new fonts.
