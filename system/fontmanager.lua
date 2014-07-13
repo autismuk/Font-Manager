@@ -81,6 +81,17 @@ function BitmapFont:loadFont(fontName)
 			charData[charID*1] = charInfo 													-- store the full font information in the characterData table.
 			spriteCount = spriteCount + 1 													-- bump the number of sprites
 		end
+		if l:match("^%s*kerning%s") then 													-- get kerning info and
+																							-- read first-char, second-char and adjustment-amount info
+			local f,s,a = l:match("first%s*=%s*(%d+)%s*second%s*=%s*(%d+)%s*amount%s*=%s*([%p%d]+)")
+			f,s,a = tonumber(f), tonumber(s), tonumber(a)									-- make sure values are numbers
+			if charData[f] then 															-- we only care about kerning if character exists in table
+				self.kerningInfo = self.kerningInfo or {} 									-- initialise tables if not present
+				self.kerningInfo[f] = self.kerningInfo[f] or {}
+				self.kerningInfo[f][s] = a 													-- set kerning amount for char [s]
+ 				charData[f].kerning = self.kerningInfo[f] 									-- link character to kerning info
+			end
+		end
 		if l:match("padding") ~= nil then 
 			self.padding[1],self.padding[2],self.padding[3],self.padding[4] = 				-- parse out padding information
 				l:match("padding%s*%=%s*([%d+])%s*%,%s*([%d+])%s*%,%s*([%d+])%s*%,%s*([%d+])")
@@ -88,7 +99,6 @@ function BitmapFont:loadFont(fontName)
 			for i = 1,4 do self.padding[i] = self.padding[i] * 1 end 						-- convert to numbers
 		end
 	end
-
 	assert(imageFile ~= nil,"No image file in fnt file, contact the author")				-- didn't find a 'page' entry i.e. no file name
 	self.imageSheet = graphics.newImageSheet(imageFile,options) 							-- load in the image sheet
 	assert(self.imageSheet ~= nil,"Image file " .. imageFile .. "failed to load for fnt file ".. fontName)	
@@ -609,6 +619,7 @@ function BitmapString:initialise(fontName,fontSize)
 	self.animationRate = 1 																	-- animation rate is 1
 	self.animationFrequency = 15 															-- animation updates per second.
 	self.animationNext = 0 																	-- time of next animation event.
+	self.useKerning = true 																	-- use kerning info by default
 	self.creationTime = system.getTimer() 													-- remember the start time.
 	if BitmapString.isDebug then 
 		self.debuggingRectangle = display.newRect(0,0,1,1)									-- moving it will update its location correctly.
@@ -919,6 +930,18 @@ function BitmapString:justifyText(isRightJustify)
 	end
 end
 
+--//	Turn kerning on/off for BitmapString
+--//    NOTE: Requires kerning info in font definition file. If no kerning info is found, a default of 0 will be used.
+--//	@flag [boolean]	true to turn kerning on, false to turn off (defaults to true)
+
+function BitmapString:applyKerning(flag)
+	if flag == nil then
+		self.useKerning = true
+	else
+		self.useKerning = flag
+	end
+end
+
 --//%	Reformat a single line, update the bounding box, return the right most display pixel used. This positions a line according to the direction.
 --//	(for direction 180 it works backwards)
 --// 	@lineNumber	[number]	line to reformat
@@ -928,10 +951,11 @@ end
 function BitmapString:reformatLine(lineNumber,xPos)
 	local index = 1 																		-- index in character list.
 	local xEnd = xPos
+	local kerning = 0 																		-- default kerning
 
 	if self.direction == 180 then 															-- if backwards, then advance xpos to end position
 		for _,charItem in ipairs(self.characterList) do 
-			if charItem.lineNumber == lineNumber then 
+			if charItem.lineNumber == lineNumber then  
 				xPos = xPos + self.horizontalSpacingPixels + charItem.bitmapChar:getBoundingBox().width 
 			end 
 		end
@@ -945,18 +969,32 @@ function BitmapString:reformatLine(lineNumber,xPos)
 			local ln = lineNumber 															-- line number to go to.
 			if self.direction == 270 then ln = charItem.lineCount - ln + 1 end 				-- vertically flip for 270 degree orientation
 			if self.direction == 180 then  													-- work backwards for 180 degree orientation.
-				xPos = xPos - charItem.bitmapChar.boundingBox.width 
+				xPos = xPos - charItem.bitmapChar.boundingBox.width - kerning
+			else
+				xPos = xPos + kerning														-- adjust xPos with kerning
 			end
+
 			local charBox = charItem.bitmapChar:getBoundingBox() 							-- get character bounding box
 			charItem.bitmapChar:moveTo(xPos,												-- move and size correctly.
 										(ln - 1) * charBox.height * self.verticalSpacingScalar,self.fontSize) 
 			charBox = charItem.bitmapChar:getBoundingBox() 									-- get character bounding box
-			xPos = math.max(charBox.x2) 													-- get the next position to the right.
+			xPos = math.max(charBox.x2)   													-- get the next position to the right.
 			self.boundingBox.x2 = math.max(self.boundingBox.x2,xPos) 						-- update the bounding box.
 			self.boundingBox.y2 = math.max(self.boundingBox.y2,charBox.y2)
-			xPos = xPos + self.horizontalSpacingPixels 										-- spacing goes after bounding box.
+			xPos = xPos + self.horizontalSpacingPixels  									-- spacing goes after bounding box.
 			if self.direction == 180 then
 				xPos = charBox.x1 - self.horizontalSpacingPixels 
+			end
+			if self.useKerning then 														-- use kerning only if defined for BitmapString
+				kerning = 0 																-- reset kerning to 0
+				if index < #self.characterList then 										-- check if not last character in list
+					if charItem.bitmapChar.info.kerning then 								-- do we have kerning info available?
+						local nextChar = self.characterList[index+1] 						-- shortcut to next character
+																							-- get kerning amount and scale it
+						kerning = charItem.bitmapChar.info.kerning[nextChar.bitmapChar.character] or 0 		
+						kerning = kerning * (charItem.bitmapChar.actualHeight / charItem.bitmapChar.basePhysicalHeight)
+					end	
+				end
 			end
 		end
 		index = index + 1 																	-- go to next entry
