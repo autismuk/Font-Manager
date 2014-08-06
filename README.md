@@ -136,6 +136,11 @@ end
 
 f) Curve is now a static class in its own right rather than being a method of FontManage.
 
+Kerning
+=======
+
+Thanks to Ingemar, the library now supports kerning - if it isn't present it just behaves as before. Note that this is turned on by default, so if you rely on spacing too precisely it could be slightly out. This can be turned on or off with the applyKerning(<boolean>) method, which turns it on or off according tot he boolean parameter.
+
 Updates
 =======
 
@@ -145,7 +150,7 @@ Updates
 1/6/14		Added DEFAULT_SIZE (uses the actual physical bitmap size for 1x)
 5/7/14 		Added in Ingemar's changes to use Corona's scaling system. 
 6/7/14 		Couple of minor consequential bugs fixed from those changes.
-
+6/8/14 		Kerning added.
 Paul Robson 
 paul@robsons.org.uk
 

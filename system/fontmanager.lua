@@ -1488,4 +1488,5 @@ return { BitmapString = BitmapString, Modifiers = Modifiers, FontManager = Bitma
 	06/07/14 	Amended getFileNameScalar() so it crashes nicely if the .FNT file is not present.
 	06/07/14 	Made the debug rectangles more obviously visible.
 				Fixed bug where initially bounding box was in wrong position.
+	06/08/14 	Merged Ingemar's Kerning code into the main branch.
 --]]
