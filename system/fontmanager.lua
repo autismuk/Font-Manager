@@ -764,6 +764,13 @@ function BitmapString:setText(newText)
 	return self
 end
 
+--//	Return the current text associated with a bitmap string
+--//	@return 	[string]	string
+
+function BitmapString:getText()
+	return self.currText or "" 
+end 
+
 --//%	Reformat and rejustify the text, calculate the non-modified bounding box. This has several phases (1) it reformats the text, left justified based at (0,0)
 --//	(2) it justifies the text centrally or right if required, (3) it moves the origin from (0,0) if the anchor is set to anything other than (0,0) and finally
 --//	(4) it reapplies the modifiers.

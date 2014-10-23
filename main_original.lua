@@ -45,6 +45,8 @@ local str3 = fm.BitmapString:new("font2",str.DEFAULT_SIZE):										-- a third 
 str3:setModifier("wobble") 																		-- or just wobble.
 str3:animate() 																					-- make this one animate.
 
+print(str2:getText(),str3:getText())
+
 --
 --	A sample function type modifier, okay , so I chose 360 because it saves me scaling the rotation :)
 --
